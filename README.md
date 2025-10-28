@@ -1,4 +1,4 @@
 # InfraredRemoteControl
 Customised Multi-device IR controller
 
-[Hardware Description](https://raw.githubusercontent.com/podonoghue/InfraredRemoteControl/Hardware/IR_Remote/IR_Remote.pdf)
+[Hardware Description](https://raw.githubusercontent.com/podonoghue/InfraredRemoteControl/Hardware/IR_Remote/IR_Remote.PDF)
