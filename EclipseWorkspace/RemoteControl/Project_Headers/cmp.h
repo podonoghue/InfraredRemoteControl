@@ -36,12 +36,125 @@ namespace USBDM {
  * @{
  */
 
+   /**
+    * CMP Positive Input Select
+    * (cmp_muxcr_psel_base)
+    *
+    * Selects the positive input source
+    */
+   enum class CmpInputPlus : uint8_t {
+      CmpInputPlus_0   = CMP_MUXCR_PSEL(0),  ///< External input 0
+      CmpInputPlus_1   = CMP_MUXCR_PSEL(1),  ///< External input 1
+      CmpInputPlus_2   = CMP_MUXCR_PSEL(2),  ///< External input 2
+      CmpInputPlus_3   = CMP_MUXCR_PSEL(3),  ///< External input 3
+      CmpInputPlus_4   = CMP_MUXCR_PSEL(4),  ///< External input 4
+      CmpInputPlus_5   = CMP_MUXCR_PSEL(5),  ///< External input 5
+      CmpInputPlus_6   = CMP_MUXCR_PSEL(6),  ///< External input 6
+      CmpInputPlus_7   = CMP_MUXCR_PSEL(7),  ///< External input 7
+   };
+
+   /**
+    * CMP0 Positive Input Select
+    * (cmp_muxcr_psel)
+    *
+    * Selects the Cmp0 positive input source
+    */
+   inline constexpr CmpInputPlus Cmp0InputPlus_0            = CmpInputPlus::CmpInputPlus_0; ///< CMP0_IN0 [-]
+   inline constexpr CmpInputPlus Cmp0InputPlus_1            = CmpInputPlus::CmpInputPlus_1; ///< CMP0_IN1 [-]
+   inline constexpr CmpInputPlus Cmp0InputPlus_2            = CmpInputPlus::CmpInputPlus_2; ///< CMP0_IN2 [-]
+   inline constexpr CmpInputPlus Cmp0InputPlus_3            = CmpInputPlus::CmpInputPlus_3; ///< CMP0_IN3 [-]
+   inline constexpr CmpInputPlus Cmp0InputPlus_5            = CmpInputPlus::CmpInputPlus_5; ///< CMP0_IN5 [VREF_OUT(p13)]
+   inline constexpr CmpInputPlus Cmp0InputPlus_Vref_out     = CmpInputPlus::CmpInputPlus_5; ///< Pin VREF_OUT
+   inline constexpr CmpInputPlus Cmp0InputPlus_6            = CmpInputPlus::CmpInputPlus_6; ///< CMP0_IN6 [BANDGAP(Internal)]
+   inline constexpr CmpInputPlus Cmp0InputPlus_Bandgap      = CmpInputPlus::CmpInputPlus_6; ///< Pin BANDGAP
+   inline constexpr CmpInputPlus Cmp0InputPlus_7            = CmpInputPlus::CmpInputPlus_7; ///< CMP0_IN7 [CMP_DAC(Internal)]
+   inline constexpr CmpInputPlus Cmp0InputPlus_Cmp_dac      = CmpInputPlus::CmpInputPlus_7; ///< Pin CMP_DAC
+
+
+   /**
+    * CMP Negative Input Select
+    * (cmp_muxcr_msel_base)
+    *
+    * Selects the negative input source
+    */
+   enum class CmpInputMinus : uint8_t {
+      CmpInputMinus_0   = CMP_MUXCR_MSEL(0),  ///< External input 0
+      CmpInputMinus_1   = CMP_MUXCR_MSEL(1),  ///< External input 1
+      CmpInputMinus_2   = CMP_MUXCR_MSEL(2),  ///< External input 2
+      CmpInputMinus_3   = CMP_MUXCR_MSEL(3),  ///< External input 3
+      CmpInputMinus_4   = CMP_MUXCR_MSEL(4),  ///< External input 4
+      CmpInputMinus_5   = CMP_MUXCR_MSEL(5),  ///< External input 5
+      CmpInputMinus_6   = CMP_MUXCR_MSEL(6),  ///< External input 6
+      CmpInputMinus_7   = CMP_MUXCR_MSEL(7),  ///< External input 7
+   };
+
+   /**
+    * CMP0 Negative Input Select
+    * (cmp_muxcr_msel)
+    *
+    * Selects the Cmp0 negative input source
+    */
+   inline constexpr CmpInputMinus Cmp0InputMinus_0            = CmpInputMinus::CmpInputMinus_0; ///< CMP0_IN0 [-]
+   inline constexpr CmpInputMinus Cmp0InputMinus_1            = CmpInputMinus::CmpInputMinus_1; ///< CMP0_IN1 [-]
+   inline constexpr CmpInputMinus Cmp0InputMinus_2            = CmpInputMinus::CmpInputMinus_2; ///< CMP0_IN2 [-]
+   inline constexpr CmpInputMinus Cmp0InputMinus_3            = CmpInputMinus::CmpInputMinus_3; ///< CMP0_IN3 [-]
+   inline constexpr CmpInputMinus Cmp0InputMinus_5            = CmpInputMinus::CmpInputMinus_5; ///< CMP0_IN5 [VREF_OUT(p13)]
+   inline constexpr CmpInputMinus Cmp0InputMinus_Vref_out     = CmpInputMinus::CmpInputMinus_5; ///< Pin VREF_OUT
+   inline constexpr CmpInputMinus Cmp0InputMinus_6            = CmpInputMinus::CmpInputMinus_6; ///< CMP0_IN6 [BANDGAP(Internal)]
+   inline constexpr CmpInputMinus Cmp0InputMinus_Bandgap      = CmpInputMinus::CmpInputMinus_6; ///< Pin BANDGAP
+   inline constexpr CmpInputMinus Cmp0InputMinus_7            = CmpInputMinus::CmpInputMinus_7; ///< CMP0_IN7 [CMP_DAC(Internal)]
+   inline constexpr CmpInputMinus Cmp0InputMinus_Cmp_dac      = CmpInputMinus::CmpInputMinus_7; ///< Pin CMP_DAC
+
+
+
+   // Bit operators for MUXCR register fields
+   constexpr inline uint8_t operator|(CmpInputPlus op1, CmpInputMinus op2)  { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpInputMinus op1, CmpInputPlus op2)  { return uint8_t(op1)|uint8_t(op2); };
+   
+   /**
+    * CMP1 Positive Input Select
+    * (cmp_muxcr_psel)
+    *
+    * Selects the Cmp1 positive input source
+    */
+   inline constexpr CmpInputPlus Cmp1InputPlus_0             = CmpInputPlus::CmpInputPlus_0; ///< CMP1_IN0 [-]
+   inline constexpr CmpInputPlus Cmp1InputPlus_1             = CmpInputPlus::CmpInputPlus_1; ///< CMP1_IN1 [-]
+   inline constexpr CmpInputPlus Cmp1InputPlus_3             = CmpInputPlus::CmpInputPlus_3; ///< CMP1_IN3 [ADC0_SE23]
+   inline constexpr CmpInputPlus Cmp1InputPlus_Adc0_se23     = CmpInputPlus::CmpInputPlus_3; ///< Pin ADC0_SE23
+   inline constexpr CmpInputPlus Cmp1InputPlus_5             = CmpInputPlus::CmpInputPlus_5; ///< CMP1_IN5 [VREF_OUT(p13)]
+   inline constexpr CmpInputPlus Cmp1InputPlus_Vref_out      = CmpInputPlus::CmpInputPlus_5; ///< Pin VREF_OUT
+   inline constexpr CmpInputPlus Cmp1InputPlus_6             = CmpInputPlus::CmpInputPlus_6; ///< CMP1_IN6 [BANDGAP(Internal)]
+   inline constexpr CmpInputPlus Cmp1InputPlus_Bandgap       = CmpInputPlus::CmpInputPlus_6; ///< Pin BANDGAP
+   inline constexpr CmpInputPlus Cmp1InputPlus_7             = CmpInputPlus::CmpInputPlus_7; ///< CMP1_IN7 [CMP_DAC(Internal)]
+   inline constexpr CmpInputPlus Cmp1InputPlus_Cmp_dac       = CmpInputPlus::CmpInputPlus_7; ///< Pin CMP_DAC
+
+
+   /**
+    * CMP1 Negative Input Select
+    * (cmp_muxcr_msel)
+    *
+    * Selects the Cmp1 negative input source
+    */
+   inline constexpr CmpInputMinus Cmp1InputMinus_0             = CmpInputMinus::CmpInputMinus_0; ///< CMP1_IN0 [-]
+   inline constexpr CmpInputMinus Cmp1InputMinus_1             = CmpInputMinus::CmpInputMinus_1; ///< CMP1_IN1 [-]
+   inline constexpr CmpInputMinus Cmp1InputMinus_3             = CmpInputMinus::CmpInputMinus_3; ///< CMP1_IN3 [ADC0_SE23]
+   inline constexpr CmpInputMinus Cmp1InputMinus_Adc0_se23     = CmpInputMinus::CmpInputMinus_3; ///< Pin ADC0_SE23
+   inline constexpr CmpInputMinus Cmp1InputMinus_5             = CmpInputMinus::CmpInputMinus_5; ///< CMP1_IN5 [VREF_OUT(p13)]
+   inline constexpr CmpInputMinus Cmp1InputMinus_Vref_out      = CmpInputMinus::CmpInputMinus_5; ///< Pin VREF_OUT
+   inline constexpr CmpInputMinus Cmp1InputMinus_6             = CmpInputMinus::CmpInputMinus_6; ///< CMP1_IN6 [BANDGAP(Internal)]
+   inline constexpr CmpInputMinus Cmp1InputMinus_Bandgap       = CmpInputMinus::CmpInputMinus_6; ///< Pin BANDGAP
+   inline constexpr CmpInputMinus Cmp1InputMinus_7             = CmpInputMinus::CmpInputMinus_7; ///< CMP1_IN7 [CMP_DAC(Internal)]
+   inline constexpr CmpInputMinus Cmp1InputMinus_Cmp_dac       = CmpInputMinus::CmpInputMinus_7; ///< Pin CMP_DAC
+
+
+
 /**
  * Peripheral information for CMP, Analogue Comparator.
  * 
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Action on transition
     * (cmp_scr_interrupt)
@@ -114,76 +227,6 @@ namespace USBDM {
       CmpOutput_Direct     = CMP_CR1_OPE(1)|CMP_CR1_COS(1),  ///< Direct (unfiltered)
       CmpOutput_Filtered   = CMP_CR1_OPE(1)|CMP_CR1_COS(0),  ///< Filtered
    };
-
-   /**
-    * CMP Positive Input Select
-    * (cmp_muxcr_psel_base)
-    *
-    * Selects the positive input source
-    */
-   enum CmpInputPlus : uint8_t {
-      CmpInputPlus_0   = CMP_MUXCR_PSEL(0),  ///< External input 0
-      CmpInputPlus_1   = CMP_MUXCR_PSEL(1),  ///< External input 1
-      CmpInputPlus_2   = CMP_MUXCR_PSEL(2),  ///< External input 2
-      CmpInputPlus_3   = CMP_MUXCR_PSEL(3),  ///< External input 3
-      CmpInputPlus_4   = CMP_MUXCR_PSEL(4),  ///< External input 4
-      CmpInputPlus_5   = CMP_MUXCR_PSEL(5),  ///< External input 5
-      CmpInputPlus_6   = CMP_MUXCR_PSEL(6),  ///< External input 6
-      CmpInputPlus_7   = CMP_MUXCR_PSEL(7),  ///< External input 7
-   };
-
-   /**
-    * CMP0 Positive Input Select
-    * (cmp_muxcr_psel)
-    *
-    * Selects the Cmp0 positive input source
-    */
-   static constexpr CmpInputPlus Cmp0InputPlus_0          = CmpInputPlus_0;  ///< CMP0_IN0 [-]
-   static constexpr CmpInputPlus Cmp0InputPlus_1          = CmpInputPlus_1;  ///< CMP0_IN1 [-]
-   static constexpr CmpInputPlus Cmp0InputPlus_2          = CmpInputPlus_2;  ///< CMP0_IN2 [-]
-   static constexpr CmpInputPlus Cmp0InputPlus_3          = CmpInputPlus_3;  ///< CMP0_IN3 [-]
-   static constexpr CmpInputPlus Cmp0InputPlus_5          = CmpInputPlus_5;  ///< CMP0_IN5 [VREF_OUT(p13)]
-   static constexpr CmpInputPlus Cmp0InputPlus_Vref_out   = CmpInputPlus_5;  ///< Pin VREF_OUT
-   static constexpr CmpInputPlus Cmp0InputPlus_6          = CmpInputPlus_6;  ///< CMP0_IN6 [BANDGAP(Internal)]
-   static constexpr CmpInputPlus Cmp0InputPlus_Bandgap    = CmpInputPlus_6;  ///< Pin BANDGAP
-   static constexpr CmpInputPlus Cmp0InputPlus_7          = CmpInputPlus_7;  ///< CMP0_IN7 [CMP_DAC(Internal)]
-   static constexpr CmpInputPlus Cmp0InputPlus_Cmp_dac    = CmpInputPlus_7;  ///< Pin CMP_DAC
-
-
-   /**
-    * CMP Negative Input Select
-    * (cmp_muxcr_msel_base)
-    *
-    * Selects the negative input source
-    */
-   enum CmpInputMinus : uint8_t {
-      CmpInputMinus_0   = CMP_MUXCR_MSEL(0),  ///< External input 0
-      CmpInputMinus_1   = CMP_MUXCR_MSEL(1),  ///< External input 1
-      CmpInputMinus_2   = CMP_MUXCR_MSEL(2),  ///< External input 2
-      CmpInputMinus_3   = CMP_MUXCR_MSEL(3),  ///< External input 3
-      CmpInputMinus_4   = CMP_MUXCR_MSEL(4),  ///< External input 4
-      CmpInputMinus_5   = CMP_MUXCR_MSEL(5),  ///< External input 5
-      CmpInputMinus_6   = CMP_MUXCR_MSEL(6),  ///< External input 6
-      CmpInputMinus_7   = CMP_MUXCR_MSEL(7),  ///< External input 7
-   };
-
-   /**
-    * CMP0 Negative Input Select
-    * (cmp_muxcr_msel)
-    *
-    * Selects the Cmp0 negative input source
-    */
-   static constexpr CmpInputMinus Cmp0InputMinus_0          = CmpInputMinus_0;  ///< CMP0_IN0 [-]
-   static constexpr CmpInputMinus Cmp0InputMinus_1          = CmpInputMinus_1;  ///< CMP0_IN1 [-]
-   static constexpr CmpInputMinus Cmp0InputMinus_2          = CmpInputMinus_2;  ///< CMP0_IN2 [-]
-   static constexpr CmpInputMinus Cmp0InputMinus_3          = CmpInputMinus_3;  ///< CMP0_IN3 [-]
-   static constexpr CmpInputMinus Cmp0InputMinus_5          = CmpInputMinus_5;  ///< CMP0_IN5 [VREF_OUT(p13)]
-   static constexpr CmpInputMinus Cmp0InputMinus_Vref_out   = CmpInputMinus_5;  ///< Pin VREF_OUT
-   static constexpr CmpInputMinus Cmp0InputMinus_6          = CmpInputMinus_6;  ///< CMP0_IN6 [BANDGAP(Internal)]
-   static constexpr CmpInputMinus Cmp0InputMinus_Bandgap    = CmpInputMinus_6;  ///< Pin BANDGAP
-   static constexpr CmpInputMinus Cmp0InputMinus_7          = CmpInputMinus_7;  ///< CMP0_IN7 [CMP_DAC(Internal)]
-   static constexpr CmpInputMinus Cmp0InputMinus_Cmp_dac    = CmpInputMinus_7;  ///< Pin CMP_DAC
-
 
    /**
     * DAC Enable
@@ -326,14 +369,54 @@ namespace USBDM {
       constexpr CmpStatus(CmpEventId event, uint8_t  state) : event(event), state(state) {}
    };
    
+
+   // Bit operators for CR0 register fields
+   constexpr inline uint8_t operator|(CmpHysteresis op1, CmpFilterSamples op2)    { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpFilterSamples op1, CmpHysteresis op2)    { return uint8_t(op1)|uint8_t(op2); };
+   
+
+   // Bit operators for CR1 register fields
+   constexpr inline uint8_t operator|(CmpPower op1, CmpPolarity op2)            { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpPower op1, CmpOutput op2)              { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpPower op1, CmpEnable op2)              { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpPower op1, CmpWindowEnable op2)        { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpPower op1, CmpSampleEnable op2)        { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpPolarity op1, CmpPower op2)            { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpPolarity op1, CmpOutput op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpPolarity op1, CmpEnable op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpPolarity op1, CmpWindowEnable op2)     { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpPolarity op1, CmpSampleEnable op2)     { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpOutput op1, CmpPower op2)              { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpOutput op1, CmpPolarity op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpOutput op1, CmpEnable op2)             { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpOutput op1, CmpWindowEnable op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpOutput op1, CmpSampleEnable op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpEnable op1, CmpPower op2)              { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpEnable op1, CmpPolarity op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpEnable op1, CmpOutput op2)             { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpEnable op1, CmpWindowEnable op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpEnable op1, CmpSampleEnable op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpWindowEnable op1, CmpPower op2)        { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpWindowEnable op1, CmpPolarity op2)     { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpWindowEnable op1, CmpOutput op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpWindowEnable op1, CmpEnable op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpWindowEnable op1, CmpSampleEnable op2) { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpSampleEnable op1, CmpPower op2)        { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpSampleEnable op1, CmpPolarity op2)     { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpSampleEnable op1, CmpOutput op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpSampleEnable op1, CmpEnable op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(CmpSampleEnable op1, CmpWindowEnable op2) { return uint8_t(op1)|uint8_t(op2); };
+   
 class CmpBasicInfo {
 
 public:
+
 }; // class CmpBasicInfo 
 
 class Cmp0Info : public CmpBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 9;
 
@@ -465,39 +548,11 @@ public:
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
-   /**
-    * CMP1 Positive Input Select
-    * (cmp_muxcr_psel)
-    *
-    * Selects the Cmp1 positive input source
-    */
-   static constexpr CmpInputPlus Cmp1InputPlus_0           = CmpInputPlus_0;  ///< CMP1_IN0 [-]
-   static constexpr CmpInputPlus Cmp1InputPlus_1           = CmpInputPlus_1;  ///< CMP1_IN1 [-]
-   static constexpr CmpInputPlus Cmp1InputPlus_3           = CmpInputPlus_3;  ///< CMP1_IN3 [ADC0_SE23]
-   static constexpr CmpInputPlus Cmp1InputPlus_Adc0_se23   = CmpInputPlus_3;  ///< Pin ADC0_SE23
-   static constexpr CmpInputPlus Cmp1InputPlus_5           = CmpInputPlus_5;  ///< CMP1_IN5 [VREF_OUT(p13)]
-   static constexpr CmpInputPlus Cmp1InputPlus_6           = CmpInputPlus_6;  ///< CMP1_IN6 [BANDGAP(Internal)]
-   static constexpr CmpInputPlus Cmp1InputPlus_7           = CmpInputPlus_7;  ///< CMP1_IN7 [CMP_DAC(Internal)]
-
-
-   /**
-    * CMP1 Negative Input Select
-    * (cmp_muxcr_msel)
-    *
-    * Selects the Cmp1 negative input source
-    */
-   static constexpr CmpInputMinus Cmp1InputMinus_0           = CmpInputMinus_0;  ///< CMP1_IN0 [-]
-   static constexpr CmpInputMinus Cmp1InputMinus_1           = CmpInputMinus_1;  ///< CMP1_IN1 [-]
-   static constexpr CmpInputMinus Cmp1InputMinus_3           = CmpInputMinus_3;  ///< CMP1_IN3 [ADC0_SE23]
-   static constexpr CmpInputMinus Cmp1InputMinus_Adc0_se23   = CmpInputMinus_3;  ///< Pin ADC0_SE23
-   static constexpr CmpInputMinus Cmp1InputMinus_5           = CmpInputMinus_5;  ///< CMP1_IN5 [VREF_OUT(p13)]
-   static constexpr CmpInputMinus Cmp1InputMinus_6           = CmpInputMinus_6;  ///< CMP1_IN6 [BANDGAP(Internal)]
-   static constexpr CmpInputMinus Cmp1InputMinus_7           = CmpInputMinus_7;  ///< CMP1_IN7 [CMP_DAC(Internal)]
-
 
 class Cmp1Info : public CmpBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 9;
 
@@ -633,6 +688,6 @@ public:
  */
 } // End namespace USBDM
 
-#endif // /ACMP/_BasicInfoGuard
+#endif // /CMP/_BasicInfoGuard
 
 #endif /* PROJECT_HEADERS_CMP_H_ */

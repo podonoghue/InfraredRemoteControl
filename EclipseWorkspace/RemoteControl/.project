@@ -32,5 +32,10 @@
 			<type>1</type>
 			<locationURI>PROJECT_LOC/Documentation/html/index.html</locationURI>
 		</link>
+		<link>
+			<name>Hardware</name>
+			<type>2</type>
+			<location>/home/peter/Documents/Development/InfraredRemoteControl/Hardware</location>
+		</link>
 	</linkedResources>
 </projectDescription>

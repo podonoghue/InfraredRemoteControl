@@ -30,6 +30,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Software Reset
     * (usbdcd_control_sr)
@@ -227,11 +228,13 @@ Reports how the charger detection is attached
 class UsbdcdBasicInfo {
 
 public:
+
 }; // class UsbdcdBasicInfo 
 
 class Usbdcd0Info : public UsbdcdBasicInfo {
 
 public:
+
    /*
     * Template:usbdcd0_v1_1
     */

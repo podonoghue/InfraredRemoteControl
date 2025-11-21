@@ -31,6 +31,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Internal Voltage Reference enable
     * (vref_sc_vrefen)
@@ -110,11 +111,13 @@ namespace USBDM {
 class VrefBasicInfo {
 
 public:
+
 }; // class VrefBasicInfo 
 
 class VrefInfo : public VrefBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 1;
 

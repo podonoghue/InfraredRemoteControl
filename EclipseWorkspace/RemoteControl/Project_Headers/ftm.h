@@ -16,6 +16,7 @@
  */
 #include <stddef.h>
 #include <cmath>
+#include "derivative.h"
 #include "pin_mapping.h"
 #include "gpio.h"
 
@@ -38,6 +39,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Timer Overflow Flag
     * (ftm_sc_tof)
@@ -332,7 +334,6 @@ namespace USBDM {
       FtmPolarity_Ch7ActiveLow   = 1U<<7,  ///< FTM0_CH7 [-]
    };
 
-
    /**
     * Combines two FtmPolarity values (by ORing)
     * Used to create a combined FtmPolarity mask
@@ -470,7 +471,6 @@ namespace USBDM {
       FtmExternalTrigger_Ch1     = 1U<<5,  ///< Trigger on FTM0_CH5 [-]
       FtmExternalTrigger_Cntin   = 1U<<6,  ///< Trigger on FTM0_CH6 [-]
    };
-
 
    /**
     * Combines two FtmExternalTrigger values (by ORing)
@@ -972,9 +972,33 @@ namespace USBDM {
       FtmInitialValue_All_1   = 0xFFFFU,  ///< All initially 1
    };
 
+
+   // Bit operators for SC register fields
+   constexpr inline uint8_t operator|(FtmOverflowFlag op1, FtmCountMode op2)        { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmOverflowFlag op1, FtmClockSource op2)      { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmOverflowFlag op1, FtmPrescale op2)         { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmOverflowFlag op1, FtmOverflowAction op2)   { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmCountMode op1, FtmOverflowFlag op2)        { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmCountMode op1, FtmClockSource op2)         { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmCountMode op1, FtmPrescale op2)            { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmCountMode op1, FtmOverflowAction op2)      { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmClockSource op1, FtmOverflowFlag op2)      { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmClockSource op1, FtmCountMode op2)         { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmClockSource op1, FtmPrescale op2)          { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmClockSource op1, FtmOverflowAction op2)    { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmPrescale op1, FtmOverflowFlag op2)         { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmPrescale op1, FtmCountMode op2)            { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmPrescale op1, FtmClockSource op2)          { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmPrescale op1, FtmOverflowAction op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmOverflowAction op1, FtmOverflowFlag op2)   { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmOverflowAction op1, FtmCountMode op2)      { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmOverflowAction op1, FtmClockSource op2)    { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(FtmOverflowAction op1, FtmPrescale op2)       { return uint8_t(op1)|uint8_t(op2); };
+   
 class FtmCommonInfo {
 
 public:
+
    /**
     * Calculate FTM timing parameters to achieve a given period
     *
@@ -1028,11 +1052,13 @@ public:
 class FtmBasicInfo : public FtmCommonInfo {
 
 public:
+
 }; // class FtmBasicInfo 
 
 class Ftm0Info : public FtmBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 10;
 
@@ -1069,7 +1095,9 @@ public:
    }
 
    class InfoFAULT {
+
    public:
+
       //! Number of signals available in info table
       static constexpr int numSignals  = 4;
 
@@ -1249,7 +1277,7 @@ public:
     *  @param[in]  filterEnable   Whether to enable filtering on the fault input
     *  @param[in]  filterDelay    Delay used by the filter (1..15) - Applies to all channels
     *
-    *  NOTE - the filter delay is shared by all inputs
+    *  @note The filter delay is shared by all inputs
     */
 public:
    template<uint8_t inputNum>
@@ -1335,6 +1363,7 @@ public:
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Quadrature decoding mode
     * (ftm_qdctrl_quadmode)
@@ -1421,11 +1450,13 @@ public:
 class FtmquadBasicInfo : public FtmCommonInfo {
 
 public:
+
 }; // class FtmquadBasicInfo 
 
 class Ftm1Info : public FtmquadBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 10;
 
@@ -1462,7 +1493,9 @@ public:
    }
 
    class InfoFAULT {
+
    public:
+
       //! Number of signals available in info table
       static constexpr int numSignals  = 1;
 
@@ -1492,7 +1525,9 @@ public:
    }; 
 
    class InfoQUAD {
+
    public:
+
       //! Number of signals available in info table
       static constexpr int numSignals  = 2;
 
@@ -1670,7 +1705,7 @@ public:
     *  @param[in]  filterEnable   Whether to enable filtering on the fault input
     *  @param[in]  filterDelay    Delay used by the filter (1..15) - Applies to all channels
     *
-    *  NOTE - the filter delay is shared by all inputs
+    *  @note The filter delay is shared by all inputs
     */
 public:
    template<uint8_t inputNum>
@@ -2389,7 +2424,7 @@ public:
     *  @param[in]  filterEnable   Whether to enable filtering on the fault input
     *  @param[in]  filterDelay    Delay used by the filter (1..15) - Applies to all channels
     *
-    *  NOTE - the filter delay is shared by all inputs
+    *  @note The filter delay is shared by all inputs
     */
 public:
    template<uint8_t inputNum>
@@ -2695,7 +2730,7 @@ protected:
    // Empty constructor
    constexpr FtmChannel(uint32_t baseAddress, FtmChannelNum channelNum) :
    FtmBase(baseAddress),
-   channelRegs((uint32_t)(ftm->CONTROLS+channelNum)),
+   channelRegs(uint32_t(baseAddress+offsetof(FTM_Type, CONTROLS)+channelNum*sizeof(FTM_Type().CONTROLS[0]))),
    CHANNEL(channelNum),
    CHANNEL_MASK(1<<channelNum) {
    }

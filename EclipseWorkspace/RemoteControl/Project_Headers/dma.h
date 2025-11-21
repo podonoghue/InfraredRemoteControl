@@ -32,12 +32,71 @@ namespace USBDM {
  * @brief Support for DMA operations
  * @{
  */
+   /**
+    * Enable Channel Preemption
+    * (dma_dchpri_ecp)
+    *
+    * Allows suspension of this channel by a higher priority channel
+    */
+   enum DmaCanBePreempted {
+      DmaCanBePreempted_Disabled   = DMA_DCHPRI_ECP(0),  ///< Cannot be suspended
+      DmaCanBePreempted_Enabled    = DMA_DCHPRI_ECP(1),  ///< Can be suspended
+   };
+
+   /**
+    * Disable Preempt Ability
+    * (dma_dchpri_dpa)
+    *
+    * Disallows the channel to suspend lower priority channels
+    */
+   enum DmaCanPreemptLower {
+      DmaCanPreemptLower_Disabled   = DMA_DCHPRI_DPA(0),  ///< Can suspend
+      DmaCanPreemptLower_Enabled    = DMA_DCHPRI_DPA(1),  ///< Cannot suspend
+   };
+
+   /**
+    * Channel Arbitration Priority
+    * (dma_dchpri_chpri)
+    *
+    * Channel priority when fixed-priority arbitration is enabled
+    * Lower values are higher priority.
+    */
+   enum DmaPriority {
+      DmaPriority_0    = DMA_DCHPRI_CHPRI(0),   ///< Level 0
+      DmaPriority_1    = DMA_DCHPRI_CHPRI(1),   ///< Level 1
+      DmaPriority_2    = DMA_DCHPRI_CHPRI(2),   ///< Level 2
+      DmaPriority_3    = DMA_DCHPRI_CHPRI(3),   ///< Level 3
+      DmaPriority_4    = DMA_DCHPRI_CHPRI(4),   ///< Level 4
+      DmaPriority_5    = DMA_DCHPRI_CHPRI(5),   ///< Level 5
+      DmaPriority_6    = DMA_DCHPRI_CHPRI(6),   ///< Level 6
+      DmaPriority_7    = DMA_DCHPRI_CHPRI(7),   ///< Level 7
+      DmaPriority_8    = DMA_DCHPRI_CHPRI(8),   ///< Level 8
+      DmaPriority_9    = DMA_DCHPRI_CHPRI(9),   ///< Level 9
+      DmaPriority_10   = DMA_DCHPRI_CHPRI(10),  ///< Level 10
+      DmaPriority_11   = DMA_DCHPRI_CHPRI(11),  ///< Level 11
+      DmaPriority_12   = DMA_DCHPRI_CHPRI(12),  ///< Level 12
+      DmaPriority_13   = DMA_DCHPRI_CHPRI(13),  ///< Level 13
+      DmaPriority_14   = DMA_DCHPRI_CHPRI(14),  ///< Level 14
+      DmaPriority_15   = DMA_DCHPRI_CHPRI(15),  ///< Level 15
+   };
+
+
+   // Bit operators for DCHPRI register fields
+   constexpr inline uint32_t operator|(DmaCanBePreempted op1, DmaCanPreemptLower op2)  { return uint32_t(op1)|uint32_t(op2); };
+   constexpr inline uint32_t operator|(DmaCanBePreempted op1, DmaPriority op2)         { return uint32_t(op1)|uint32_t(op2); };
+   constexpr inline uint32_t operator|(DmaCanPreemptLower op1, DmaCanBePreempted op2)  { return uint32_t(op1)|uint32_t(op2); };
+   constexpr inline uint32_t operator|(DmaCanPreemptLower op1, DmaPriority op2)        { return uint32_t(op1)|uint32_t(op2); };
+   constexpr inline uint32_t operator|(DmaPriority op1, DmaCanBePreempted op2)         { return uint32_t(op1)|uint32_t(op2); };
+   constexpr inline uint32_t operator|(DmaPriority op1, DmaCanPreemptLower op2)        { return uint32_t(op1)|uint32_t(op2); };
+   
+
 /**
  * Peripheral information for DMA, Direct Memory Access (DMA).
  * 
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * DMA halt on error
     * (dma_cr_hoe)
@@ -178,7 +237,7 @@ namespace USBDM {
     * As the channel completes the major loop, this option enables the linking to another channel. 
     * The link target channel initiates a channel service request via an internal mechanism that sets the 
     * TCDn_CSR[START] bit of the specified channel. 
-    * NOTE: To support the dynamic linking coherency model, the DMA_CSR_MAJORELINK field is forced to zero when 
+    * @note To support the dynamic linking coherency model, the DMA_CSR_MAJORELINK field is forced to zero when 
     * written to while the TCDn_CSR[DONE] bit is set
     */
    enum DmaMajorLink {
@@ -196,7 +255,7 @@ namespace USBDM {
     * If selected, scatter/gather processing occurs when the channel completes the major loop. 
     * The eDMA engine uses DLASTSGA as a memory pointer to a 0-modulo-32 address containing a 32-byte 
     * data structure loaded as the transfer control descriptor into the local memory. 
-    * NOTE: To support the dynamic scatter/gather coherency model, this field is forced to zero when written 
+    * @note To support the dynamic scatter/gather coherency model, this field is forced to zero when written 
     * to while the TCDn_CSR[DONE] bit is set
     */
    enum DmaScatterGather {
@@ -225,7 +284,7 @@ namespace USBDM {
     * performed by the eDMA engine is (CITER == (BITER &amp;gt;&amp;gt; 1)). This halfway point interrupt request is 
     * provided to support double-buffered, also known as ping-pong, schemes or other types of data movement 
     * where the processor needs an early indication of the transfer?s progress. 
-    * NOTE: If BITER = 1, do not use INTHALF. Use INTMAJOR instead
+    * @note If BITER = 1, do not use INTHALF. Use INTMAJOR instead
     */
    enum DmaIntHalf {
       DmaIntHalf_Disabled   = DMA_CSR_INTHALF(0),  ///< The half-point interrupt is disabled
@@ -283,54 +342,6 @@ namespace USBDM {
    };
 
    /**
-    * Enable Channel Preemption
-    * (dma_dchpri_ecp)
-    *
-    * Allows suspension of this channel by a higher priority channel
-    */
-   enum DmaCanBePreempted {
-      DmaCanBePreempted_Disabled   = DMA_DCHPRI_ECP(0),  ///< Cannot be suspended
-      DmaCanBePreempted_Enabled    = DMA_DCHPRI_ECP(1),  ///< Can be suspended
-   };
-
-   /**
-    * Disable Preempt Ability
-    * (dma_dchpri_dpa)
-    *
-    * Disallows the channel to suspend lower priority channels
-    */
-   enum DmaCanPreemptLower {
-      DmaCanPreemptLower_Disabled   = DMA_DCHPRI_DPA(0),  ///< Can suspend
-      DmaCanPreemptLower_Enabled    = DMA_DCHPRI_DPA(1),  ///< Cannot suspend
-   };
-
-   /**
-    * Channel Arbitration Priority
-    * (dma_dchpri_chpri)
-    *
-    * Channel priority when fixed-priority arbitration is enabled
-    * Lower values are higher priority.
-    */
-   enum DmaPriority {
-      DmaPriority_0    = DMA_DCHPRI_CHPRI(0),   ///< Level 0
-      DmaPriority_1    = DMA_DCHPRI_CHPRI(1),   ///< Level 1
-      DmaPriority_2    = DMA_DCHPRI_CHPRI(2),   ///< Level 2
-      DmaPriority_3    = DMA_DCHPRI_CHPRI(3),   ///< Level 3
-      DmaPriority_4    = DMA_DCHPRI_CHPRI(4),   ///< Level 4
-      DmaPriority_5    = DMA_DCHPRI_CHPRI(5),   ///< Level 5
-      DmaPriority_6    = DMA_DCHPRI_CHPRI(6),   ///< Level 6
-      DmaPriority_7    = DMA_DCHPRI_CHPRI(7),   ///< Level 7
-      DmaPriority_8    = DMA_DCHPRI_CHPRI(8),   ///< Level 8
-      DmaPriority_9    = DMA_DCHPRI_CHPRI(9),   ///< Level 9
-      DmaPriority_10   = DMA_DCHPRI_CHPRI(10),  ///< Level 10
-      DmaPriority_11   = DMA_DCHPRI_CHPRI(11),  ///< Level 11
-      DmaPriority_12   = DMA_DCHPRI_CHPRI(12),  ///< Level 12
-      DmaPriority_13   = DMA_DCHPRI_CHPRI(13),  ///< Level 13
-      DmaPriority_14   = DMA_DCHPRI_CHPRI(14),  ///< Level 14
-      DmaPriority_15   = DMA_DCHPRI_CHPRI(15),  ///< Level 15
-   };
-
-   /**
     * Source Minor Loop Offset Enable
     * (dma_nbytes_mloffyes)
     *
@@ -347,11 +358,13 @@ namespace USBDM {
 class DmaBasicInfo {
 
 public:
+
 }; // class DmaBasicInfo 
 
 class Dma0Info : public DmaBasicInfo {
 
 public:
+
    /*
     * Template:dma0_4ch
     */
@@ -445,6 +458,7 @@ public:
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * DMA Channel Mode
     * (dmamux_chcfg_mode[0])
@@ -460,11 +474,13 @@ public:
 class DmamuxBasicInfo {
 
 public:
+
 }; // class DmamuxBasicInfo 
 
 class Dmamux0Info : public DmamuxBasicInfo {
 
 public:
+
    /*
     * Template:dmamux0_4ch_trig_mk20d5
     */
@@ -820,9 +836,9 @@ struct __attribute__((__packed__)) DmaTcd {
 
    DmaTcd &operator=(const DmaTcd &other) = default;
 
-   void operator=(const DmaTcd &other) volatile {
-         *(DmaTcd *)this = other;
-   };
+//   void operator=(const DmaTcd &other) volatile {
+//         *(DmaTcd *)this = other;
+//   };
 
    /**
     * Constructor.
@@ -1192,7 +1208,7 @@ public:
     * This is only used if DmaArbitration_Fixed is used.
     *
     * @param[in] dmaChannelNum      Channel to modify
-    * @param[in] priority           Priority for the channel
+    * @param[in] dmaPriority        Priority for the channel
     * @param[in] dmaCanBePreempted  Controls whether the channel can be suspended by a higher priority channel
     * @param[in] dmaCanPreemptLower Controls whether the channel can suspend a lower priority channel
     *

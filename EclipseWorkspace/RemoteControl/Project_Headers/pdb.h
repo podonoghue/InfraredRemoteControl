@@ -66,6 +66,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Software Trigger
     * (pdb_sc_swtrig)
@@ -308,11 +309,13 @@ namespace USBDM {
 class PdbBasicInfo {
 
 public:
+
 }; // class PdbBasicInfo 
 
 class Pdb0Info : public PdbBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 1;
 

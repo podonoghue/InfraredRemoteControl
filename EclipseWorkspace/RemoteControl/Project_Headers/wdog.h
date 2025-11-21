@@ -32,6 +32,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Watchdog enable
     * (wdog_stctrlh_wdogen)
@@ -188,9 +189,15 @@ namespace USBDM {
       WdogUnlock_2   = 0xD928,  ///< 2nd unlock value
    };
 
+
+   // Bit operators for STCTRLH register fields
+   constexpr inline uint16_t operator|(WdogEnable op1, WdogAllowUpdate op2)      { return uint16_t(op1)|uint16_t(op2); };
+   constexpr inline uint16_t operator|(WdogAllowUpdate op1, WdogEnable op2)      { return uint16_t(op1)|uint16_t(op2); };
+   
 class WdogBasicInfo {
 
 public:
+
    //! Common class based callback code has been generated for this class of peripheral
    // (_BasicInfoIrqGuard)
    static constexpr bool irqHandlerInstalled = false;
@@ -211,7 +218,7 @@ public:
          Seconds_Ticks &window,
          uint16_t      &presc) {
    
-      float constexpr maxCount = ~1UL;
+      float constexpr maxCount = float(~1UL);
    
       if ((int)window.toTicks()>(int)timeout.toTicks()) {
          return E_ILLEGAL_PARAM;
@@ -327,6 +334,7 @@ public:
 class WdogInfo : public WdogBasicInfo {
 
 public:
+
    /*
     * Template:wdog_mk
     */

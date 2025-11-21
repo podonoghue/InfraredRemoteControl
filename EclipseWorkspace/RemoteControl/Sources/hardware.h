@@ -17,16 +17,18 @@
 #ifndef INCLUDE_USBDM_HARDWARE_H_
 #define INCLUDE_USBDM_HARDWARE_H_
 
-#include "error.h"
-#include "pin_mapping.h"
-#include "delay.h"
-#include "console.h"
+#include "../Project_Headers/error.h"
+#include "../Project_Headers/pin_mapping.h"
+#include "../Project_Headers/delay.h"
+#include "../Project_Headers/console.h"
+#include "../Project_Headers/gpio.h"
 
-#include "gpio.h"
-#include "adc.h"
-#include "spi.h"
-#include "llwu.h"
-#include "control.h"
+#include "../Project_Headers/control.h"
+#include "../Project_Headers/gpio.h"
+#include "../Project_Headers/llwu.h"
+#include "../Project_Headers/pit.h"
+#include "../Project_Headers/adc.h"
+#include "../Project_Headers/spi.h"
 
 
 // User includes
@@ -49,7 +51,7 @@ extern void mapAllPins();
 // Hardware declarations
 
 /// Battery Level
-typedef Adc0::Channel<AdcChannelNum_Se13>                    BatteryLevel;                                 // PTB3(p30)
+typedef Adc0::Channel<Adc0ChannelNum_Se13>                   BatteryLevel;                                 // PTB3(p30)
 
 /// Reset*
 typedef PcrTable_T<ControlInfo, 0>                           Resetb;                                       // RESET_b(p26)
@@ -64,32 +66,29 @@ typedef PcrTable_T<ControlInfo, 7>                           SwdDio;            
 typedef USBDM::GpioA<4,ActiveHigh>                           IrReceiver;                                   // PTA4(p21)
 
 /// TFT Reset 
-typedef USBDM::GpioB<1,ActiveHigh>                           TftResetPin;                                  // PTB1(p28)
+typedef USBDM::GpioB<1,ActiveHigh>                           TftReset;                                     // PTB1(p28)
 
 /// Charging detection
-typedef USBDM::GpioB<0,ActiveHigh>                           Charging;                                     // PTB0(p27)
-
-/// TFT Busy Pin
-typedef USBDM::GpioB<2,ActiveHigh>                           TftBusyPin;                                   // PTB2(p29)
+typedef USBDM::GpioB<0,ActiveLow>                            Charging;                                     // PTB0(p27)
 
 /// TFT Backlight
 typedef USBDM::GpioC<4,ActiveHigh>                           TftBacklight;                                 // PTC4(p37)
 
 /// Switch 3
-typedef USBDM::GpioD<1,ActiveHigh>                           Switch3;                                      // PTD1(p42)
+typedef USBDM::GpioD<1,ActiveLow>                            Switch3;                                      // PTD1(p42)
 
 /// Switch 2
-typedef USBDM::GpioD<2,ActiveHigh>                           Switch2;                                      // PTD2(p43)
+typedef USBDM::GpioD<2,ActiveLow>                            Switch2;                                      // PTD2(p43)
 
 /// Switch 1
-typedef USBDM::GpioD<3,ActiveHigh>                           Switch1;                                      // PTD3(p44)
+typedef USBDM::GpioD<3,ActiveLow>                            Switch1;                                      // PTD3(p44)
 
-typedef GpioDField<3,0,ActiveHigh>                           Switches;                                     // PTD0(p41), PTD1(p42), PTD2(p43), PTD3(p44)
+typedef USBDM::GpioDField<3,0,ActiveLow>                     Switches;                                     // PTD0(p41), PTD1(p42), PTD2(p43), PTD3(p44)
 
-/// Switch 4
-typedef USBDM::GpioD<0,ActiveHigh>                           Switch4;                                      // PTD0(p41)
+/// Switch 4x
+typedef USBDM::GpioD<0,ActiveLow>                            Switch4a;                                     // PTD0(p41)
 
-/// Debug LED
+/// DebugLed
 typedef USBDM::GpioD<5,ActiveHigh>                           DebugLed;                                     // PTD5(p46)
 
 /// Touch Panel IRQ
@@ -97,6 +96,8 @@ typedef USBDM::GpioD<4,ActiveHigh>                           TouchIrq;          
 
 /// Touch Wakeup
 typedef Llwu::Pin<LlwuPin_Ptd4>                              TouchWakeup;                                  // PTD4(p45)
+
+typedef Pit::Channel<0>                                      ButtonTimerChannel;                           // PIT_CH0
 
 /// SPI, Serial Peripheral Interface
 typedef Spi0                                                 MySPI;                                        

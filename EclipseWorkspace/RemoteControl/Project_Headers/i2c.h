@@ -39,6 +39,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Baud rate prescaler
     * (i2c_f_mult)
@@ -485,14 +486,21 @@ namespace USBDM {
    enum I2cSmbLowTimeout : uint16_t {
    };
 
+
+   // Bit operators for SMB register fields
+   constexpr inline uint8_t operator|(I2cSclLowTimeout op1, I2cSclHighTimeout op2)  { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(I2cSclHighTimeout op1, I2cSclLowTimeout op2)  { return uint8_t(op1)|uint8_t(op2); };
+   
 class I2cBasicInfo {
 
 public:
+
 }; // class I2cBasicInfo 
 
 class I2c0Info : public I2cBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 2;
 

@@ -40,6 +40,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Transmit FIFO Fill Request interrupt/DMA enable
     * (spi_rser_txfifo)
@@ -125,7 +126,6 @@ namespace USBDM {
       SpiPcsActiveLow_None   = SPI_MCR_PCSIS(0),      ///< All PCSx active-high
       SpiPcsActiveLow_All    = SPI_MCR_PCSIS(-1),     ///< All PCSx active-low
    };
-
 
    /**
     * Combines two SpiPcsActiveLow values (by ORing)
@@ -349,7 +349,6 @@ namespace USBDM {
       SpiPeripheralSelect_None   = SPI_PUSHR_PCS(0),      ///< PCSx not asserted
    };
 
-
    /**
     * Combines two SpiPeripheralSelect values (by ORing)
     * Used to create a combined SpiPeripheralSelect mask
@@ -376,9 +375,15 @@ namespace USBDM {
       return bool(uint32_t(left)&uint32_t(right));
    }
    
+
+   // Bit operators for CTAR register fields
+   constexpr inline uint32_t operator|(SpiMode op1, SpiBitOrder op2)     { return uint32_t(op1)|uint32_t(op2); };
+   constexpr inline uint32_t operator|(SpiBitOrder op1, SpiMode op2)     { return uint32_t(op1)|uint32_t(op2); };
+   
 class SpiBasicInfo {
 
 public:
+
    //! Common class based callback code has been generated for this class of peripheral
    // (_BasicInfoIrqGuard)
    static constexpr bool irqHandlerInstalled = false;
@@ -450,6 +455,10 @@ public:
        * Copy Constructor
        */
       constexpr SerialInit(const SerialInit &other) = default;
+      /**
+       * Assignment operator
+       */
+      constexpr SerialInit& operator=(const SerialInit& t) = default;
    
       /**
        * Default Constructor
@@ -587,6 +596,10 @@ public:
        * Copy Constructor
        */
       constexpr Config(const Config &other) = default;
+      /**
+       * Assignment operator
+       */
+      constexpr Config& operator=(const Config& t) = default;
    
       /**
        * Default Constructor
@@ -928,6 +941,7 @@ public:
 class Spi0Info : public SpiBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 8;
 
@@ -936,7 +950,7 @@ public:
 
          //      Signal                 Pin                                  PinIndex                PCR value
          /*   0: SPI0_SCK             = PTC5(p38)                      */  { PinIndex::PTC5,         PcrValue(0x00200UL) },
-         /*   1: SPI0_SIN             = PTC7(p40)                      */  { PinIndex::PTC7,         PcrValue(0x00200UL) },
+         /*   1: SPI0_SIN             = PTC7(p40)                      */  { PinIndex::PTC7,         PcrValue(0x00203UL) },
          /*   2: SPI0_SOUT            = PTC6(p39)                      */  { PinIndex::PTC6,         PcrValue(0x00200UL) },
          /*   3: SPI0_PCS0            = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*   4: SPI0_PCS1            = PTC3(p36)                      */  { PinIndex::PTC3,         PcrValue(0x00200UL) },
@@ -952,7 +966,8 @@ public:
     */
    static void initPCRs() {
       enablePortClocks(USBDM::PORTC_CLOCK_MASK);
-      PORTC->GPCLR = (0x0200UL|PORT_GPCLR_GPWE(0x00EEUL));
+      PORTC->GPCLR = (0x0200UL|PORT_GPCLR_GPWE(0x006EUL));
+      PORTC->GPCLR = (0x0203UL|PORT_GPCLR_GPWE(0x0080UL));
    }
 
    /**
@@ -1078,15 +1093,178 @@ public:
    //! Peripheral instance number
    static constexpr unsigned instance = 0;
    
-   //! Pin number in Info table for SCK if mapped to a pin
-   static constexpr int sckPin  = 0;
-
-   //! Pin number in Info table for SIN if mapped to a pin
-   static constexpr int sinPin  = 1;
-
-   //! Pin number in Info table for SOUT if mapped to a pin
-   static constexpr int soutPin  = 2;
-
+   static constexpr int Pcs0PinIndex = 3;
+   
+   static constexpr int Pcs1PinIndex = 4;
+   
+   /// GPIO associated with SPI0 pin (SPI0_PCS1)
+   //typedef GpioTable_T<Spi0Info, 4, ActiveHigh> GpioPcs1;
+   
+   /// Allow access to PCR of SPI0 pin (SPI0_PCS1)
+   typedef PcrTable_T<Spi0Info, 4> Pcs1Pin;
+   
+   /**
+    * Enable SPI0_PCS1 pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values to device default.
+    */
+   static void setPcs1Output() {
+   
+      Pcs1Pin::setOutput();
+   }
+   
+   /**
+    * Enable SPI0_PCS1 pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values.
+    *
+    * @param pcrValue  PCR value controlling pin characteristics
+    */
+   static void setPcs1Output(PcrValue pcrValue) {
+   
+      Pcs1Pin::setOutput(pcrValue);
+   }
+   
+   static constexpr int Pcs2PinIndex = 5;
+   
+   /// GPIO associated with SPI0 pin (SPI0_PCS2)
+   //typedef GpioTable_T<Spi0Info, 5, ActiveHigh> GpioPcs2;
+   
+   /// Allow access to PCR of SPI0 pin (SPI0_PCS2)
+   typedef PcrTable_T<Spi0Info, 5> Pcs2Pin;
+   
+   /**
+    * Enable SPI0_PCS2 pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values to device default.
+    */
+   static void setPcs2Output() {
+   
+      Pcs2Pin::setOutput();
+   }
+   
+   /**
+    * Enable SPI0_PCS2 pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values.
+    *
+    * @param pcrValue  PCR value controlling pin characteristics
+    */
+   static void setPcs2Output(PcrValue pcrValue) {
+   
+      Pcs2Pin::setOutput(pcrValue);
+   }
+   
+   static constexpr int Pcs3PinIndex = 6;
+   
+   /// GPIO associated with SPI0 pin (SPI0_PCS3)
+   //typedef GpioTable_T<Spi0Info, 6, ActiveHigh> GpioPcs3;
+   
+   /// Allow access to PCR of SPI0 pin (SPI0_PCS3)
+   typedef PcrTable_T<Spi0Info, 6> Pcs3Pin;
+   
+   /**
+    * Enable SPI0_PCS3 pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values to device default.
+    */
+   static void setPcs3Output() {
+   
+      Pcs3Pin::setOutput();
+   }
+   
+   /**
+    * Enable SPI0_PCS3 pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values.
+    *
+    * @param pcrValue  PCR value controlling pin characteristics
+    */
+   static void setPcs3Output(PcrValue pcrValue) {
+   
+      Pcs3Pin::setOutput(pcrValue);
+   }
+   
+   static constexpr int Pcs4PinIndex = 7;
+   
+   static constexpr int SckPinIndex = 0;
+   
+   /// GPIO associated with SPI0 pin (SPI0_SCK)
+   //typedef GpioTable_T<Spi0Info, 0, ActiveHigh> GpioSck;
+   
+   /// Allow access to PCR of SPI0 pin (SPI0_SCK)
+   typedef PcrTable_T<Spi0Info, 0> SckPin;
+   
+   /**
+    * Enable SPI0_SCK pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values to device default.
+    */
+   static void setSckOutput() {
+   
+      SckPin::setOutput();
+   }
+   
+   /**
+    * Enable SPI0_SCK pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values.
+    *
+    * @param pcrValue  PCR value controlling pin characteristics
+    */
+   static void setSckOutput(PcrValue pcrValue) {
+   
+      SckPin::setOutput(pcrValue);
+   }
+   
+   static constexpr int SinPinIndex = 1;
+   
+   /// GPIO associated with SPI0 pin (SPI0_SIN)
+   //typedef GpioTable_T<Spi0Info, 1, ActiveHigh> GpioSin;
+   
+   /// Allow access to PCR of SPI0 pin (SPI0_SIN)
+   typedef PcrTable_T<Spi0Info, 1> SinPin;
+   
+   /**
+    * Enable SPI0_SIN pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values to device default.
+    */
+   static void setSinInput() {
+   
+      SinPin::setOutput();
+   }
+   
+   /**
+    * Enable SPI0_SIN pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values.
+    *
+    * @param pcrValue  PCR value controlling pin characteristics
+    */
+   static void setSinInput(PcrValue pcrValue) {
+   
+      SinPin::setOutput(pcrValue);
+   }
+   
+   static constexpr int SoutPinIndex = 2;
+   
+   /// GPIO associated with SPI0 pin (SPI0_SOUT)
+   //typedef GpioTable_T<Spi0Info, 2, ActiveHigh> GpioSout;
+   
+   /// Allow access to PCR of SPI0 pin (SPI0_SOUT)
+   typedef PcrTable_T<Spi0Info, 2> SoutPin;
+   
+   /**
+    * Enable SPI0_SOUT pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values to device default.
+    */
+   static void setSoutOutput() {
+   
+      SoutPin::setOutput();
+   }
+   
+   /**
+    * Enable SPI0_SOUT pin and connects to SPI0.
+    * Configures all Pin Control Register (PCR) values.
+    *
+    * @param pcrValue  PCR value controlling pin characteristics
+    */
+   static void setSoutOutput(PcrValue pcrValue) {
+   
+      SoutPin::setOutput(pcrValue);
+   }
+   
    /**
     * Default initialisation value for Spi0
     * This value is created from Configure.usbdmProject settings
@@ -1410,7 +1588,7 @@ public:
     * @param spiContinuousClock Whether the Serial Communication Clock (SCK) runs continuously
     */
    void setContinousClock(SpiContinuousClock spiContinuousClock) {
-      spi->MCR = (spi->MCR&~SPI_MCR_CONT_SCKE_MASK) | spiContinuousClock;
+      spi->MCR = (spi->MCR&~SPI_MCR_CONT_SCKE_MASK) | uint32_t(spiContinuousClock);
    }
 
    /**
@@ -1420,7 +1598,7 @@ public:
     * @param spiMasterSlave Whether to operate as Master or Slave device
     */
    void setMasterSlave(SpiMasterSlave spiMasterSlave) {
-      spi->MCR = (spi->MCR&~SPI_MCR_MSTR_MASK) | spiMasterSlave;
+      spi->MCR = (spi->MCR&~SPI_MCR_MSTR_MASK) | uint32_t(spiMasterSlave);
    }
 
    /**
@@ -1442,7 +1620,7 @@ public:
     * @endcode
     */
    void setPcsPolarity(SpiPcsActiveLow spiPcsActiveLow) {
-      spi->MCR = (spi->MCR&~SPI_MCR_PCSIS_MASK) | spiPcsActiveLow;
+      spi->MCR = (spi->MCR&~SPI_MCR_PCSIS_MASK) | uint32_t(spiPcsActiveLow);
    }
 
    /**
@@ -1789,6 +1967,8 @@ public:
       };
    }
 
+#pragma GCC push_options
+#pragma GCC optimize("O3")
    /**
     *  Transmit and receive a series of values
     *
@@ -1867,6 +2047,7 @@ public:
          }
       } while(rxDataSize>0);
    }
+#pragma GCC pop_options
 
    /**
     *  Transmit and receive a series of values
@@ -1916,7 +2097,7 @@ public:
     */
    template<typename T, unsigned N>
    void txRx(const std::array<T, N> &txData, std::array<T, N> &rxData, bool lastTransaction=true) {
-      txRx(N, txData.data(), rxData.data());
+      txRx(N, txData.data(), rxData.data(), lastTransaction);
    }
 
    /**
@@ -2694,9 +2875,9 @@ public:
    SpiBase_T() : Spi(Info::baseAddress) {
 
       // Check pin assignments
-      static_assert(Info::info[Info::sckPin].pinIndex  != PinIndex::UNMAPPED_PCR, "SPIx_SCK has not been assigned to a pin - Modify Configure.usbdm");
-      static_assert(Info::info[Info::sinPin].pinIndex  != PinIndex::UNMAPPED_PCR, "SPIx_SIN has not been assigned to a pin - Modify Configure.usbdm");
-      static_assert(Info::info[Info::soutPin].pinIndex != PinIndex::UNMAPPED_PCR, "SPIx_SOUT has not been assigned to a pin - Modify Configure.usbdm");
+      static_assert(Info::info[Info::SckPinIndex].pinIndex  != PinIndex::UNMAPPED_PCR, "SPIx_SCK has not been assigned to a pin - Modify Configure.usbdm");
+      static_assert(Info::info[Info::SinPinIndex].pinIndex  != PinIndex::UNMAPPED_PCR, "SPIx_SIN has not been assigned to a pin - Modify Configure.usbdm");
+      static_assert(Info::info[Info::SoutPinIndex].pinIndex != PinIndex::UNMAPPED_PCR, "SPIx_SOUT has not been assigned to a pin - Modify Configure.usbdm");
 
       configure(Info::DefaultInitValue);
    }
@@ -2707,9 +2888,9 @@ public:
    SpiBase_T(const typename SpiBasicInfo::Init &init) : Spi(Info::baseAddress) {
 
       // Check pin assignments
-      static_assert(Info::info[Info::sckPin].pinIndex  != PinIndex::UNMAPPED_PCR, "SPIx_SCK has not been assigned to a pin - Modify Configure.usbdm");
-      static_assert(Info::info[Info::sinPin].pinIndex  != PinIndex::UNMAPPED_PCR, "SPIx_SIN has not been assigned to a pin - Modify Configure.usbdm");
-      static_assert(Info::info[Info::soutPin].pinIndex != PinIndex::UNMAPPED_PCR, "SPIx_SOUT has not been assigned to a pin - Modify Configure.usbdm");
+      static_assert(Info::info[Info::SckPinIndex].pinIndex  != PinIndex::UNMAPPED_PCR, "SPIx_SCK has not been assigned to a pin - Modify Configure.usbdm");
+      static_assert(Info::info[Info::SinPinIndex].pinIndex  != PinIndex::UNMAPPED_PCR, "SPIx_SIN has not been assigned to a pin - Modify Configure.usbdm");
+      static_assert(Info::info[Info::SoutPinIndex].pinIndex != PinIndex::UNMAPPED_PCR, "SPIx_SOUT has not been assigned to a pin - Modify Configure.usbdm");
 
       configure(init);
    }

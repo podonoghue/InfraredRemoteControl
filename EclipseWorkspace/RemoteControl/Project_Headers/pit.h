@@ -23,7 +23,7 @@
 #include "dma.h"
 #endif
 
-// No handler defined for PIT Ch0
+extern void buttonCallback();
 // No handler defined for PIT Ch1
 // No handler defined for PIT Ch2
 // No handler defined for PIT Ch3
@@ -44,6 +44,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Pit Channel Number
     * (pit_channelNumber)
@@ -51,15 +52,16 @@ namespace USBDM {
     * Selected PIT channel
     */
    enum PitChannelNum : uint8_t {
-      PitChannelNum_0         = 0,           ///< Channel 0
-      PitChannelNum_Pit_ch0   = 0,           ///< Pin PIT_CH0
-      PitChannelNum_1         = 1,           ///< Channel 1
-      PitChannelNum_Pit_ch1   = 1,           ///< Pin PIT_CH1
-      PitChannelNum_2         = 2,           ///< Channel 2
-      PitChannelNum_Pit_ch2   = 2,           ///< Pin PIT_CH2
-      PitChannelNum_3         = 3,           ///< Channel 3
-      PitChannelNum_Pit_ch3   = 3,           ///< Pin PIT_CH3
-      PitChannelNum_None      = 0b10000000,  ///< Channel Not Allocated
+      PitChannelNum_0                    = 0,           ///< Channel 0
+      PitChannelNum_ButtonTimerChannel   = 0,           ///< Channel 0
+      PitChannelNum_Pit_ch0              = 0,           ///< Pin PIT_CH0
+      PitChannelNum_1                    = 1,           ///< Channel 1
+      PitChannelNum_Pit_ch1              = 1,           ///< Pin PIT_CH1
+      PitChannelNum_2                    = 2,           ///< Channel 2
+      PitChannelNum_Pit_ch2              = 2,           ///< Pin PIT_CH2
+      PitChannelNum_3                    = 3,           ///< Channel 3
+      PitChannelNum_Pit_ch3              = 3,           ///< Pin PIT_CH3
+      PitChannelNum_None                 = 0b10000000,  ///< Channel Not Allocated
    };
 
    /**
@@ -109,6 +111,7 @@ namespace USBDM {
 class PitBasicInfo {
 
 public:
+
    //! Common class based callback code has been generated for this class of peripheral
    // (_BasicInfoIrqGuard)
    static constexpr bool irqHandlerInstalled = true;
@@ -356,6 +359,7 @@ public:
 class PitInfo : public PitBasicInfo {
 
 public:
+
    /*
     * Template:pit_4ch
     */
@@ -523,6 +527,42 @@ public:
    //! Number of PIT channels
    static constexpr uint32_t NumChannels  = 4;
 
+   /**
+    * Set Module Disable
+    *
+    * @param pitOperation Disabled PIT module clock
+    */
+   static void setEnable(PitOperation pitOperation) {
+      pit->MCR = (pit->MCR&~PIT_MCR_MDIS_MASK) | uint32_t(pitOperation);
+   }
+   
+   /**
+    * Get Module Disable
+    *
+    * @return Disabled PIT module clock
+    */
+   static PitOperation getEnable() {
+      return PitOperation(pit->MCR&PIT_MCR_MDIS_MASK);
+   }
+   
+   /**
+    * Set Freeze in Debug
+    *
+    * @param pitDebugMode Determines if timers are stopped in Debug mode
+    */
+   static void setDebugMode(PitDebugMode pitDebugMode) {
+      pit->MCR = (pit->MCR&~PIT_MCR_FRZ_MASK) | uint32_t(pitDebugMode);
+   }
+   
+   /**
+    * Get Freeze in Debug
+    *
+    * @return Determines if timers are stopped in Debug mode
+    */
+   static PitDebugMode getDebugMode() {
+      return PitDebugMode(pit->MCR&PIT_MCR_FRZ_MASK);
+   }
+   
    /** Bitmask used to indicate a channel call-back is one-shot */
    static inline uint8_t clearOnEvent = 0;
    
@@ -537,11 +577,10 @@ public:
    
       auto &channel = pit->CHANNEL[pitIrqNum];
    
+      auto handler = sCallbacks[pitIrqNum];
+   
       // Clear interrupt flag
       channel.TFLG = PIT_TFLG_TIF_MASK;
-   
-      // Call handler
-      sCallbacks[pitIrqNum]();
    
       // If a one-shot then stop channel
       if (clearOnEvent&(1<<pitIrqNum)) {
@@ -549,6 +588,9 @@ public:
          sCallbacks[pitIrqNum] = unhandledCallback;
          clearOnEvent &= ~(1<<pitIrqNum);
       }
+   
+      // Call handler
+      handler();
    }
    
    
@@ -677,6 +719,16 @@ public:
     * This value is created from Configure.usbdmProject settings
     */
    static constexpr ChannelInit DefaultChannelInitValues[] = {
+      {
+      PitChannelNum_0,
+
+      PitChannelEnable_Enabled ,   // (pit_tctrl_ten[0])         Timer Channel Enable - Channel enabled
+      PitChannelAction_Interrupt , // (pit_tctrl_tie[0])         Action on timer event - Interrupt
+      479999_ticks,                // (pit_ldval_tsv[0])         Reload value channel 0
+
+      NvicPriority_Normal ,        // (irqLevel_Ch0)             IRQ priority level for Ch0 - Normal
+      buttonCallback,              // (handlerName_Ch0)          User declared event handler
+      },
    }; // DefaultChannelInitValues
 
    /**

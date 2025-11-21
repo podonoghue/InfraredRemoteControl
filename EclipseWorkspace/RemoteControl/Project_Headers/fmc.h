@@ -26,6 +26,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Master N Prefetch Disable
     * (fmc_pfapr_mpfd)
@@ -142,6 +143,7 @@ namespace USBDM {
 class FmcInfo {
 
 public:
+
    /*
     * Template:fmc_mk10d5
     */

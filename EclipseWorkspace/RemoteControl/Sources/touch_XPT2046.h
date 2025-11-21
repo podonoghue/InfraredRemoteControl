@@ -23,11 +23,33 @@
 #ifndef USBDM_TOUCH_XPT2046_H_
 #define USBDM_TOUCH_XPT2046_H_
 #include "hardware.h"
-#include "spi.h"
+#include "../Project_Headers/spi.h"
 
 namespace USBDM {
 
-template<unsigned width, unsigned height>
+enum TouchOrientation : uint8_t {
+   //                                                +----- Mirror row
+   //                                                |+---- Mirror col
+   //                                                ||+--- Row-col exchange
+   //                                                |||
+   //                                                vvv
+   TouchOrientation_Normal                       = 0b000, // RGB + Normal
+   TouchOrientation_Mirrored_XequalsY            = 0b001, // RGB + Mirrored across X=Y axis
+   TouchOrientation_Mirrored_YAxis               = 0b010, // RGB + Mirrored across Y Axis
+   TouchOrientation_Rotated_270                  = 0b011, // RGB + Rotated 270 degrees
+   TouchOrientation_Mirrored_XAxis               = 0b100, // RGB + Mirrored across X Axis
+   TouchOrientation_Rotated_90                   = 0b101, // RGB + Rotated 90 degrees
+   TouchOrientation_Rotated_180                  = 0b110, // RGB + Rotated 180 degrees
+   TouchOrientation_Mirrored_XequalsMinusY       = 0b111, // RGB + Mirrored across X=-Y axis
+};
+
+/**
+ *
+ * @tparam orientation  Orientation of display
+ * @tparam width        Width of display after re-orientation
+ * @tparam height       Height of display after re-orientation
+ */
+template<TouchOrientation orientation, unsigned width, unsigned height>
 class Touch_XPT2046 {
 
 protected:
@@ -40,7 +62,7 @@ protected:
 
    // Communication settings
    static constexpr Spi0::SerialInit serialInitValue {
-      2.5_MHz ,               // (speed[0])                 Speed of interface
+      2.5_MHz ,              // (speed[0])                 Speed of interface
       SpiMode_0 ,            // (spi_ctar_mode[0])         Mode - Mode 0: CPOL=0, CPHA=0
       SpiFrameSize_8_bits ,  // (spi_ctar_fmsz[0])         SPI Frame sizes - 8 bits/transfer
       SpiBitOrder_MsbFirst,  // (spi_ctar_lsbfe[0])        Transmission order - MSB sent first
@@ -148,21 +170,20 @@ protected:
       }
    };
 
-   static inline const Map xPoints[] = {
-         {  218,  314 },
-         {  886,  242 },
-         { 1717,  163 },
-         { 2640,   84 },
-         { 3527,    5 },
-   };
 
+   static inline const Map xPoints[] = {
+         {528, 310, },
+         {1332, 235, },
+         {2156, 160, },
+         {3044, 85, },
+         {3781, 10, },
+   };
    static inline const Map yPoints[] = {
-         { 172,     5  },
-         { 809,   100 },
-         { 1492,  195 },
-         { 2086,  290 },
-         { 2975,  385 },
-         { 3690,  474 },
+         {437, 10, },
+         {1238, 125, },
+         {2117, 240, },
+         {2976, 355, },
+         {3800, 470, },
    };
 
    static void findPoints(const Map points[], unsigned n, int value, Map &left, Map &right) {
@@ -230,7 +251,28 @@ protected:
       return unsigned(scaledValue);
    }
 
+   static void constexpr scale(unsigned &x, unsigned &y) {
 
+      console.write("(",x,",",y,") -> ");
+      x = scaleX(x);
+      y = scaleY(y);
+      console.writeln("(",x,",",y,")");
+
+      if constexpr (orientation & 0b001) {
+         // Row-Col exchange
+         unsigned t = x; x = y; y = t;
+      }
+      if constexpr (orientation & 0b010) {
+         // Mirror col
+         x = width - x;
+      }
+      if constexpr (orientation & 0b100) {
+         // Mirror row
+         y = height - y;
+      }
+   }
+
+public:
    bool checkRawTouch(unsigned &x, unsigned &y) {
 
       static constexpr IntegerFormat decimalFormat(Padding_LeadingSpaces, Width_6, Radix_10);
@@ -257,6 +299,8 @@ protected:
       uint8_t rxData2[sizeof(txData2)];
 
       if (z>Z_THRESHOLD) {
+
+         // console.writeln("Z = ", z, ", (> ", Z_THRESHOLD, ")");
 
          spi.txRx(txData2, rxData2);
          spi.endTransaction();
@@ -307,8 +351,7 @@ public:
    bool checkTouch(unsigned &xResult, unsigned &yResult) {
 
       if (checkRawTouch(xResult, yResult)) {
-         xResult = scaleX(xResult);
-         yResult = scaleY(yResult);
+         scale(xResult, yResult);
          return true;
       }
       return false;
@@ -330,11 +373,17 @@ public:
     * Should only be done when not polling for touches
     */
    void enableTouchInterrupt() {
-   
+
+      static const PcrInit gpioInit {
+         PinPull_Up,
+         PinAction_IrqFalling,
+         PinFilter_Passive
+      };
+
       sendCommand(Last);
       TouchIrq::clearInterruptState();
       TouchIrq::enableNvicPinInterrupts(NvicPriority_Normal);
-      TouchIrq::setInput(PinPull_Up, PinAction_IrqFalling, PinFilter_Passive);
+      TouchIrq::setInput(gpioInit);
    }
 
    /**
@@ -342,11 +391,18 @@ public:
     * Should be done before polling for touches
     */
    void disableTouchInterrupt() {
-   
-      TouchIrq::setInput(PinPull_Up, PinAction_None, PinFilter_Passive);
+
+      static const PcrInit gpioInit {
+         PinPull_Up,
+         PinAction_None,
+         PinFilter_Passive,
+      };
+
+      TouchIrq::setInput(gpioInit);
       TouchIrq::disableNvicPinInterrupts();
       TouchIrq::clearInterruptState();
    }
+
 };
 
 } // namespace USBDM

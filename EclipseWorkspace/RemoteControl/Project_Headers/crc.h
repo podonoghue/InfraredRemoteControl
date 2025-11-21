@@ -32,6 +32,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * CRC Polynomial
     * (crc_gpoly_gpoly)
@@ -115,11 +116,13 @@ namespace USBDM {
 class CrcBasicInfo {
 
 public:
+
 }; // class CrcBasicInfo 
 
 class Crc0Info : public CrcBasicInfo {
 
 public:
+
    /*
     * Template:crc0_0x40032000
     */

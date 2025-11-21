@@ -41,6 +41,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Transmitter Enable
     * (uart_c2_te)
@@ -422,7 +423,6 @@ namespace USBDM {
       AllFlags                        = (0xffU),              ///< All flags
    };
 
-
    /**
     * Combines two UartStatusFlag values (by ORing)
     * Used to create a combined UartStatusFlag mask
@@ -561,7 +561,7 @@ namespace USBDM {
     *
     * T8 is the ninth data bit transmitted when the UART is configured for 9-bit data format,
     * that is, if C1[M] = 1 or C4[M10] = 1.
-    * NOTE: If the value of T8 is the same as in the previous transmission, T8 does not
+    * Note: If the value of T8 is the same as in the previous transmission, T8 does not
     * have to be rewritten. The same value is transmitted until T8 is rewritten.
     */
    enum UartTransmitBit8 : uint8_t {
@@ -598,7 +598,7 @@ namespace USBDM {
     * by short low pulse in the middle of a bit time remaining idle high for a one for
     * inverted polarity.This field is automatically set when C7816[INIT] and C7816[ISO7816E]
     * are enabled and an initial character is detected in T = 0 protocol mode.
-    * NOTE: Setting TXINV inverts all transmitted values, including idle, break, start, and stop bits.
+    * Note: Setting TXINV inverts all transmitted values, including idle, break, start, and stop bits.
     * In loop mode, if TXINV is set, the receiver gets the transmit inversion bit when RXINV is disabled.
     * When C7816[ISO7816E] is set/enabled then only the transmitted data bits and parity bit are inverted.
     */
@@ -1616,6 +1616,7 @@ namespace USBDM {
 class UartBasicInfo : public FormattedIO {
 
 public:
+
    //! Common class based callback code has been generated for this class of peripheral
    // (_BasicInfoIrqGuard)
    static constexpr bool irqHandlerInstalled = false;
@@ -1856,7 +1857,7 @@ public:
     *        clearing mechanisms for the UART status flags
     */
    void setTransmitData(uint8_t value) const {
-      uart->D = (uart->D&~UART_D_RT_MASK) | UART_D_RT(value);
+      uart->D = (uart->D&~UART_D_RT_MASK) | uint32_t(UART_D_RT(value));
    }
    
    /**
@@ -2151,7 +2152,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartLinBreakAction uartLinBreakAction, Types... rest) : Init(rest...) {
    
-         bdh = (bdh&~UART_BDH_LBKDIE_MASK) | uartLinBreakAction;
+         bdh = (bdh&~UART_BDH_LBKDIE_MASK) | uint32_t(uartLinBreakAction);
       }
    
       /**
@@ -2166,7 +2167,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartRxdActiveEdgeAction uartRxdActiveEdgeAction, Types... rest) : Init(rest...) {
    
-         bdh = (bdh&~UART_BDH_RXEDGIE_MASK) | uartRxdActiveEdgeAction;
+         bdh = (bdh&~UART_BDH_RXEDGIE_MASK) | uint32_t(uartRxdActiveEdgeAction);
       }
    
       /**
@@ -2181,7 +2182,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartLoopModeSelect uartLoopModeSelect, Types... rest) : Init(rest...) {
    
-         c1 = (c1&~UART_C1_LOOPS_MASK) | uartLoopModeSelect;
+         c1 = (c1&~UART_C1_LOOPS_MASK) | uint32_t(uartLoopModeSelect);
       }
    
       /**
@@ -2196,7 +2197,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartStopsInWaitMode uartStopsInWaitMode, Types... rest) : Init(rest...) {
    
-         c1 = (c1&~UART_C1_UARTSWAI_MASK) | uartStopsInWaitMode;
+         c1 = (c1&~UART_C1_UARTSWAI_MASK) | uint32_t(uartStopsInWaitMode);
       }
    
       /**
@@ -2211,7 +2212,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiverSourceSelect uartReceiverSourceSelect, Types... rest) : Init(rest...) {
    
-         c1 = (c1&~UART_C1_RSRC_MASK) | uartReceiverSourceSelect;
+         c1 = (c1&~UART_C1_RSRC_MASK) | uint32_t(uartReceiverSourceSelect);
       }
    
       /**
@@ -2227,7 +2228,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(Uart9BitOr8BitModeSelect uart9BitOr8BitModeSelect, Types... rest) : Init(rest...) {
    
-         c1 = (c1&~UART_C1_M_MASK) | uart9BitOr8BitModeSelect;
+         c1 = (c1&~UART_C1_M_MASK) | uint32_t(uart9BitOr8BitModeSelect);
       }
    
       /**
@@ -2244,7 +2245,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiverWakeupMethodSelect uartReceiverWakeupMethodSelect, Types... rest) : Init(rest...) {
    
-         c1 = (c1&~UART_C1_WAKE_MASK) | uartReceiverWakeupMethodSelect;
+         c1 = (c1&~UART_C1_WAKE_MASK) | uint32_t(uartReceiverWakeupMethodSelect);
       }
    
       /**
@@ -2259,7 +2260,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartIdleLineTypeSelect uartIdleLineTypeSelect, Types... rest) : Init(rest...) {
    
-         c1 = (c1&~UART_C1_ILT_MASK) | uartIdleLineTypeSelect;
+         c1 = (c1&~UART_C1_ILT_MASK) | uint32_t(uartIdleLineTypeSelect);
       }
    
       /**
@@ -2276,7 +2277,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartParityEnable uartParityEnable, Types... rest) : Init(rest...) {
    
-         c1 = (c1&~UART_C1_PE_MASK) | uartParityEnable;
+         c1 = (c1&~UART_C1_PE_MASK) | uint32_t(uartParityEnable);
       }
    
       /**
@@ -2296,7 +2297,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartParityType uartParityType, Types... rest) : Init(rest...) {
    
-         c1 = (c1&~UART_C1_PT_MASK) | uartParityType;
+         c1 = (c1&~UART_C1_PT_MASK) | uint32_t(uartParityType);
       }
    
       /**
@@ -2311,7 +2312,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTxCompleteAction uartTxCompleteAction, Types... rest) : Init(rest...) {
    
-         c2 = (c2&~UART_C2_TCIE_MASK) | uartTxCompleteAction;
+         c2 = (c2&~UART_C2_TCIE_MASK) | uint32_t(uartTxCompleteAction);
       }
    
       /**
@@ -2326,7 +2327,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartIdleLineDetectAction uartIdleLineDetectAction, Types... rest) : Init(rest...) {
    
-         c2 = (c2&~UART_C2_ILIE_MASK) | uartIdleLineDetectAction;
+         c2 = (c2&~UART_C2_ILIE_MASK) | uint32_t(uartIdleLineDetectAction);
       }
    
       /**
@@ -2341,7 +2342,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitterEnable uartTransmitterEnable, Types... rest) : Init(rest...) {
    
-         c2 = (c2&~UART_C2_TE_MASK) | uartTransmitterEnable;
+         c2 = (c2&~UART_C2_TE_MASK) | uint32_t(uartTransmitterEnable);
       }
    
       /**
@@ -2356,7 +2357,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiverEnable uartReceiverEnable, Types... rest) : Init(rest...) {
    
-         c2 = (c2&~UART_C2_RE_MASK) | uartReceiverEnable;
+         c2 = (c2&~UART_C2_RE_MASK) | uint32_t(uartReceiverEnable);
       }
    
       /**
@@ -2372,7 +2373,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiverWakeupControl uartReceiverWakeupControl, Types... rest) : Init(rest...) {
    
-         c2 = (c2&~UART_C2_RWU_MASK) | uartReceiverWakeupControl;
+         c2 = (c2&~UART_C2_RWU_MASK) | uint32_t(uartReceiverWakeupControl);
       }
    
       /**
@@ -2393,7 +2394,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartSendBreak uartSendBreak, Types... rest) : Init(rest...) {
    
-         c2 = (c2&~UART_C2_SBK_MASK) | uartSendBreak;
+         c2 = (c2&~UART_C2_SBK_MASK) | uint32_t(uartSendBreak);
       }
    
       /**
@@ -2409,7 +2410,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartLinBreakDetectInterruptFlag uartLinBreakDetectInterruptFlag, Types... rest) : Init(rest...) {
    
-         s2 = (s2&~UART_S2_LBKDIF_MASK) | uartLinBreakDetectInterruptFlag;
+         s2 = (s2&~UART_S2_LBKDIF_MASK) | uint32_t(uartLinBreakDetectInterruptFlag);
       }
    
       /**
@@ -2426,7 +2427,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartRxdPinActiveEdgeInterruptFlag uartRxdPinActiveEdgeInterruptFlag, Types... rest) : Init(rest...) {
    
-         s2 = (s2&~UART_S2_RXEDGIF_MASK) | uartRxdPinActiveEdgeInterruptFlag;
+         s2 = (s2&~UART_S2_RXEDGIF_MASK) | uint32_t(uartRxdPinActiveEdgeInterruptFlag);
       }
    
       /**
@@ -2441,7 +2442,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartMostSignificantBitFirst uartMostSignificantBitFirst, Types... rest) : Init(rest...) {
    
-         s2 = (s2&~UART_S2_MSBF_MASK) | uartMostSignificantBitFirst;
+         s2 = (s2&~UART_S2_MSBF_MASK) | uint32_t(uartMostSignificantBitFirst);
       }
    
       /**
@@ -2456,7 +2457,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveDataInversion uartReceiveDataInversion, Types... rest) : Init(rest...) {
    
-         s2 = (s2&~UART_S2_RXINV_MASK) | uartReceiveDataInversion;
+         s2 = (s2&~UART_S2_RXINV_MASK) | uint32_t(uartReceiveDataInversion);
       }
    
       /**
@@ -2472,7 +2473,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveWakeupIdleDetect uartReceiveWakeupIdleDetect, Types... rest) : Init(rest...) {
    
-         s2 = (s2&~UART_S2_RWUID_MASK) | uartReceiveWakeupIdleDetect;
+         s2 = (s2&~UART_S2_RWUID_MASK) | uint32_t(uartReceiveWakeupIdleDetect);
       }
    
       /**
@@ -2487,7 +2488,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartBreakTransmitCharacterLength uartBreakTransmitCharacterLength, Types... rest) : Init(rest...) {
    
-         s2 = (s2&~UART_S2_BRK13_MASK) | uartBreakTransmitCharacterLength;
+         s2 = (s2&~UART_S2_BRK13_MASK) | uint32_t(uartBreakTransmitCharacterLength);
       }
    
       /**
@@ -2503,7 +2504,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartLinBreakDetectionEnable uartLinBreakDetectionEnable, Types... rest) : Init(rest...) {
    
-         s2 = (s2&~UART_S2_LBKDE_MASK) | uartLinBreakDetectionEnable;
+         s2 = (s2&~UART_S2_LBKDE_MASK) | uint32_t(uartLinBreakDetectionEnable);
       }
    
       /**
@@ -2515,13 +2516,13 @@ XXXXXXXXXXXXXXXXXXXXXX
        *
        * @param uartTransmitBit8 T8 is the ninth data bit transmitted when the UART is configured for 9-bit data format,
        *        that is, if C1[M] = 1 or C4[M10] = 1.
-       *        NOTE: If the value of T8 is the same as in the previous transmission, T8 does not
+       *        Note: If the value of T8 is the same as in the previous transmission, T8 does not
        *        have to be rewritten. The same value is transmitted until T8 is rewritten.
        */
       template <typename... Types>
       constexpr Init(UartTransmitBit8 uartTransmitBit8, Types... rest) : Init(rest...) {
    
-         c3 = (c3&~UART_C3_T8_MASK) | uartTransmitBit8;
+         c3 = (c3&~UART_C3_T8_MASK) | uint32_t(uartTransmitBit8);
       }
    
       /**
@@ -2542,7 +2543,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitterPinDirectionInSingleWire uartTransmitterPinDirectionInSingleWire, Types... rest) : Init(rest...) {
    
-         c3 = (c3&~UART_C3_TXDIR_MASK) | uartTransmitterPinDirectionInSingleWire;
+         c3 = (c3&~UART_C3_TXDIR_MASK) | uint32_t(uartTransmitterPinDirectionInSingleWire);
       }
    
       /**
@@ -2560,14 +2561,14 @@ XXXXXXXXXXXXXXXXXXXXXX
        *        by short low pulse in the middle of a bit time remaining idle high for a one for
        *        inverted polarity.This field is automatically set when C7816[INIT] and C7816[ISO7816E]
        *        are enabled and an initial character is detected in T = 0 protocol mode.
-       *        NOTE: Setting TXINV inverts all transmitted values, including idle, break, start, and stop bits.
+       *        Note: Setting TXINV inverts all transmitted values, including idle, break, start, and stop bits.
        *        In loop mode, if TXINV is set, the receiver gets the transmit inversion bit when RXINV is disabled.
        *        When C7816[ISO7816E] is set/enabled then only the transmitted data bits and parity bit are inverted.
        */
       template <typename... Types>
       constexpr Init(UartTransmitDataInversion uartTransmitDataInversion, Types... rest) : Init(rest...) {
    
-         c3 = (c3&~UART_C3_TXINV_MASK) | uartTransmitDataInversion;
+         c3 = (c3&~UART_C3_TXINV_MASK) | uint32_t(uartTransmitDataInversion);
       }
    
       /**
@@ -2582,7 +2583,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartOverrunErrorInterruptEnable uartOverrunErrorInterruptEnable, Types... rest) : Init(rest...) {
    
-         c3 = (c3&~UART_C3_ORIE_MASK) | uartOverrunErrorInterruptEnable;
+         c3 = (c3&~UART_C3_ORIE_MASK) | uint32_t(uartOverrunErrorInterruptEnable);
       }
    
       /**
@@ -2597,7 +2598,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartNoiseErrorInterruptEnable uartNoiseErrorInterruptEnable, Types... rest) : Init(rest...) {
    
-         c3 = (c3&~UART_C3_NEIE_MASK) | uartNoiseErrorInterruptEnable;
+         c3 = (c3&~UART_C3_NEIE_MASK) | uint32_t(uartNoiseErrorInterruptEnable);
       }
    
       /**
@@ -2612,7 +2613,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartFramingErrorInterruptEnable uartFramingErrorInterruptEnable, Types... rest) : Init(rest...) {
    
-         c3 = (c3&~UART_C3_FEIE_MASK) | uartFramingErrorInterruptEnable;
+         c3 = (c3&~UART_C3_FEIE_MASK) | uint32_t(uartFramingErrorInterruptEnable);
       }
    
       /**
@@ -2627,7 +2628,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartParityErrorInterruptEnable uartParityErrorInterruptEnable, Types... rest) : Init(rest...) {
    
-         c3 = (c3&~UART_C3_PEIE_MASK) | uartParityErrorInterruptEnable;
+         c3 = (c3&~UART_C3_PEIE_MASK) | uint32_t(uartParityErrorInterruptEnable);
       }
    
       /**
@@ -2645,7 +2646,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartMatchAddressModeEnable1 uartMatchAddressModeEnable1, Types... rest) : Init(rest...) {
    
-         c4 = (c4&~UART_C4_MAEN1_MASK) | uartMatchAddressModeEnable1;
+         c4 = (c4&~UART_C4_MAEN1_MASK) | uint32_t(uartMatchAddressModeEnable1);
       }
    
       /**
@@ -2663,7 +2664,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartMatchAddressModeEnable2 uartMatchAddressModeEnable2, Types... rest) : Init(rest...) {
    
-         c4 = (c4&~UART_C4_MAEN2_MASK) | uartMatchAddressModeEnable2;
+         c4 = (c4&~UART_C4_MAEN2_MASK) | uint32_t(uartMatchAddressModeEnable2);
       }
    
       /**
@@ -2682,7 +2683,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(Uart10BitModeSelect uart10BitModeSelect, Types... rest) : Init(rest...) {
    
-         c4 = (c4&~UART_C4_M10_MASK) | uart10BitModeSelect;
+         c4 = (c4&~UART_C4_M10_MASK) | uint32_t(uart10BitModeSelect);
       }
    
       /**
@@ -2697,7 +2698,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartBaudRateFineAdjust uartBaudRateFineAdjust, Types... rest) : Init(rest...) {
    
-         c4 = (c4&~UART_C4_BRFA_MASK) | UART_C4_BRFA(uartBaudRateFineAdjust);
+         c4 = (c4&~UART_C4_BRFA_MASK) | uint32_t(UART_C4_BRFA(uartBaudRateFineAdjust));
       }
    
       /**
@@ -2712,7 +2713,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTxEmptyDma uartTxEmptyDma, Types... rest) : Init(rest...) {
    
-         c5 = (c5&~UART_C5_TDMAS_MASK) | uartTxEmptyDma;
+         c5 = (c5&~UART_C5_TDMAS_MASK) | uint32_t(uartTxEmptyDma);
       }
    
       /**
@@ -2727,7 +2728,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartRxFullDma uartRxFullDma, Types... rest) : Init(rest...) {
    
-         c5 = (c5&~UART_C5_RDMAS_MASK) | uartRxFullDma;
+         c5 = (c5&~UART_C5_RDMAS_MASK) | uint32_t(uartRxFullDma);
       }
    
       /**
@@ -2744,7 +2745,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiverRequestToSendEnable uartReceiverRequestToSendEnable, Types... rest) : Init(rest...) {
    
-         modem = (modem&~UART_MODEM_RXRTSE_MASK) | uartReceiverRequestToSendEnable;
+         modem = (modem&~UART_MODEM_RXRTSE_MASK) | uint32_t(uartReceiverRequestToSendEnable);
       }
    
       /**
@@ -2761,7 +2762,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitterRequestToSendPolarity uartTransmitterRequestToSendPolarity, Types... rest) : Init(rest...) {
    
-         modem = (modem&~UART_MODEM_TXRTSPOL_MASK) | uartTransmitterRequestToSendPolarity;
+         modem = (modem&~UART_MODEM_TXRTSPOL_MASK) | uint32_t(uartTransmitterRequestToSendPolarity);
       }
    
       /**
@@ -2779,7 +2780,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitterRequestToSendEnable uartTransmitterRequestToSendEnable, Types... rest) : Init(rest...) {
    
-         modem = (modem&~UART_MODEM_TXRTSE_MASK) | uartTransmitterRequestToSendEnable;
+         modem = (modem&~UART_MODEM_TXRTSE_MASK) | uint32_t(uartTransmitterRequestToSendEnable);
       }
    
       /**
@@ -2798,7 +2799,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitterClearToSendEnable uartTransmitterClearToSendEnable, Types... rest) : Init(rest...) {
    
-         modem = (modem&~UART_MODEM_TXCTSE_MASK) | uartTransmitterClearToSendEnable;
+         modem = (modem&~UART_MODEM_TXCTSE_MASK) | uint32_t(uartTransmitterClearToSendEnable);
       }
    
       /**
@@ -2813,7 +2814,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartInfraredEnable uartInfraredEnable, Types... rest) : Init(rest...) {
    
-         ir = (ir&~UART_IR_IREN_MASK) | uartInfraredEnable;
+         ir = (ir&~UART_IR_IREN_MASK) | uint32_t(uartInfraredEnable);
       }
    
       /**
@@ -2828,7 +2829,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitterNarrowPulse uartTransmitterNarrowPulse, Types... rest) : Init(rest...) {
    
-         ir = (ir&~UART_IR_TNP_MASK) | uartTransmitterNarrowPulse;
+         ir = (ir&~UART_IR_TNP_MASK) | uint32_t(uartTransmitterNarrowPulse);
       }
    
       /**
@@ -2848,7 +2849,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitFifoEnable uartTransmitFifoEnable, Types... rest) : Init(rest...) {
    
-         pfifo = (pfifo&~UART_PFIFO_TXFE_MASK) | uartTransmitFifoEnable;
+         pfifo = (pfifo&~UART_PFIFO_TXFE_MASK) | uint32_t(uartTransmitFifoEnable);
       }
    
       /**
@@ -2868,7 +2869,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveFifoEnable uartReceiveFifoEnable, Types... rest) : Init(rest...) {
    
-         pfifo = (pfifo&~UART_PFIFO_RXFE_MASK) | uartReceiveFifoEnable;
+         pfifo = (pfifo&~UART_PFIFO_RXFE_MASK) | uint32_t(uartReceiveFifoEnable);
       }
    
       /**
@@ -2884,7 +2885,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitFifo_BufferFlush uartTransmitFifo_BufferFlush, Types... rest) : Init(rest...) {
    
-         cfifo = (cfifo&~UART_CFIFO_TXFLUSH_MASK) | uartTransmitFifo_BufferFlush;
+         cfifo = (cfifo&~UART_CFIFO_TXFLUSH_MASK) | uint32_t(uartTransmitFifo_BufferFlush);
       }
    
       /**
@@ -2900,7 +2901,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveFifo_BufferFlush uartReceiveFifo_BufferFlush, Types... rest) : Init(rest...) {
    
-         cfifo = (cfifo&~UART_CFIFO_RXFLUSH_MASK) | uartReceiveFifo_BufferFlush;
+         cfifo = (cfifo&~UART_CFIFO_RXFLUSH_MASK) | uint32_t(uartReceiveFifo_BufferFlush);
       }
    
       /**
@@ -2915,7 +2916,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveFifoOverflowInterruptEnable uartReceiveFifoOverflowInterruptEnable, Types... rest) : Init(rest...) {
    
-         cfifo = (cfifo&~UART_CFIFO_RXOFE_MASK) | uartReceiveFifoOverflowInterruptEnable;
+         cfifo = (cfifo&~UART_CFIFO_RXOFE_MASK) | uint32_t(uartReceiveFifoOverflowInterruptEnable);
       }
    
       /**
@@ -2930,7 +2931,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitFifoOverflowInterruptEnable uartTransmitFifoOverflowInterruptEnable, Types... rest) : Init(rest...) {
    
-         cfifo = (cfifo&~UART_CFIFO_TXOFE_MASK) | uartTransmitFifoOverflowInterruptEnable;
+         cfifo = (cfifo&~UART_CFIFO_TXOFE_MASK) | uint32_t(uartTransmitFifoOverflowInterruptEnable);
       }
    
       /**
@@ -2945,7 +2946,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveFifoUnderflowInterruptEnable uartReceiveFifoUnderflowInterruptEnable, Types... rest) : Init(rest...) {
    
-         cfifo = (cfifo&~UART_CFIFO_RXUFE_MASK) | uartReceiveFifoUnderflowInterruptEnable;
+         cfifo = (cfifo&~UART_CFIFO_RXUFE_MASK) | uint32_t(uartReceiveFifoUnderflowInterruptEnable);
       }
    
       /**
@@ -2963,7 +2964,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveFifoOverflow uartReceiveFifoOverflow, Types... rest) : Init(rest...) {
    
-         sfifo = (sfifo&~UART_SFIFO_RXOF_MASK) | uartReceiveFifoOverflow;
+         sfifo = (sfifo&~UART_SFIFO_RXOF_MASK) | uint32_t(uartReceiveFifoOverflow);
       }
    
       /**
@@ -2981,7 +2982,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitFifoOverflow uartTransmitFifoOverflow, Types... rest) : Init(rest...) {
    
-         sfifo = (sfifo&~UART_SFIFO_TXOF_MASK) | uartTransmitFifoOverflow;
+         sfifo = (sfifo&~UART_SFIFO_TXOF_MASK) | uint32_t(uartTransmitFifoOverflow);
       }
    
       /**
@@ -2999,7 +3000,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveFifoUnderflow uartReceiveFifoUnderflow, Types... rest) : Init(rest...) {
    
-         sfifo = (sfifo&~UART_SFIFO_RXUF_MASK) | uartReceiveFifoUnderflow;
+         sfifo = (sfifo&~UART_SFIFO_RXUF_MASK) | uint32_t(uartReceiveFifoUnderflow);
       }
    
       /**
@@ -3018,7 +3019,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitWatermark uartTransmitWatermark, Types... rest) : Init(rest...) {
    
-         twfifo = (twfifo&~UART_TWFIFO_TXWATER_MASK) | UART_TWFIFO_TXWATER(uartTransmitWatermark);
+         twfifo = (twfifo&~UART_TWFIFO_TXWATER_MASK) | uint32_t(UART_TWFIFO_TXWATER(uartTransmitWatermark));
       }
    
       /**
@@ -3037,7 +3038,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveWatermark uartReceiveWatermark, Types... rest) : Init(rest...) {
    
-         rwfifo = (rwfifo&~UART_RWFIFO_RXWATER_MASK) | UART_RWFIFO_RXWATER(uartReceiveWatermark);
+         rwfifo = (rwfifo&~UART_RWFIFO_RXWATER_MASK) | uint32_t(UART_RWFIFO_RXWATER(uartReceiveWatermark));
       }
    
       /**
@@ -3052,7 +3053,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartGenerateNackOnOverflow uartGenerateNackOnOverflow, Types... rest) : Init(rest...) {
    
-         c7816 = (c7816&~UART_C7816_ONACK_MASK) | uartGenerateNackOnOverflow;
+         c7816 = (c7816&~UART_C7816_ONACK_MASK) | uint32_t(uartGenerateNackOnOverflow);
       }
    
       /**
@@ -3068,7 +3069,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartGenerateNackOnError uartGenerateNackOnError, Types... rest) : Init(rest...) {
    
-         c7816 = (c7816&~UART_C7816_ANACK_MASK) | uartGenerateNackOnError;
+         c7816 = (c7816&~UART_C7816_ANACK_MASK) | uint32_t(uartGenerateNackOnError);
       }
    
       /**
@@ -3084,7 +3085,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartDetectInitialCharacter uartDetectInitialCharacter, Types... rest) : Init(rest...) {
    
-         c7816 = (c7816&~UART_C7816_INIT_MASK) | uartDetectInitialCharacter;
+         c7816 = (c7816&~UART_C7816_INIT_MASK) | uint32_t(uartDetectInitialCharacter);
       }
    
       /**
@@ -3099,7 +3100,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransferType uartTransferType, Types... rest) : Init(rest...) {
    
-         c7816 = (c7816&~UART_C7816_TTYPE_MASK) | uartTransferType;
+         c7816 = (c7816&~UART_C7816_TTYPE_MASK) | uint32_t(uartTransferType);
       }
    
       /**
@@ -3114,7 +3115,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartIso7816FunctionalityEnabled uartIso7816FunctionalityEnabled, Types... rest) : Init(rest...) {
    
-         c7816 = (c7816&~UART_C7816_ISO_7816E_MASK) | uartIso7816FunctionalityEnabled;
+         c7816 = (c7816&~UART_C7816_ISO_7816E_MASK) | uint32_t(uartIso7816FunctionalityEnabled);
       }
    
       /**
@@ -3129,7 +3130,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartWaitTimerInterruptEnable uartWaitTimerInterruptEnable, Types... rest) : Init(rest...) {
    
-         ie7816 = (ie7816&~UART_IE7816_WTE_MASK) | uartWaitTimerInterruptEnable;
+         ie7816 = (ie7816&~UART_IE7816_WTE_MASK) | uint32_t(uartWaitTimerInterruptEnable);
       }
    
       /**
@@ -3144,7 +3145,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartCharacterWaitTimerCwtInterruptEna uartCharacterWaitTimerCwtInterruptEna, Types... rest) : Init(rest...) {
    
-         ie7816 = (ie7816&~UART_IE7816_CWTE_MASK) | uartCharacterWaitTimerCwtInterruptEna;
+         ie7816 = (ie7816&~UART_IE7816_CWTE_MASK) | uint32_t(uartCharacterWaitTimerCwtInterruptEna);
       }
    
       /**
@@ -3159,7 +3160,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartBlockWaitTimerBwtInterruptEnable uartBlockWaitTimerBwtInterruptEnable, Types... rest) : Init(rest...) {
    
-         ie7816 = (ie7816&~UART_IE7816_BWTE_MASK) | uartBlockWaitTimerBwtInterruptEnable;
+         ie7816 = (ie7816&~UART_IE7816_BWTE_MASK) | uint32_t(uartBlockWaitTimerBwtInterruptEnable);
       }
    
       /**
@@ -3174,7 +3175,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartInitialCharacterDetectedInitdInter uartInitialCharacterDetectedInitdInter, Types... rest) : Init(rest...) {
    
-         ie7816 = (ie7816&~UART_IE7816_INITDE_MASK) | uartInitialCharacterDetectedInitdInter;
+         ie7816 = (ie7816&~UART_IE7816_INITDE_MASK) | uint32_t(uartInitialCharacterDetectedInitdInter);
       }
    
       /**
@@ -3189,7 +3190,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartGuardTimerViolatedGtvInterruptEna uartGuardTimerViolatedGtvInterruptEna, Types... rest) : Init(rest...) {
    
-         ie7816 = (ie7816&~UART_IE7816_GTVE_MASK) | uartGuardTimerViolatedGtvInterruptEna;
+         ie7816 = (ie7816&~UART_IE7816_GTVE_MASK) | uint32_t(uartGuardTimerViolatedGtvInterruptEna);
       }
    
       /**
@@ -3204,7 +3205,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitThresholdExceededTxtInterr uartTransmitThresholdExceededTxtInterr, Types... rest) : Init(rest...) {
    
-         ie7816 = (ie7816&~UART_IE7816_TXTE_MASK) | uartTransmitThresholdExceededTxtInterr;
+         ie7816 = (ie7816&~UART_IE7816_TXTE_MASK) | uint32_t(uartTransmitThresholdExceededTxtInterr);
       }
    
       /**
@@ -3219,7 +3220,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveThresholdExceededInterruptEna uartReceiveThresholdExceededInterruptEna, Types... rest) : Init(rest...) {
    
-         ie7816 = (ie7816&~UART_IE7816_RXTE_MASK) | uartReceiveThresholdExceededInterruptEna;
+         ie7816 = (ie7816&~UART_IE7816_RXTE_MASK) | uint32_t(uartReceiveThresholdExceededInterruptEna);
       }
    
       /**
@@ -3234,7 +3235,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartWaitTimerInterrupt uartWaitTimerInterrupt, Types... rest) : Init(rest...) {
    
-         is7816 = (is7816&~UART_IS7816_WT_MASK) | uartWaitTimerInterrupt;
+         is7816 = (is7816&~UART_IS7816_WT_MASK) | uint32_t(uartWaitTimerInterrupt);
       }
    
       /**
@@ -3249,7 +3250,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartCharacterWaitTimerInterrupt uartCharacterWaitTimerInterrupt, Types... rest) : Init(rest...) {
    
-         is7816 = (is7816&~UART_IS7816_CWT_MASK) | uartCharacterWaitTimerInterrupt;
+         is7816 = (is7816&~UART_IS7816_CWT_MASK) | uint32_t(uartCharacterWaitTimerInterrupt);
       }
    
       /**
@@ -3264,7 +3265,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartBlockWaitTimerInterrupt uartBlockWaitTimerInterrupt, Types... rest) : Init(rest...) {
    
-         is7816 = (is7816&~UART_IS7816_BWT_MASK) | uartBlockWaitTimerInterrupt;
+         is7816 = (is7816&~UART_IS7816_BWT_MASK) | uint32_t(uartBlockWaitTimerInterrupt);
       }
    
       /**
@@ -3279,7 +3280,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartInitialCharacterDetectedInterrupt uartInitialCharacterDetectedInterrupt, Types... rest) : Init(rest...) {
    
-         is7816 = (is7816&~UART_IS7816_INITD_MASK) | uartInitialCharacterDetectedInterrupt;
+         is7816 = (is7816&~UART_IS7816_INITD_MASK) | uint32_t(uartInitialCharacterDetectedInterrupt);
       }
    
       /**
@@ -3294,7 +3295,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartGuardTimerViolatedInterrupt uartGuardTimerViolatedInterrupt, Types... rest) : Init(rest...) {
    
-         is7816 = (is7816&~UART_IS7816_GTV_MASK) | uartGuardTimerViolatedInterrupt;
+         is7816 = (is7816&~UART_IS7816_GTV_MASK) | uint32_t(uartGuardTimerViolatedInterrupt);
       }
    
       /**
@@ -3309,7 +3310,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitThresholdExceededInterrupt uartTransmitThresholdExceededInterrupt, Types... rest) : Init(rest...) {
    
-         is7816 = (is7816&~UART_IS7816_TXT_MASK) | uartTransmitThresholdExceededInterrupt;
+         is7816 = (is7816&~UART_IS7816_TXT_MASK) | uint32_t(uartTransmitThresholdExceededInterrupt);
       }
    
       /**
@@ -3325,7 +3326,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveThresholdExceededInterrupt uartReceiveThresholdExceededInterrupt, Types... rest) : Init(rest...) {
    
-         is7816 = (is7816&~UART_IS7816_RXT_MASK) | uartReceiveThresholdExceededInterrupt;
+         is7816 = (is7816&~UART_IS7816_RXT_MASK) | uint32_t(uartReceiveThresholdExceededInterrupt);
       }
    
       /**
@@ -3340,7 +3341,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartWaitTimerInterruptC7816ttype0 uartWaitTimerInterruptC7816ttype0, Types... rest) : Init(rest...) {
    
-         wp7816t0 = (wp7816t0&~UART_WP7816T0_WI_MASK) | UART_WP7816T0_WI(uartWaitTimerInterruptC7816ttype0);
+         wp7816t0 = (wp7816t0&~UART_WP7816T0_WI_MASK) | uint32_t(UART_WP7816T0_WI(uartWaitTimerInterruptC7816ttype0));
       }
    
       /**
@@ -3355,7 +3356,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartCharacterWaitTimeIntegerC7816ttype uartCharacterWaitTimeIntegerC7816ttype, Types... rest) : Init(rest...) {
    
-         wp7816t1 = (wp7816t1&~UART_WP7816T1_CWI_MASK) | UART_WP7816T1_CWI(uartCharacterWaitTimeIntegerC7816ttype);
+         wp7816t1 = (wp7816t1&~UART_WP7816T1_CWI_MASK) | uint32_t(UART_WP7816T1_CWI(uartCharacterWaitTimeIntegerC7816ttype));
       }
    
       /**
@@ -3370,7 +3371,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartBlockWaitTimeIntegerC7816ttype1 uartBlockWaitTimeIntegerC7816ttype1, Types... rest) : Init(rest...) {
    
-         wp7816t1 = (wp7816t1&~UART_WP7816T1_BWI_MASK) | UART_WP7816T1_BWI(uartBlockWaitTimeIntegerC7816ttype1);
+         wp7816t1 = (wp7816t1&~UART_WP7816T1_BWI_MASK) | uint32_t(UART_WP7816T1_BWI(uartBlockWaitTimeIntegerC7816ttype1));
       }
    
       /**
@@ -3385,7 +3386,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartGuardBandN uartGuardBandN, Types... rest) : Init(rest...) {
    
-         wn7816 = (wn7816&~UART_WN7816_GTN_MASK) | UART_WN7816_GTN(uartGuardBandN);
+         wn7816 = (wn7816&~UART_WN7816_GTN_MASK) | uint32_t(UART_WN7816_GTN(uartGuardBandN));
       }
    
       /**
@@ -3400,7 +3401,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartFdMultiplier uartFdMultiplier, Types... rest) : Init(rest...) {
    
-         wf7816 = (wf7816&~UART_WF7816_GTFD_MASK) | UART_WF7816_GTFD(uartFdMultiplier);
+         wf7816 = (wf7816&~UART_WF7816_GTFD_MASK) | uint32_t(UART_WF7816_GTFD(uartFdMultiplier));
       }
    
       /**
@@ -3416,7 +3417,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitNackThreshold uartTransmitNackThreshold, Types... rest) : Init(rest...) {
    
-         et7816 = (et7816&~UART_ET7816_TXTHRESHOLD_MASK) | UART_ET7816_TXTHRESHOLD(uartTransmitNackThreshold);
+         et7816 = (et7816&~UART_ET7816_TXTHRESHOLD_MASK) | uint32_t(UART_ET7816_TXTHRESHOLD(uartTransmitNackThreshold));
       }
    
       /**
@@ -3432,7 +3433,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartReceiveNackThreshold uartReceiveNackThreshold, Types... rest) : Init(rest...) {
    
-         et7816 = (et7816&~UART_ET7816_RXTHRESHOLD_MASK) | UART_ET7816_RXTHRESHOLD(uartReceiveNackThreshold);
+         et7816 = (et7816&~UART_ET7816_RXTHRESHOLD_MASK) | uint32_t(UART_ET7816_RXTHRESHOLD(uartReceiveNackThreshold));
       }
    
       /**
@@ -3447,7 +3448,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitLength uartTransmitLength, Types... rest) : Init(rest...) {
    
-         tl7816 = (tl7816&~UART_TL7816_TLEN_MASK) | UART_TL7816_TLEN(uartTransmitLength);
+         tl7816 = (tl7816&~UART_TL7816_TLEN_MASK) | uint32_t(UART_TL7816_TLEN(uartTransmitLength));
       }
    
       /**
@@ -3462,7 +3463,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartEn709 uartEn709, Types... rest) : Init(rest...) {
    
-         c6 = (c6&~UART_C6_EN709_MASK) | uartEn709;
+         c6 = (c6&~UART_C6_EN709_MASK) | uint32_t(uartEn709);
       }
    
       /**
@@ -3477,7 +3478,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartCea709 uartCea709, Types... rest) : Init(rest...) {
    
-         c6 = (c6&~UART_C6_TX709_MASK) | uartCea709;
+         c6 = (c6&~UART_C6_TX709_MASK) | uint32_t(uartCea709);
       }
    
       /**
@@ -3492,7 +3493,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartCollisionEnable uartCollisionEnable, Types... rest) : Init(rest...) {
    
-         c6 = (c6&~UART_C6_CE_MASK) | uartCollisionEnable;
+         c6 = (c6&~UART_C6_CE_MASK) | uint32_t(uartCollisionEnable);
       }
    
       /**
@@ -3507,7 +3508,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartCollisionSignalPolarity uartCollisionSignalPolarity, Types... rest) : Init(rest...) {
    
-         c6 = (c6&~UART_C6_CP_MASK) | uartCollisionSignalPolarity;
+         c6 = (c6&~UART_C6_CP_MASK) | uint32_t(uartCollisionSignalPolarity);
       }
    
       /**
@@ -3522,7 +3523,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartPacketCycleTimeCounterHigh uartPacketCycleTimeCounterHigh, Types... rest) : Init(rest...) {
    
-         pcth = (pcth&~UART_PCTH_PCTH_MASK) | UART_PCTH_PCTH(uartPacketCycleTimeCounterHigh);
+         pcth = (pcth&~UART_PCTH_PCTH_MASK) | uint32_t(UART_PCTH_PCTH(uartPacketCycleTimeCounterHigh));
       }
    
       /**
@@ -3537,7 +3538,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartPacketCycleTimeCounterLow uartPacketCycleTimeCounterLow, Types... rest) : Init(rest...) {
    
-         pctl = (pctl&~UART_PCTL_PCTL_MASK) | UART_PCTL_PCTL(uartPacketCycleTimeCounterLow);
+         pctl = (pctl&~UART_PCTL_PCTL_MASK) | uint32_t(UART_PCTL_PCTL(uartPacketCycleTimeCounterLow));
       }
    
       /**
@@ -3552,7 +3553,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartBeta1Timer uartBeta1Timer, Types... rest) : Init(rest...) {
    
-         b1t = (b1t&~UART_B1T_B1T_MASK) | UART_B1T_B1T(uartBeta1Timer);
+         b1t = (b1t&~UART_B1T_B1T_MASK) | uint32_t(UART_B1T_B1T(uartBeta1Timer));
       }
    
       /**
@@ -3567,7 +3568,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartSecondaryDelayTimerHigh uartSecondaryDelayTimerHigh, Types... rest) : Init(rest...) {
    
-         sdth = (sdth&~UART_SDTH_SDTH_MASK) | UART_SDTH_SDTH(uartSecondaryDelayTimerHigh);
+         sdth = (sdth&~UART_SDTH_SDTH_MASK) | uint32_t(UART_SDTH_SDTH(uartSecondaryDelayTimerHigh));
       }
    
       /**
@@ -3582,7 +3583,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartSecondaryDelayTimerLow uartSecondaryDelayTimerLow, Types... rest) : Init(rest...) {
    
-         sdtl = (sdtl&~UART_SDTL_SDTL_MASK) | UART_SDTL_SDTL(uartSecondaryDelayTimerLow);
+         sdtl = (sdtl&~UART_SDTL_SDTL_MASK) | uint32_t(UART_SDTL_SDTL(uartSecondaryDelayTimerLow));
       }
    
       /**
@@ -3597,7 +3598,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmitPacketLengthRegister uartTransmitPacketLengthRegister, Types... rest) : Init(rest...) {
    
-         tpl = (tpl&~UART_TPL_TPL_MASK) | UART_TPL_TPL(uartTransmitPacketLengthRegister);
+         tpl = (tpl&~UART_TPL_TPL_MASK) | uint32_t(UART_TPL_TPL(uartTransmitPacketLengthRegister));
       }
    
       /**
@@ -3612,7 +3613,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartWbaseExpiredInterruptEnable uartWbaseExpiredInterruptEnable, Types... rest) : Init(rest...) {
    
-         ie = (ie&~UART_IE_WBEIE_MASK) | uartWbaseExpiredInterruptEnable;
+         ie = (ie&~UART_IE_WBEIE_MASK) | uint32_t(uartWbaseExpiredInterruptEnable);
       }
    
       /**
@@ -3627,7 +3628,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartInitialSyncDetectionInterruptEnable uartInitialSyncDetectionInterruptEnable, Types... rest) : Init(rest...) {
    
-         ie = (ie&~UART_IE_ISDIE_MASK) | uartInitialSyncDetectionInterruptEnable;
+         ie = (ie&~UART_IE_ISDIE_MASK) | uint32_t(uartInitialSyncDetectionInterruptEnable);
       }
    
       /**
@@ -3642,7 +3643,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartPacketReceivedInterruptEnable uartPacketReceivedInterruptEnable, Types... rest) : Init(rest...) {
    
-         ie = (ie&~UART_IE_PRXIE_MASK) | uartPacketReceivedInterruptEnable;
+         ie = (ie&~UART_IE_PRXIE_MASK) | uint32_t(uartPacketReceivedInterruptEnable);
       }
    
       /**
@@ -3657,7 +3658,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartPacketTransmittedInterruptEnable uartPacketTransmittedInterruptEnable, Types... rest) : Init(rest...) {
    
-         ie = (ie&~UART_IE_PTXIE_MASK) | uartPacketTransmittedInterruptEnable;
+         ie = (ie&~UART_IE_PTXIE_MASK) | uint32_t(uartPacketTransmittedInterruptEnable);
       }
    
       /**
@@ -3672,7 +3673,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartPacketCycleTimerInterruptEnable uartPacketCycleTimerInterruptEnable, Types... rest) : Init(rest...) {
    
-         ie = (ie&~UART_IE_PCTEIE_MASK) | uartPacketCycleTimerInterruptEnable;
+         ie = (ie&~UART_IE_PCTEIE_MASK) | uint32_t(uartPacketCycleTimerInterruptEnable);
       }
    
       /**
@@ -3687,7 +3688,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartPreambleStartInterruptEnable uartPreambleStartInterruptEnable, Types... rest) : Init(rest...) {
    
-         ie = (ie&~UART_IE_PSIE_MASK) | uartPreambleStartInterruptEnable;
+         ie = (ie&~UART_IE_PSIE_MASK) | uint32_t(uartPreambleStartInterruptEnable);
       }
    
       /**
@@ -3702,7 +3703,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmissionFailInterruptEnable uartTransmissionFailInterruptEnable, Types... rest) : Init(rest...) {
    
-         ie = (ie&~UART_IE_TXFIE_MASK) | uartTransmissionFailInterruptEnable;
+         ie = (ie&~UART_IE_TXFIE_MASK) | uint32_t(uartTransmissionFailInterruptEnable);
       }
    
       /**
@@ -3717,7 +3718,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartPreambleErrorFlag uartPreambleErrorFlag, Types... rest) : Init(rest...) {
    
-         s3 = (s3&~UART_S3_PEF_MASK) | uartPreambleErrorFlag;
+         s3 = (s3&~UART_S3_PEF_MASK) | uint32_t(uartPreambleErrorFlag);
       }
    
       /**
@@ -3732,7 +3733,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartWbaseExpiredFlag uartWbaseExpiredFlag, Types... rest) : Init(rest...) {
    
-         s3 = (s3&~UART_S3_WBEF_MASK) | uartWbaseExpiredFlag;
+         s3 = (s3&~UART_S3_WBEF_MASK) | uint32_t(uartWbaseExpiredFlag);
       }
    
       /**
@@ -3747,7 +3748,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartPacketReceivedFlag uartPacketReceivedFlag, Types... rest) : Init(rest...) {
    
-         s3 = (s3&~UART_S3_PRXF_MASK) | uartPacketReceivedFlag;
+         s3 = (s3&~UART_S3_PRXF_MASK) | uint32_t(uartPacketReceivedFlag);
       }
    
       /**
@@ -3762,7 +3763,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartPacketTransmittedFlag uartPacketTransmittedFlag, Types... rest) : Init(rest...) {
    
-         s3 = (s3&~UART_S3_PTXF_MASK) | uartPacketTransmittedFlag;
+         s3 = (s3&~UART_S3_PTXF_MASK) | uint32_t(uartPacketTransmittedFlag);
       }
    
       /**
@@ -3777,7 +3778,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartPacketCycleTimerExpiredFlag uartPacketCycleTimerExpiredFlag, Types... rest) : Init(rest...) {
    
-         s3 = (s3&~UART_S3_PCTEF_MASK) | uartPacketCycleTimerExpiredFlag;
+         s3 = (s3&~UART_S3_PCTEF_MASK) | uint32_t(uartPacketCycleTimerExpiredFlag);
       }
    
       /**
@@ -3792,7 +3793,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartPreambleStartFlag uartPreambleStartFlag, Types... rest) : Init(rest...) {
    
-         s3 = (s3&~UART_S3_PSF_MASK) | uartPreambleStartFlag;
+         s3 = (s3&~UART_S3_PSF_MASK) | uint32_t(uartPreambleStartFlag);
       }
    
       /**
@@ -3807,7 +3808,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartTransmissionFailFlag uartTransmissionFailFlag, Types... rest) : Init(rest...) {
    
-         s3 = (s3&~UART_S3_TXFF_MASK) | uartTransmissionFailFlag;
+         s3 = (s3&~UART_S3_TXFF_MASK) | uint32_t(uartTransmissionFailFlag);
       }
    
       /**
@@ -3822,7 +3823,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartCdet uartCdet, Types... rest) : Init(rest...) {
    
-         s4 = (s4&~UART_S4_CDET_MASK) | uartCdet;
+         s4 = (s4&~UART_S4_CDET_MASK) | uint32_t(uartCdet);
       }
    
       /**
@@ -3837,7 +3838,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartImproperLineCodeViolation uartImproperLineCodeViolation, Types... rest) : Init(rest...) {
    
-         s4 = (s4&~UART_S4_ILCV_MASK) | uartImproperLineCodeViolation;
+         s4 = (s4&~UART_S4_ILCV_MASK) | uint32_t(uartImproperLineCodeViolation);
       }
    
       /**
@@ -3852,7 +3853,7 @@ XXXXXXXXXXXXXXXXXXXXXX
       template <typename... Types>
       constexpr Init(UartError uartError, Types... rest) : Init(rest...) {
    
-         s4 = (s4&~UART_S4_FE_MASK) | uartError;
+         s4 = (s4&~UART_S4_FE_MASK) | uint32_t(uartError);
       }
    
    }; // class UartBasicInfo::Init
@@ -4069,6 +4070,7 @@ XXXXXXXXXXXXXXXXXXXXXX
 class Uart0Info : public UartBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 5;
 
@@ -4338,14 +4340,17 @@ public:
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
 class Uart1BasicInfo : public FormattedIO {
 
 public:
+
 }; // class Uart1BasicInfo 
 
 class Uart1Info : public Uart1BasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 4;
 
@@ -4486,9 +4491,11 @@ public:
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
 class Uart2Info : public Uart1BasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 4;
 

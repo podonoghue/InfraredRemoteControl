@@ -16,6 +16,7 @@
  */
 #include <stdint.h>
 #include "derivative.h"
+#include "gpio.h"
 #include "pin_mapping.h"
 
 // No handler defined for I2S0 Tx
@@ -41,6 +42,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Channel Number
     * (channelNum)
@@ -1009,11 +1011,13 @@ Enables the corresponding data channel for receive operation
 class I2sBasicInfo {
 
 public:
+
 }; // class I2sBasicInfo 
 
 class I2s0Info : public I2sBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 8;
 

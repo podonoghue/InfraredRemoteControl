@@ -34,9 +34,10 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * LLWU peripheral wake-up source
-    * (llwu_me_peripherals)
+    * (llwu_me)
     *
     * Peripheral used as wake-up source
     */
@@ -57,7 +58,7 @@ namespace USBDM {
     *
     * Whether this peripheral can wake-up the processor
     */
-   enum LlwuPeripheralWakeup {
+   enum LlwuPeripheralWakeup : uint8_t {
       LlwuPeripheralWakeup_Disabled   = false,  ///< Wake-up disabled
       LlwuPeripheralWakeup_Enabled    = true,   ///< Wake-up enabled
    };
@@ -70,7 +71,7 @@ namespace USBDM {
     * On devices where Reset is not a dedicated pin, the RESET pin must also be enabled
     * in the explicit port mux control
     */
-   enum LlwuResetWakeup {
+   enum LlwuResetWakeup : uint8_t {
       LlwuResetWakeup_Disabled   = LLWU_RST_LLRSTE(0),  ///< RESET not enabled as LLWU exit source
       LlwuResetWakeup_Enabled    = LLWU_RST_LLRSTE(1),  ///< RESET enabled as LLWU exit source
    };
@@ -81,7 +82,7 @@ namespace USBDM {
     *
     * Enables the digital filter for the RESET pin during LLS, VLLS3, VLLS2, or VLLS1 modes
     */
-   enum LlwuResetFilter {
+   enum LlwuResetFilter : uint8_t {
       LlwuResetFilter_Disabled   = LLWU_RST_RSTFILT(0),  ///< Filter not enabled
       LlwuResetFilter_Enabled    = LLWU_RST_RSTFILT(1),  ///< Filter enabled
    };
@@ -92,7 +93,7 @@ namespace USBDM {
     *
     * Enables and configures the edge detection for a wake-up pin
     */
-   enum LlwuPinMode {
+   enum LlwuPinMode : uint8_t {
       LlwuPinMode_Disabled      = LLWU_PE1_WUPE0(0)|LLWU_PE1_WUPE1(0)|LLWU_PE1_WUPE2(0)|LLWU_PE1_WUPE3(0),  ///< Wake-up pin disabled
       LlwuPinMode_RisingEdge    = LLWU_PE1_WUPE0(1)|LLWU_PE1_WUPE1(1)|LLWU_PE1_WUPE2(1)|LLWU_PE1_WUPE3(1),  ///< Wake-up on pin rising edge
       LlwuPinMode_FallingEdge   = LLWU_PE1_WUPE0(2)|LLWU_PE1_WUPE1(2)|LLWU_PE1_WUPE2(2)|LLWU_PE1_WUPE3(2),  ///< Wake-up on pin falling edge
@@ -103,8 +104,7 @@ namespace USBDM {
     * Pin filter numbers
     * (pin_filter_numbers)
     *
-    * These are used as an index into the FILT table so 
-    * do NOT correspond to filter names e.g. FILT1 = FILT[0] etc
+    * Selects the filter table entry being used
     */
    enum LlwuFilterNum : uint8_t {
       LlwuFilterNum_1   = 0,  ///< Wake-up pin filter 1
@@ -113,9 +113,9 @@ namespace USBDM {
 
    /**
     * Filter Pin Select
-    * (pin_numbers)
+    * (llwu_filt_filsel)
     *
-    * Selects 1 of the pins to be muxed into the filter
+    * Selects wake-up pin to be used
     */
    enum LlwuPin : uint8_t {
       LlwuPin_Pte1          = 0,   ///< LLWU_P0 [-]
@@ -142,16 +142,27 @@ namespace USBDM {
     *
     * Controls the digital filter options for the filtered external pin detect
     */
-   enum LlwuFilterPinMode {
+   enum LlwuFilterPinMode : uint8_t {
       LlwuFilterPinMode_Disabled      = LLWU_FILT_FILTE(0),  ///< Wake-up disabled
       LlwuFilterPinMode_RisingEdge    = LLWU_FILT_FILTE(1),  ///< Wake-up on filtered rising edge
       LlwuFilterPinMode_FallingEdge   = LLWU_FILT_FILTE(2),  ///< Wake-up on filtered falling edge
       LlwuFilterPinMode_EitherEdge    = LLWU_FILT_FILTE(3),  ///< Wake-up on either filtered edge
    };
 
+
+   // Bit operators for RST register fields
+   constexpr inline uint8_t operator|(LlwuResetWakeup op1, LlwuResetFilter op2) { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(LlwuResetFilter op1, LlwuResetWakeup op2) { return uint8_t(op1)|uint8_t(op2); };
+   
+
+   // Bit operators for FILT register fields
+   constexpr inline uint8_t operator|(LlwuPin op1, LlwuFilterPinMode op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(LlwuFilterPinMode op1, LlwuPin op2)           { return uint8_t(op1)|uint8_t(op2); };
+   
 class LlwuBasicInfo {
 
 public:
+
    //! Common class based callback code has been generated for this class of peripheral
    // (_BasicInfoIrqGuard)
    static constexpr bool irqHandlerInstalled = true;
@@ -173,7 +184,37 @@ public:
    }
    
    /**
+    * Obtain mask for LLWU_PEx_WUPEx from wake-up pin source
+    *
+    * @param llwuPin Selects wake-up pin to be used
+    *
+    * @return Mask to use
+    */
+   static constexpr uint8_t pe_wupe_mask(LlwuPin llwuPin) {
+   
+      /// Array to assist with mapping Pin to register bit-mask
+      constexpr uint8_t pe_wupe_masks[] =
+         {LLWU_PE1_WUPE0_MASK, LLWU_PE1_WUPE1_MASK, LLWU_PE1_WUPE2_MASK, LLWU_PE1_WUPE3_MASK, };
+   
+      return pe_wupe_masks[llwuPin&0x11];
+      //return LLWU_PE1_WUPE0_MASK<<(LLWU_PE1_WUPE1_SHIFT*(llwuPin&0x11));
+   }
+   
+   /**
+    * Obtain index for LLWU_PEx_WUPEx from wake-up pin source
+    *
+    * @param llwuPin Selects wake-up pin to be used
+    *
+    * @return Index to use
+    */
+   static constexpr int pe_wupe_index(LlwuPin llwuPin) {
+   
+      return llwuPin>>2;
+   }
+   
+   /**
     * Configure LLWU peripheral wake-up source
+    * (llwu_me,llwu_me_wume)
     *
     * @param llwuPeripheral       Peripheral used as wake-up source
     * @param llwuPeripheralWakeup Whether this peripheral can wake-up the processor
@@ -195,7 +236,6 @@ public:
     * The mask returned correspond to (multiple) peripheral sources.
     * These flags are cleared through the originating peripheral.
     *
-    *
     * Example checking source
     * @code
     *    if ((peripheralWakeupSource&LlwuPeripheral_Lptmr) != 0) {
@@ -208,12 +248,13 @@ public:
    uint32_t getPeripheralWakeupSources() const {
       return llwu->MF;
    }
-
+   
    /**
-    *  Check if peripheral is source of wake-up
-    *  These flags are cleared through the originating peripheral.
+    * Check if peripheral is source of wake-up
+    * These flags are cleared through the originating peripheral.
+    * (llwu_me,llwu_mf)
     *
-    * @param llwuPeripheral       Peripheral used as wake-up source
+    * @param llwuPeripheral Peripheral used as wake-up source
     *
     * @return false Given peripheral is not source of wake-up.
     * @return true  Given peripheral is source of wake-up.
@@ -221,9 +262,10 @@ public:
    bool isPeripheralWakeupSource(LlwuPeripheral llwuPeripheral) const {
       return llwu->MF & llwuPeripheral;
    }
-
+   
    /**
     * Controls Reset wake-up control
+    * (llwu_rst_rstfilt,llwu_rst_llrste)
     *
     * @param llwuResetFilter Enables the digital filter for the RESET pin during LLS, VLLS3, VLLS2, or VLLS1 modes
     * @param llwuResetWakeup This bit must be set to allow the device to be reset while in a low-leakage power mode.
@@ -242,24 +284,24 @@ public:
     */
    /**
     * Configure pin as wake-up source
+    * (llwu_filt_filsel,llwu_filt_filte,llwu_pe,llwu_pf)
     *
-    * @param[in] llwuPin       Pin to configure
-    * @param[in] llwuPinMode   Mode for pin as wake-up input
+    * @param llwuPin           Selects wake-up pin to be used
+    * @param llwuPinMode       Enables and configures the edge detection for a wake-up pin
     */
    void configurePinSource(
-         LlwuPin     llwuPin,
-         LlwuPinMode llwuPinMode) const {
+         LlwuPin           llwuPin,
+         LlwuPinMode       llwuPinMode) const {
    
-      static const uint8_t masks[] =
-         {LLWU_PE1_WUPE0_MASK, LLWU_PE1_WUPE1_MASK, LLWU_PE1_WUPE2_MASK, LLWU_PE1_WUPE3_MASK, };
-      volatile uint8_t &llwuPe = llwu->PE[llwuPin>>2];
-      uint8_t mask = masks[llwuPin&3];
+      const uint8_t mask = pe_wupe_mask(llwuPin);
+   
+      volatile uint8_t &llwuPe = llwu->PE[pe_wupe_index(llwuPin)];
+   
       llwuPe = (llwuPe&~mask) | (llwuPinMode&mask);
    }
    
    /**
     * Get bit mask indicating wake-up pin sources
-
     * The pin masks correspond to Pin sources.
     *
     * @code
@@ -270,8 +312,12 @@ public:
     *
     * @return Bit mask
     */
+   
    uint32_t getPinWakeupSources() const {
+   
       constexpr unsigned PF_SIZE = sizeof(llwu->PF)/sizeof(llwu->PF[0]);
+   
+      // Combine contents of several 8-bit registers
       if constexpr(PF_SIZE==4) {
          return (llwu->PF[1]<<24)|(llwu->PF[1]<<16)|(llwu->PF[1]<<8)|llwu->PF[0];
       }
@@ -289,30 +335,33 @@ public:
    /**
     * Check if pin is source of wake-up
     *
-    * @param[in] llwuPin  Pin to check
+    * @param llwuPin           Selects wake-up pin to be used
     *
     * @return false Given pin is not source of wake-up.
     * @return true  Given pin is source of wake-up.
     */
-   bool isPinWakeupSource(LlwuPin llwuPin) const {
+   bool isPinWakeupSource(LlwuPin           llwuPin) const {
+   
       return getPinWakeupSources() & (1<<llwuPin);
    }
    
    /**
     * Clear wake-up pin flag
     *
-    *  @param[in] llwuPin Pin indicating which flag to clear
+    * @param llwuPin           Selects wake-up pin to be used
     */
-   void clearPinWakeupFlag(LlwuPin llwuPin) const {
+   void clearPinWakeupFlag(LlwuPin           llwuPin) const {
+   
       llwu->PF[llwuPin>>3] = (1<<(llwuPin&0x7));
    }
    
    /**
     * Clear all wake-up flags
-
+    *
     * Peripherals sources are not cleared since they are controlled by the peripheral
     */
    void clearAllFlags() const {
+   
       clearPinWakeupFlags();
       clearFilteredPinWakeupFlags();
    }
@@ -321,6 +370,7 @@ public:
     * Clear all wake-up pin flags
     */
    void clearPinWakeupFlags() const {
+   
       for(unsigned index=0; index<(sizeof(llwu->PF)/sizeof(llwu->PF[0])); index++) {
          llwu->PF[index] = 0xFF;
       }
@@ -333,10 +383,11 @@ public:
     */
    /**
     * Configure one of the input pins as a filtered wake-up source
+    * (pin_filter_numbers,llwu_filt_filsel,llwu_filt_filte)
     *
-    * @param[in] llwuFilterNum      Filter to configure - number available depends on device
-    * @param[in] llwuPin            Pin to assign to filter
-    * @param[in] llwuFilterPinMode  Mode for pin as wake-up input
+    * @param llwuFilterNum     Selects the filter table entry being used
+    * @param llwuPin           Selects wake-up pin to be used
+    * @param llwuFilterPinMode Controls the digital filter options for the filtered external pin detect
     *
     * @note Filtering is bypassed in VLLS0
     */
@@ -352,28 +403,31 @@ public:
    /**
     * Check if filtered wake-up pin is source of wake-up
     *
-    * @param[in] filterNum Pin Filter to check
+    * @param llwuFilterNum     Selects the filter table entry being used
     *
     * @return false Given filtered pin is not source of wake-up.
     * @return true  Given filtered pin is source of wake-up.
     */
-   bool isFilteredPinWakeupSource(unsigned filterNum) const {
-      return (llwu->FILT[filterNum] & LLWU_FILT_FILTF_MASK);
+   bool isFilteredPinWakeupSource(LlwuFilterNum     llwuFilterNum) const {
+   
+      return (llwu->FILT[llwuFilterNum] & LLWU_FILT_FILTF_MASK);
    }
    
    /**
     * Clear filtered wake-up pin flag
     *
-    * @param[in] filterNum Pin Filter to clear flag
+    * @param llwuFilterNum     Selects the filter table entry being used
     */
-   void clearFilteredPinWakeupFlag(LlwuFilterNum filterNum) const {
-      llwu->FILT[filterNum] = llwu->FILT[filterNum] | LLWU_FILT_FILTF_MASK;
+   void clearFilteredPinWakeupFlag(LlwuFilterNum     llwuFilterNum) const {
+   
+      llwu->FILT[llwuFilterNum] = llwu->FILT[llwuFilterNum] | LLWU_FILT_FILTF_MASK;
    }
    
    /**
     * Clear all filtered wake-up pin flags
     */
    void clearFilteredPinWakeupFlags() const {
+   
       for (unsigned index=0; index<(sizeof(llwu->FILT)/sizeof(llwu->FILT[0])); index++) {
          llwu->FILT[index] = llwu->FILT[index] | LLWU_FILT_FILTF_MASK;
       }
@@ -383,6 +437,7 @@ public:
     * Disable all wake-up sources (pins and peripherals)
     */
    void disableAllSources() const {
+   
       for (unsigned index=0; index<(sizeof(llwu->PE)/(sizeof(llwu->PE[0]))); index++) {
          llwu->PE[index] = 0;
       }
@@ -456,25 +511,21 @@ public:
        */
       constexpr Init() = default;
    
-      /// Array to assist with mapping Pin to register bit-mask
-      static constexpr uint8_t masks[] =
-         {LLWU_PE1_WUPE0_MASK, LLWU_PE1_WUPE1_MASK, LLWU_PE1_WUPE2_MASK, LLWU_PE1_WUPE3_MASK, };
-   
-   
-      /// Pin sources enable
+      // Wake-up pin control (llwu_pe)
       uint8_t pe[4]   = {0};
    
-      /// Filter configurations
+      // Pin Filter Mode (llwu_filt_filte)
       uint8_t filt[2] = {0};
    
-      /// Module (peripheral) sources enable
+      // LLWU peripheral wake-up source (llwu_me)
       uint8_t me      = 0;
    
-      /// Reset Pin Filter configuration
+      // Low-Leakage Mode RESET Enable (llwu_rst_llrste)
       uint8_t rst     = 0;
+   
       /**
        * Constructor for LLWU peripheral wake-up source
-       * (llwu_me_peripherals)
+       * (llwu_me)
        *
        * @tparam   Types
        * @param    rest
@@ -489,20 +540,20 @@ public:
    
       /**
        * Constructor for filtered pin source
+       * (pin_filter_numbers,llwu_filt_filsel,llwu_filt_filte)
        *
        * @tparam Types
        * @param rest
        *
-       * @param llwuFilterNum       Filter to use
-       * @param llwuPin             Peripheral to enable as wake-up source
-       * @param llwuFilterPinMode   Sensitivity of pin
+       * @param llwuFilterNum     Selects the filter table entry being used
+       * @param llwuPin           Selects wake-up pin to be used
+       * @param llwuFilterPinMode Controls the digital filter options for the filtered external pin detect
        */
       template <typename... Types>
       constexpr Init(
             LlwuFilterNum     llwuFilterNum,
             LlwuPin           llwuPin,
-            LlwuFilterPinMode llwuFilterPinMode,
-            Types... rest) : Init(rest...) {
+            LlwuFilterPinMode llwuFilterPinMode, Types... rest) : Init(rest...) {
    
          // LLWU_FILT_FILTF_MASK clears flag on write to register
          filt[llwuFilterNum] = LLWU_FILT_FILTF_MASK|llwuFilterPinMode|llwuPin;
@@ -510,33 +561,41 @@ public:
    
       /**
        * Constructor for unfiltered pin source
+       * (llwu_filt_filsel,llwu_pe)
        *
        * @tparam Types
        * @param rest
        *
-       * @param llwuPin       Peripheral to enable as wake-up source
-       * @param llwuPinMode   Sensitivity of pin
+       * @param llwuPin     Selects wake-up pin to be used
+       * @param llwuPinMode Enables and configures the edge detection for a wake-up pin
        */
       template <typename... Types>
-      constexpr Init(LlwuPin llwuPin, LlwuPinMode llwuPinMode, Types... rest) : Init(rest...) {
+      constexpr Init(
+            LlwuPin     llwuPin,
+            LlwuPinMode llwuPinMode, Types... rest) : Init(rest...) {
    
-         const uint8_t  mask  = masks[llwuPin&3];
-         const int      index = llwuPin>>2;
+         const uint8_t mask  = pe_wupe_mask(llwuPin);
+         const int     index = pe_wupe_index(llwuPin);
    
          pe[index] = (pe[index]&~mask) | (llwuPinMode & mask);
       }
    
       /**
        * Constructor for Reset as wake-up source
+       * (llwu_rst_llrste,llwu_rst_rstfilt)
        *
        * @tparam Types
        * @param rest
        *
-       * @param llwuResetWakeup  Enable/Disable Reset source
-       * @param llwuResetFilter  Enable/Disable Reset pin filter
+       * @param llwuResetWakeup This bit must be set to allow the device to be reset while in a low-leakage power mode.
+       *        On devices where Reset is not a dedicated pin, the RESET pin must also be enabled
+       *        in the explicit port mux control
+       * @param llwuResetFilter Enables the digital filter for the RESET pin during LLS, VLLS3, VLLS2, or VLLS1 modes
        */
       template <typename... Types>
-      constexpr Init(LlwuResetWakeup llwuResetWakeup, LlwuResetFilter llwuResetFilter, Types... rest) : Init(rest...) {
+      constexpr Init(
+            LlwuResetWakeup llwuResetWakeup,
+            LlwuResetFilter llwuResetFilter, Types... rest) : Init(rest...) {
    
          rst = llwuResetWakeup|llwuResetFilter;
       }
@@ -552,25 +611,25 @@ public:
     */
    static void configure(
                   volatile LLWU_Type *llwu,
-                  const Init    &init) {
+                  const    Init      &init) {
    
    
-      // Clear pin flags
-      llwu->PF1 = 0xFF;
-      // Clear pin flags
-      llwu->PF2 = 0xFF;
-      // Configure pin sources
-      llwu->PE1  = init.pe[0];
-      // Configure pin sources
-      llwu->PE2  = init.pe[1];
-      // Configure pin sources
-      llwu->PE3  = init.pe[2];
-      // Configure pin sources
-      llwu->PE4  = init.pe[3];
+      // Indicates which wake-up pin caused exit from LLS/VLLS. (w1c)
+      llwu->PF[0] = 0xFF;
+      // Indicates which wake-up pin caused exit from LLS/VLLS. (w1c)
+      llwu->PF[1] = 0xFF;
+      // Enables and configures the edge detection for a wake-up pin
+      llwu->PE[0] = init.pe[0]; // llwu->PE 
+      // Enables and configures the edge detection for a wake-up pin
+      llwu->PE[1] = init.pe[1]; // llwu->PE 
+      // Enables and configures the edge detection for a wake-up pin
+      llwu->PE[2] = init.pe[2]; // llwu->PE 
+      // Enables and configures the edge detection for a wake-up pin
+      llwu->PE[3] = init.pe[3]; // llwu->PE 
       // Configure and clear filtered pin source
-      llwu->FILT1 = init.filt[0];
+      llwu->FILT[0] = init.filt[0];
       // Configure and clear filtered pin source
-      llwu->FILT2 = init.filt[1];
+      llwu->FILT[1] = init.filt[1];
       // Configure peripheral sources
       llwu->ME    = init.me;
       // Configure filtered reset pin source
@@ -593,6 +652,7 @@ public:
 class LlwuInfo : public LlwuBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 40;
 
@@ -837,6 +897,7 @@ public:
    
    /**
     * Configure LLWU peripheral wake-up source
+    * (llwu_me,llwu_me_wume)
     *
     * @param llwuPeripheral       Peripheral used as wake-up source
     * @param llwuPeripheralWakeup Whether this peripheral can wake-up the processor
@@ -858,7 +919,6 @@ public:
     * The mask returned correspond to (multiple) peripheral sources.
     * These flags are cleared through the originating peripheral.
     *
-    *
     * Example checking source
     * @code
     *    if ((peripheralWakeupSource&LlwuPeripheral_Lptmr) != 0) {
@@ -871,12 +931,13 @@ public:
    static uint32_t getPeripheralWakeupSources() {
       return llwu->MF;
    }
-
+   
    /**
-    *  Check if peripheral is source of wake-up
-    *  These flags are cleared through the originating peripheral.
+    * Check if peripheral is source of wake-up
+    * These flags are cleared through the originating peripheral.
+    * (llwu_me,llwu_mf)
     *
-    * @param llwuPeripheral       Peripheral used as wake-up source
+    * @param llwuPeripheral Peripheral used as wake-up source
     *
     * @return false Given peripheral is not source of wake-up.
     * @return true  Given peripheral is source of wake-up.
@@ -884,9 +945,10 @@ public:
    static bool isPeripheralWakeupSource(LlwuPeripheral llwuPeripheral) {
       return llwu->MF & llwuPeripheral;
    }
-
+   
    /**
     * Controls Reset wake-up control
+    * (llwu_rst_rstfilt,llwu_rst_llrste)
     *
     * @param llwuResetFilter Enables the digital filter for the RESET pin during LLS, VLLS3, VLLS2, or VLLS1 modes
     * @param llwuResetWakeup This bit must be set to allow the device to be reset while in a low-leakage power mode.
@@ -905,24 +967,24 @@ public:
     */
    /**
     * Configure pin as wake-up source
+    * (llwu_filt_filsel,llwu_filt_filte,llwu_pe,llwu_pf)
     *
-    * @param[in] llwuPin       Pin to configure
-    * @param[in] llwuPinMode   Mode for pin as wake-up input
+    * @param llwuPin           Selects wake-up pin to be used
+    * @param llwuPinMode       Enables and configures the edge detection for a wake-up pin
     */
    static void configurePinSource(
-         LlwuPin     llwuPin,
-         LlwuPinMode llwuPinMode) {
+         LlwuPin           llwuPin,
+         LlwuPinMode       llwuPinMode) {
    
-      static const uint8_t masks[] =
-         {LLWU_PE1_WUPE0_MASK, LLWU_PE1_WUPE1_MASK, LLWU_PE1_WUPE2_MASK, LLWU_PE1_WUPE3_MASK, };
-      volatile uint8_t &llwuPe = llwu->PE[llwuPin>>2];
-      uint8_t mask = masks[llwuPin&3];
+      const uint8_t mask = pe_wupe_mask(llwuPin);
+   
+      volatile uint8_t &llwuPe = llwu->PE[pe_wupe_index(llwuPin)];
+   
       llwuPe = (llwuPe&~mask) | (llwuPinMode&mask);
    }
    
    /**
     * Get bit mask indicating wake-up pin sources
-
     * The pin masks correspond to Pin sources.
     *
     * @code
@@ -933,8 +995,12 @@ public:
     *
     * @return Bit mask
     */
+   
    static uint32_t getPinWakeupSources() {
+   
       constexpr unsigned PF_SIZE = sizeof(llwu->PF)/sizeof(llwu->PF[0]);
+   
+      // Combine contents of several 8-bit registers
       if constexpr(PF_SIZE==4) {
          return (llwu->PF[1]<<24)|(llwu->PF[1]<<16)|(llwu->PF[1]<<8)|llwu->PF[0];
       }
@@ -952,30 +1018,33 @@ public:
    /**
     * Check if pin is source of wake-up
     *
-    * @param[in] llwuPin  Pin to check
+    * @param llwuPin           Selects wake-up pin to be used
     *
     * @return false Given pin is not source of wake-up.
     * @return true  Given pin is source of wake-up.
     */
-   static bool isPinWakeupSource(LlwuPin llwuPin) {
+   static bool isPinWakeupSource(LlwuPin           llwuPin) {
+   
       return getPinWakeupSources() & (1<<llwuPin);
    }
    
    /**
     * Clear wake-up pin flag
     *
-    *  @param[in] llwuPin Pin indicating which flag to clear
+    * @param llwuPin           Selects wake-up pin to be used
     */
-   static void clearPinWakeupFlag(LlwuPin llwuPin) {
+   static void clearPinWakeupFlag(LlwuPin           llwuPin) {
+   
       llwu->PF[llwuPin>>3] = (1<<(llwuPin&0x7));
    }
    
    /**
     * Clear all wake-up flags
-
+    *
     * Peripherals sources are not cleared since they are controlled by the peripheral
     */
    static void clearAllFlags() {
+   
       clearPinWakeupFlags();
       clearFilteredPinWakeupFlags();
    }
@@ -984,6 +1053,7 @@ public:
     * Clear all wake-up pin flags
     */
    static void clearPinWakeupFlags() {
+   
       for(unsigned index=0; index<(sizeof(llwu->PF)/sizeof(llwu->PF[0])); index++) {
          llwu->PF[index] = 0xFF;
       }
@@ -996,10 +1066,11 @@ public:
     */
    /**
     * Configure one of the input pins as a filtered wake-up source
+    * (pin_filter_numbers,llwu_filt_filsel,llwu_filt_filte)
     *
-    * @param[in] llwuFilterNum      Filter to configure - number available depends on device
-    * @param[in] llwuPin            Pin to assign to filter
-    * @param[in] llwuFilterPinMode  Mode for pin as wake-up input
+    * @param llwuFilterNum     Selects the filter table entry being used
+    * @param llwuPin           Selects wake-up pin to be used
+    * @param llwuFilterPinMode Controls the digital filter options for the filtered external pin detect
     *
     * @note Filtering is bypassed in VLLS0
     */
@@ -1015,28 +1086,31 @@ public:
    /**
     * Check if filtered wake-up pin is source of wake-up
     *
-    * @param[in] filterNum Pin Filter to check
+    * @param llwuFilterNum     Selects the filter table entry being used
     *
     * @return false Given filtered pin is not source of wake-up.
     * @return true  Given filtered pin is source of wake-up.
     */
-   static bool isFilteredPinWakeupSource(unsigned filterNum) {
-      return (llwu->FILT[filterNum] & LLWU_FILT_FILTF_MASK);
+   static bool isFilteredPinWakeupSource(LlwuFilterNum     llwuFilterNum) {
+   
+      return (llwu->FILT[llwuFilterNum] & LLWU_FILT_FILTF_MASK);
    }
    
    /**
     * Clear filtered wake-up pin flag
     *
-    * @param[in] filterNum Pin Filter to clear flag
+    * @param llwuFilterNum     Selects the filter table entry being used
     */
-   static void clearFilteredPinWakeupFlag(LlwuFilterNum filterNum) {
-      llwu->FILT[filterNum] = llwu->FILT[filterNum] | LLWU_FILT_FILTF_MASK;
+   static void clearFilteredPinWakeupFlag(LlwuFilterNum     llwuFilterNum) {
+   
+      llwu->FILT[llwuFilterNum] = llwu->FILT[llwuFilterNum] | LLWU_FILT_FILTF_MASK;
    }
    
    /**
     * Clear all filtered wake-up pin flags
     */
    static void clearFilteredPinWakeupFlags() {
+   
       for (unsigned index=0; index<(sizeof(llwu->FILT)/sizeof(llwu->FILT[0])); index++) {
          llwu->FILT[index] = llwu->FILT[index] | LLWU_FILT_FILTF_MASK;
       }
@@ -1046,6 +1120,7 @@ public:
     * Disable all wake-up sources (pins and peripherals)
     */
    static void disableAllSources() {
+   
       for (unsigned index=0; index<(sizeof(llwu->PE)/(sizeof(llwu->PE[0]))); index++) {
          llwu->PE[index] = 0;
       }

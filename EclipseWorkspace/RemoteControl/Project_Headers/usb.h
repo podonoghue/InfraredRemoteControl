@@ -136,14 +136,17 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
 class UsbBasicInfo {
 
 public:
+
 }; // class UsbBasicInfo 
 
 class Usb0Info : public UsbBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 4;
 

@@ -34,6 +34,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Allow Very Low Power modes
     * (smc_pmprot_avlp)
@@ -159,6 +160,29 @@ namespace USBDM {
       SmcStatus_VLLS   = SMC_PMSTAT_PMSTAT(1<<6),  ///< Processor is in Very Low Leakage Stop mode
    };
 
+
+   // Bit operators for PMPROT register fields
+   constexpr inline uint8_t operator|(SmcAllowVeryLowPower op1, SmcAllowLowLeakageStop op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcAllowVeryLowPower op1, SmcAllowVeryLowLeakageStop op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcAllowLowLeakageStop op1, SmcAllowVeryLowPower op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcAllowLowLeakageStop op1, SmcAllowVeryLowLeakageStop op2)     { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcAllowVeryLowLeakageStop op1, SmcAllowVeryLowPower op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcAllowVeryLowLeakageStop op1, SmcAllowLowLeakageStop op2)     { return uint8_t(op1)|uint8_t(op2); };
+   
+
+   // Bit operators for PMCTRL register fields
+   constexpr inline uint8_t operator|(SmcRunMode op1, SmcExitLowPowerOnInt op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcRunMode op1, SmcStopMode op2)                    { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcExitLowPowerOnInt op1, SmcRunMode op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcExitLowPowerOnInt op1, SmcStopMode op2)          { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcStopMode op1, SmcRunMode op2)                    { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcStopMode op1, SmcExitLowPowerOnInt op2)          { return uint8_t(op1)|uint8_t(op2); };
+   
+
+   // Bit operators for STOPCTRL register fields
+   constexpr inline uint8_t operator|(SmcPowerOnResetInVlls0 op1, SmcLowLeakageStopMode op2)  { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcLowLeakageStopMode op1, SmcPowerOnResetInVlls0 op2)  { return uint8_t(op1)|uint8_t(op2); };
+   
    consteval uint32_t make16(uint8_t pmctrl, uint8_t stopctrl=0, uint8_t bias=0) {
       return pmctrl+(stopctrl<<8)+(bias<<16);
    }
@@ -185,6 +209,7 @@ namespace USBDM {
 class SmcInfo {
 
 public:
+
    /*
     * Template:smc_mk10d5
     */
@@ -225,7 +250,8 @@ public:
    /**
     * Enable the given power modes
     * A mode must be enabled before it can be entered.
-   
+    * (smc_pmprot_avlp,smc_pmprot_alls,smc_pmprot_avlls)
+    *
     * @note This is a write-once operation after reset
     *
     * @param smcAllowVeryLowPower       Allows the MCU to enter any very low power modes: VLPR, VLPW, and VLPS
@@ -256,7 +282,7 @@ public:
          return setErrorCode(E_ILLEGAL_POWER_TRANSITION);
       }
    
-      smc->PMCTRL = (smc->PMCTRL&~SMC_PMCTRL_LPWUI_MASK) | smcExitLowPowerOnInt;
+      smc->PMCTRL = (smc->PMCTRL&~SMC_PMCTRL_LPWUI_MASK) | uint32_t(smcExitLowPowerOnInt);
    
       // Make sure write completes
       (void)smc->PMCTRL;
@@ -270,7 +296,7 @@ public:
     * @param smcPowerOnResetInVlls0 Controls whether the Power-On-Reset detect circuit is enabled in VLLS0 mode (Brown-out detection)
     */
    static void setPowerOnResetInVLLS0(SmcPowerOnResetInVlls0 smcPowerOnResetInVlls0) {
-      smc->STOPCTRL = (smc->STOPCTRL&~SMC_STOPCTRL_PORPO_MASK) | smcPowerOnResetInVlls0;
+      smc->STOPCTRL = (smc->STOPCTRL&~SMC_STOPCTRL_PORPO_MASK) | uint32_t(smcPowerOnResetInVlls0);
    }
 
    /**
@@ -280,7 +306,7 @@ public:
     * @param smcLowLeakageStopMode Controls which VLLS sub-mode to enter if STOPM = VLLSx
     */
    static void setLowLeakageStopMode(SmcLowLeakageStopMode smcLowLeakageStopMode) {
-      smc->STOPCTRL = (smc->STOPCTRL&~SMC_STOPCTRL_VLLSM_MASK) | smcLowLeakageStopMode;
+      smc->STOPCTRL = (smc->STOPCTRL&~SMC_STOPCTRL_VLLSM_MASK) | uint32_t(smcLowLeakageStopMode);
    }
 
    /**
@@ -306,7 +332,7 @@ public:
     *        This field is cleared by hardware on any successful write to the PMPROT register
     */
    static void setStopMode(SmcStopMode smcStopMode) {
-      smc->PMCTRL = (smc->PMCTRL&~SMC_PMCTRL_STOPM_MASK) | smcStopMode;
+      smc->PMCTRL = (smc->PMCTRL&~SMC_PMCTRL_STOPM_MASK) | uint32_t(smcStopMode);
       // Make sure write has completed
       (void)(smc->PMCTRL);
    }
@@ -455,7 +481,7 @@ public:
       template <typename... Types>
       constexpr Init(SmcAllowVeryLowPower smcAllowVeryLowPower, Types... rest) : Init(rest...) {
    
-         pmprot = (pmprot&~SMC_PMPROT_AVLP_MASK) | smcAllowVeryLowPower;
+         pmprot = (pmprot&~SMC_PMPROT_AVLP_MASK) | uint32_t(smcAllowVeryLowPower);
       }
    
       /**
@@ -470,7 +496,7 @@ public:
       template <typename... Types>
       constexpr Init(SmcAllowLowLeakageStop smcAllowLowLeakageStop, Types... rest) : Init(rest...) {
    
-         pmprot = (pmprot&~SMC_PMPROT_ALLS_MASK) | smcAllowLowLeakageStop;
+         pmprot = (pmprot&~SMC_PMPROT_ALLS_MASK) | uint32_t(smcAllowLowLeakageStop);
       }
    
       /**
@@ -485,7 +511,7 @@ public:
       template <typename... Types>
       constexpr Init(SmcAllowVeryLowLeakageStop smcAllowVeryLowLeakageStop, Types... rest) : Init(rest...) {
    
-         pmprot = (pmprot&~SMC_PMPROT_AVLLS_MASK) | smcAllowVeryLowLeakageStop;
+         pmprot = (pmprot&~SMC_PMPROT_AVLLS_MASK) | uint32_t(smcAllowVeryLowLeakageStop);
       }
    
       /**
@@ -502,7 +528,7 @@ public:
       template <typename... Types>
       constexpr Init(SmcStopMode smcStopMode, Types... rest) : Init(rest...) {
    
-         pmctrl = (pmctrl&~SMC_PMCTRL_STOPM_MASK) | smcStopMode;
+         pmctrl = (pmctrl&~SMC_PMCTRL_STOPM_MASK) | uint32_t(smcStopMode);
       }
    
       /**
@@ -518,7 +544,7 @@ public:
       template <typename... Types>
       constexpr Init(SmcExitLowPowerOnInt smcExitLowPowerOnInt, Types... rest) : Init(rest...) {
    
-         pmctrl = (pmctrl&~SMC_PMCTRL_LPWUI_MASK) | smcExitLowPowerOnInt;
+         pmctrl = (pmctrl&~SMC_PMCTRL_LPWUI_MASK) | uint32_t(smcExitLowPowerOnInt);
       }
    
       /**
@@ -533,7 +559,7 @@ public:
       template <typename... Types>
       constexpr Init(SmcPowerOnResetInVlls0 smcPowerOnResetInVlls0, Types... rest) : Init(rest...) {
    
-         stopctrl = (stopctrl&~SMC_STOPCTRL_PORPO_MASK) | smcPowerOnResetInVlls0;
+         stopctrl = (stopctrl&~SMC_STOPCTRL_PORPO_MASK) | uint32_t(smcPowerOnResetInVlls0);
       }
    
       /**
@@ -548,7 +574,7 @@ public:
       template <typename... Types>
       constexpr Init(SmcLowLeakageStopMode smcLowLeakageStopMode, Types... rest) : Init(rest...) {
    
-         stopctrl = (stopctrl&~SMC_STOPCTRL_VLLSM_MASK) | smcLowLeakageStopMode;
+         stopctrl = (stopctrl&~SMC_STOPCTRL_VLLSM_MASK) | uint32_t(smcLowLeakageStopMode);
       }
    
    }; // class Smc/Init

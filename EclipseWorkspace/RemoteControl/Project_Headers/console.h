@@ -15,7 +15,7 @@
 
 #ifndef INCLUDE_USBDM_CONSOLE_H_
 #define INCLUDE_USBDM_CONSOLE_H_
-#include <derivative.h>
+#include "derivative.h"
 
 #if true // /UART/_CommonInfoGuard
 #include "uart.h"

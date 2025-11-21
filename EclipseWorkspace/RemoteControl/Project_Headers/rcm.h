@@ -31,6 +31,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Reset pin filter select in low power modes
     * (rcm_rpfc_rstfltss)
@@ -110,11 +111,13 @@ namespace USBDM {
 class RcmBasicInfo {
 
 public:
+
 }; // class RcmBasicInfo 
 
 class RcmInfo : public RcmBasicInfo {
 
 public:
+
    /*
     * Template:rcm_mk10d5
     */

@@ -8,18 +8,18 @@
  *  Created on: 04/03/2012
  *      Author: podonoghue
  */
-#include "string.h"
-#include "derivative.h"
-#include "system.h"
-#include "stdbool.h"
-#include "pin_mapping.h"
-#include "sim.h"
-#include "osc.h"
-#include "osc.h"
-#include "rtc.h"
+#include <string.h>
+#include "../Project_Headers/derivative.h"
+#include "../Project_Headers/system.h"
+#include <stdbool.h>
+#include "../Project_Headers/pin_mapping.h"
+#include "../Project_Headers/sim.h"
+#include "../Project_Headers/osc.h"
+#include "../Project_Headers/osc.h"
+#include "../Project_Headers/rtc.h"
 
-#include "smc.h"
-#include "mcg.h"
+#include "../Project_Headers/smc.h"
+#include "../Project_Headers/mcg.h"
 #ifdef MCG_C11_PLLCS_MASK
 #include "usbphy.h"
 #endif
@@ -73,7 +73,7 @@ const ClockInfo Mcg::clockInfo[] = {
 
       /// Control Register 2 - Excluding LP, FCTRIM 
       McgOsc0LossOfClockAction_Interrupt | // (mcg_c2_locre0[0])         OSC0 Action on Loss of Clock - Interrupt request
-      McgRange0_High |                  // (mcg_c2_range0[0])         Frequency Range Select - High range
+      McgRange0_VeryHigh |              // (mcg_c2_range0[0])         Frequency Range Select - Very High range
       OscMode_LowPowerOscillator |      // (oscMode)                  OSC0 mode - Low Power Oscillator
       McgIrClkSrc_Fast,                 // (mcg_c2_ircs[0])           Internal Reference Clock [MCGIRCLK] Source - Fast internal reference clock
 
@@ -84,7 +84,7 @@ const ClockInfo Mcg::clockInfo[] = {
       /// Control Register 5 
       McgPllEnable_AsNeeded |           // (mcg_c5_pllclken0[0])      PLL0 Enable - PLL active as needed
       McgPllStopEnable_DisabledInStop | // (mcg_c5_pllsten0[0])       PLL Stop Enable - PLL0 is disabled in any Stop mode
-      1,                                // (mcg_c5_prdiv0[0])         PLL0 External Reference Divider
+      3,                                // (mcg_c5_prdiv0[0])         PLL0 External Reference Divider
 
       /// Control Register 6 
       McgPllLossOfClockInterrupt_Disabled | // (mcg_c6_lolie0[0])         PLL Loss of Lock Interrupt Enable - No interrupt request

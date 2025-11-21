@@ -19,6 +19,7 @@
  */
 #include <stddef.h>
 #include "derivative.h"
+#include "pin_mapping.h"
 #ifdef RELEASE_BUILD
 #include "bitband.h"
 #endif
@@ -502,7 +503,7 @@ public:
     * @note Resets the Pin Control Register value (PCR value).
     * @note Resets the pin output value to the inactive state
     *
-    * @param[in] pcrInit PCR value to use in configuring pin (excluding MUX value).
+    * @param[in] pcrValue PCR value to use in configuring pin (excluding MUX value).
     */
    static void setInOut(const PcrValue &pcrValue) {
       // Make input initially
@@ -585,7 +586,7 @@ public:
     * @note Resets the pin value to the inactive state
     * @note Use setOut() for a lightweight change of direction without affecting other pin settings.
     *
-    * @param[in] pcrInit PCR value to use in configuring port (excluding MUX value).
+    * @param[in] pcrValue PCR value to use in configuring port (excluding MUX value).
     */
    static void setOutput(const PcrValue &pcrValue) {
       // Set initial level before enabling pin drive
@@ -661,7 +662,7 @@ public:
     * @note Resets the Pin Control Register value (PCR value).
     * @note Use setIn() for a lightweight change of direction without affecting other pin settings.
     *
-    * @param[in] pcrInit PCR value to use in configuring port (excluding MUX value)
+    * @param[in] pcrValue PCR value to use in configuring port (excluding MUX value)
     */
    static void setInput(const PcrValue &pcrValue) {
       // Make pin an input

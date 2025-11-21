@@ -5,9 +5,11 @@
 -->
 
 <section name="USBDM">
-   <item key="$$DeviceInfo_Device_Variant"                 value="MK20DX128VLF5" />
+   <item key="$$DeviceInfo_Device_Variant"                 value="MK20DX64VLF5" />
    <item key="$$DeviceInfo_SubFamily"                      value="MK20D5" />
    <item key="$$Hardware_Source_Filename"                  value="MK20D5.usbdmHardware" />
+   <item key="$peripheral$GPIOB_polarity"                  value="1" />
+   <item key="$peripheral$GPIOD_polarity"                  value="15" />
    <item key="$peripheral$SPI0_codeIdentifier"             value="MySPI" />
    <item key="$pin$PTA0_pcrSetting_7"                      value="700" />
    <item key="$pin$PTA18_pcrSetting_0"                     value="0" />
@@ -18,7 +20,6 @@
    <item key="$pin$PTA4_pcrSetting_1"                      value="100" />
    <item key="$pin$PTB0_pcrSetting_1"                      value="100" />
    <item key="$pin$PTB1_pcrSetting_1"                      value="100" />
-   <item key="$pin$PTB2_pcrSetting_1"                      value="100" />
    <item key="$pin$PTB3_pcrSetting_0"                      value="0" />
    <item key="$pin$PTC1_pcrSetting_2"                      value="200" />
    <item key="$pin$PTC2_pcrSetting_2"                      value="200" />
@@ -26,7 +27,7 @@
    <item key="$pin$PTC4_pcrSetting_1"                      value="100" />
    <item key="$pin$PTC5_pcrSetting_2"                      value="200" />
    <item key="$pin$PTC6_pcrSetting_2"                      value="200" />
-   <item key="$pin$PTC7_pcrSetting_2"                      value="200" />
+   <item key="$pin$PTC7_pcrSetting_2"                      value="203" />
    <item key="$pin$PTD0_pcrSetting_1"                      value="100" />
    <item key="$pin$PTD1_pcrSetting_1"                      value="100" />
    <item key="$pin$PTD2_pcrSetting_1"                      value="100" />
@@ -42,14 +43,12 @@
    <item key="$signal$GPIOA_4_descriptionSetting"          value="IR Receiver" />
    <item key="$signal$GPIOB_0_codeIdentifier"              value="Charging" />
    <item key="$signal$GPIOB_0_descriptionSetting"          value="Charging detection" />
-   <item key="$signal$GPIOB_1_codeIdentifier"              value="TftResetPin" />
+   <item key="$signal$GPIOB_1_codeIdentifier"              value="TftReset" />
    <item key="$signal$GPIOB_1_descriptionSetting"          value="TFT Reset " />
-   <item key="$signal$GPIOB_2_codeIdentifier"              value="TftBusyPin" />
-   <item key="$signal$GPIOB_2_descriptionSetting"          value="TFT Busy Pin" />
    <item key="$signal$GPIOC_4_codeIdentifier"              value="TftBacklight" />
    <item key="$signal$GPIOC_4_descriptionSetting"          value="TFT Backlight" />
-   <item key="$signal$GPIOD_0_codeIdentifier"              value="Switch4/Switches" />
-   <item key="$signal$GPIOD_0_descriptionSetting"          value="Switch 4" />
+   <item key="$signal$GPIOD_0_codeIdentifier"              value="Switch4a/Switches" />
+   <item key="$signal$GPIOD_0_descriptionSetting"          value="Switch 4x" />
    <item key="$signal$GPIOD_1_codeIdentifier"              value="Switch3/Switches" />
    <item key="$signal$GPIOD_1_descriptionSetting"          value="Switch 3" />
    <item key="$signal$GPIOD_2_codeIdentifier"              value="Switch2/Switches" />
@@ -59,9 +58,10 @@
    <item key="$signal$GPIOD_4_codeIdentifier"              value="TouchIrq" />
    <item key="$signal$GPIOD_4_descriptionSetting"          value="Touch Panel IRQ" />
    <item key="$signal$GPIOD_5_codeIdentifier"              value="DebugLed" />
-   <item key="$signal$GPIOD_5_descriptionSetting"          value="Debug LED" />
+   <item key="$signal$GPIOD_5_descriptionSetting"          value="DebugLed" />
    <item key="$signal$LLWU_P14_codeIdentifier"             value="TouchWakeup" />
    <item key="$signal$LLWU_P14_descriptionSetting"         value="Touch Wakeup" />
+   <item key="$signal$PIT_CH0_codeIdentifier"              value="ButtonTimerChannel" />
    <item key="$signal$RESET_b_codeIdentifier"              value="Resetb" />
    <item key="$signal$RESET_b_descriptionSetting"          value="Reset*" />
    <item key="$signal$SPI0_PCS1_codeIdentifier"            value="TouchCs" />
@@ -122,8 +122,14 @@
    <item key="/FTM1/synchronisationConfiguration"          value="" />
    <item key="/FTM1/triggerGeneration"                     value="" />
    <item key="/GPIOD/irqHandlingMethod"                    value="$ClassMethod" />
-   <item key="/LINKER/heapSize"                            value="4096" />
-   <item key="/LINKER/stackSize"                           value="4096" />
+   <item key="/GPIOE/enablePeripheralSupport"              value="false" />
+   <item key="/HARDWARE/warnMultipleSignalsOnPin"          value="true" />
+   <item key="/LINKER/data_rom"                            value="flexNVM" />
+   <item key="/LINKER/heapSize"                            value="8192" />
+   <item key="/LINKER/heap_ram"                            value="ram_high" />
+   <item key="/LINKER/rodata_rom"                          value="flexNVM" />
+   <item key="/LINKER/stackSize"                           value="2048" />
+   <item key="/LINKER/stack_ram"                           value="flexRAM" />
    <item key="/LLWU/enablePeripheralSupport"               value="true" />
    <item key="/LLWU/irqHandlingMethod"                     value="$ClassMethod" />
    <item key="/LLWU/llwu_filt1_filte"                      value="2" />
@@ -135,21 +141,28 @@
    <item key="/MCG/ClockConfig[2]"                         value="ClockConfig_RUN_FEE_40MHz" />
    <item key="/MCG/ClockConfig[3]"                         value="ClockConfig_RUN_FEI_42MHz" />
    <item key="/MCG/ERRATA_E7993"                           value="false" />
+   <item key="/MCG/configurePeripheralInStartUp"           value="true" />
    <item key="/MCG/enablePeripheralSupport"                value="true" />
    <item key="/MCG/mcgClockMode[0]"                        value="7" />
    <item key="/MCG/mcgClockMode[1]"                        value="5" />
    <item key="/MCG/mcgClockMode[2]"                        value="1" />
    <item key="/MCG/mcg_c1_frdiv[0]"                        value="11" />
-   <item key="/MCG/mcg_c2_range0[0]"                       value="1" />
-   <item key="/MCG/mcg_c2_range0[1]"                       value="1" />
-   <item key="/MCG/mcg_c2_range0[2]"                       value="1" />
-   <item key="/MCG/mcg_c2_range0[3]"                       value="1" />
+   <item key="/MCG/mcg_c2_range0[0]"                       value="2" />
+   <item key="/MCG/mcg_c2_range0[1]"                       value="2" />
+   <item key="/MCG/mcg_c2_range0[2]"                       value="2" />
+   <item key="/MCG/mcg_c2_range0[3]"                       value="2" />
    <item key="/MCG/pll0OutputFrequency[0]"                 value="96000000" />
    <item key="/MCG/pll0OutputFrequency[3]"                 value="96000000" />
    <item key="/OSC0/configurePeripheralInStartUp"          value="true" />
    <item key="/OSC0/enablePeripheralSupport"               value="true" />
+   <item key="/OSC0/osc_input_freq"                        value="16000000" />
+   <item key="/PIT/enableGettersAndSetters"                value="true" />
    <item key="/PIT/enablePeripheralSupport"                value="true" />
+   <item key="/PIT/irqHandlerName_Ch0"                     value="buttonCallback" />
    <item key="/PIT/irqHandlingMethod"                      value="$ClassMethod" />
+   <item key="/PIT/pit_ldval_tsv[0]"                       value="479999" />
+   <item key="/PIT/pit_tctrl_ten[0]"                       value="true" />
+   <item key="/PIT/pit_tctrl_tie[0]"                       value="true" />
    <item key="/SIM/configurePeripheralInStartUp"           value="true" />
    <item key="/SIM/enablePeripheralSupport"                value="true" />
    <item key="/SIM/sim_clkdiv1_outdiv4[0]"                 value="3" />
@@ -160,7 +173,17 @@
    <item key="/SIM/sim_clkdiv2_usb[2]"                     value="9" />
    <item key="/SIM/sim_clkdiv2_usb[3]"                     value="2" />
    <item key="/SIM/sim_sopt1_osc32ksel"                    value="2" />
+   <item key="/SIM/sim_sopt2_pllfllsel[0]"                 value="1" />
+   <item key="/SIM/sim_sopt2_pllfllsel[1]"                 value="1" />
    <item key="/SIM/sim_sopt2_pllfllsel[2]"                 value="1" />
+   <item key="/SIM/sim_sopt2_usbsrc[0]"                    value="0" />
+   <item key="/SIM/sim_sopt2_usbsrc[1]"                    value="0" />
+   <item key="/SIM/sim_sopt2_usbsrc[2]"                    value="0" />
+   <item key="/SIM/sim_sopt2_usbsrc[3]"                    value="0" />
+   <item key="/SIM/system_core_clock[1]"                   value="0" />
+   <item key="/SIM/system_core_clock[2]"                   value="0" />
+   <item key="/SIM/system_core_clock[3]"                   value="0" />
+   <item key="/SIM/system_usb_clkin_clock"                 value="48000000" />
    <item key="/SMC/enablePeripheralSupport"                value="true" />
    <item key="/SMC/smc_pmctrl_runm[1]"                     value="2" />
    <item key="/SPI0/enablePeripheralSupport"               value="true" />

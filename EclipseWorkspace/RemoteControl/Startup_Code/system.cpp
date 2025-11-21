@@ -7,16 +7,20 @@
  */
 
 #include <stdint.h>
-#include "derivative.h"
-#include "pmc.h"
-#include "sim.h"
-#include "wdog.h"
+#include "../Project_Headers/derivative.h"
+#include "../Project_Headers/pmc.h"
+#include "../Project_Headers/sim.h"
+#include "../Project_Headers/wdog.h"
 
 
 /* This definition is overridden if Clock initialisation is provided */
 __attribute__((__weak__))
 void SystemCoreClockUpdate(void) {
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
    /**
     *  System Core Clock
@@ -34,10 +38,6 @@ void SystemCoreClockUpdate(void) {
    uint32_t SystemBusClock;
    
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Actual Vector table */
 extern int const __vector_table[];

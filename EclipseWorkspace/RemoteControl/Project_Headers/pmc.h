@@ -34,6 +34,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Low-voltage detect action
     * (pmc_lvdsc1_action)
@@ -179,11 +180,13 @@ namespace USBDM {
 class PmcBasicInfo {
 
 public:
+
 }; // class PmcBasicInfo 
 
 class PmcInfo : public PmcBasicInfo {
 
 public:
+
    /*
     * Template:pmc_mk
     */

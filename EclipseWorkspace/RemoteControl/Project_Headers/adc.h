@@ -20,9 +20,9 @@
 #if true // /ADC/_BasicInfoGuard
 
 namespace USBDM {
-// Forward declaration
-enum AdcChannelNum : uint8_t;
-}
+   // Forward declaration
+   enum class AdcChannelNum : uint8_t;
+}; // namespace USBDM
 
 // No handler defined for ADC0
 
@@ -39,13 +39,14 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * ADC Channel number
     * (adc_sc1_channel)
     *
     * Selects an ADC channel
     */
-   enum AdcChannelNum : uint8_t {
+   enum class AdcChannelNum : uint8_t {
       AdcChannelNum_Se0         = 0,   ///< Channel SE0
       AdcChannelNum_Se1         = 1,   ///< Channel SE1
       AdcChannelNum_Se2         = 2,   ///< Channel SE2
@@ -95,39 +96,39 @@ namespace USBDM {
    };
 
    /**
-    * ADC Channel number
+    * ADC0 Channel number
     * (adc0_sc1_channel)
     *
-    * Selects an ADC channel
+    * Selects an ADC0 channel
     */
-   static constexpr AdcChannelNum Adc0ChannelNum_Se0            = AdcChannelNum_Se0;    ///< ADC0_SE0 [ADC0_DP0(p7)]
-   static constexpr AdcChannelNum Adc0ChannelNum_Adc0_dp0       = AdcChannelNum_Se0;    ///< Pin ADC0_DP0
-   static constexpr AdcChannelNum Adc0ChannelNum_Se3            = AdcChannelNum_Se3;    ///< ADC0_SE3 [ADC0_DP3]
-   static constexpr AdcChannelNum Adc0ChannelNum_Adc0_dp3       = AdcChannelNum_Se3;    ///< Pin ADC0_DP3
-   static constexpr AdcChannelNum Adc0ChannelNum_Se8            = AdcChannelNum_Se8;    ///< ADC0_SE8 [-]
-   static constexpr AdcChannelNum Adc0ChannelNum_Se9            = AdcChannelNum_Se9;    ///< ADC0_SE9 [-]
-   static constexpr AdcChannelNum Adc0ChannelNum_Se12           = AdcChannelNum_Se12;   ///< ADC0_SE12 [-]
-   static constexpr AdcChannelNum Adc0ChannelNum_Se13           = AdcChannelNum_Se13;   ///< Battery Level [PTB3(p30)]
-   static constexpr AdcChannelNum Adc0ChannelNum_BatteryLevel   = AdcChannelNum_Se13;   ///< Battery Level
-   static constexpr AdcChannelNum Adc0ChannelNum_Ptb3           = AdcChannelNum_Se13;   ///< Pin PTB3
-   static constexpr AdcChannelNum Adc0ChannelNum_Se14           = AdcChannelNum_Se14;   ///< ADC0_SE14 [-]
-   static constexpr AdcChannelNum Adc0ChannelNum_Se15           = AdcChannelNum_Se15;   ///< ADC0_SE15 [-]
-   static constexpr AdcChannelNum Adc0ChannelNum_Se19           = AdcChannelNum_Se19;   ///< ADC0_SE19 [ADC0_DM0(p8)]
-   static constexpr AdcChannelNum Adc0ChannelNum_Adc0_dm0       = AdcChannelNum_Se19;   ///< Pin ADC0_DM0
-   static constexpr AdcChannelNum Adc0ChannelNum_Se21           = AdcChannelNum_Se21;   ///< ADC0_SE21 [ADC0_DM3]
-   static constexpr AdcChannelNum Adc0ChannelNum_Adc0_dm3       = AdcChannelNum_Se21;   ///< Pin ADC0_DM3
-   static constexpr AdcChannelNum Adc0ChannelNum_Se23           = AdcChannelNum_Se23;   ///< ADC0_SE23 [ADC0_SE23]
-   static constexpr AdcChannelNum Adc0ChannelNum_Adc0_se23      = AdcChannelNum_Se23;   ///< Pin ADC0_SE23
-   static constexpr AdcChannelNum Adc0ChannelNum_Se26           = AdcChannelNum_Se26;   ///< ADC0_SE26 [TEMP_SENSOR(Internal)]
-   static constexpr AdcChannelNum Adc0ChannelNum_Temp_sensor    = AdcChannelNum_Se26;   ///< Pin TEMP_SENSOR
-   static constexpr AdcChannelNum Adc0ChannelNum_Se27           = AdcChannelNum_Se27;   ///< ADC0_SE27 [BANDGAP(Internal)]
-   static constexpr AdcChannelNum Adc0ChannelNum_Bandgap        = AdcChannelNum_Se27;   ///< Pin BANDGAP
-   static constexpr AdcChannelNum Adc0ChannelNum_Se4b           = AdcChannelNum_Se4b;   ///< ADC0_SE4b [-]
-   static constexpr AdcChannelNum Adc0ChannelNum_Se5b           = AdcChannelNum_Se5b;   ///< ADC0_SE5b [-]
-   static constexpr AdcChannelNum Adc0ChannelNum_Se6b           = AdcChannelNum_Se6b;   ///< ADC0_SE6b [-]
-   static constexpr AdcChannelNum Adc0ChannelNum_Se7b           = AdcChannelNum_Se7b;   ///< ADC0_SE7b [-]
-   static constexpr AdcChannelNum Adc0ChannelNum_Diff0          = AdcChannelNum_Diff0;  ///< ADC0_DP0 [ADC0_DP0(p7)]
-   static constexpr AdcChannelNum Adc0ChannelNum_Diff3          = AdcChannelNum_Diff3;  ///< ADC0_DP3 [ADC0_DP3]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se0              = AdcChannelNum::AdcChannelNum_Se0; ///< ADC0_SE0 [ADC0_DP0(p7)]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Adc0_dp0         = AdcChannelNum::AdcChannelNum_Se0; ///< Pin ADC0_DP0
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se3              = AdcChannelNum::AdcChannelNum_Se3; ///< ADC0_SE3 [ADC0_DP3]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Adc0_dp3         = AdcChannelNum::AdcChannelNum_Se3; ///< Pin ADC0_DP3
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se8              = AdcChannelNum::AdcChannelNum_Se8; ///< ADC0_SE8 [-]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se9              = AdcChannelNum::AdcChannelNum_Se9; ///< ADC0_SE9 [-]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se12             = AdcChannelNum::AdcChannelNum_Se12; ///< ADC0_SE12 [-]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se13             = AdcChannelNum::AdcChannelNum_Se13; ///< Battery Level [PTB3(p30)]
+   inline constexpr AdcChannelNum Adc0ChannelNum_BatteryLevel     = AdcChannelNum::AdcChannelNum_Se13; ///< Battery Level
+   inline constexpr AdcChannelNum Adc0ChannelNum_Ptb3             = AdcChannelNum::AdcChannelNum_Se13; ///< Pin PTB3
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se14             = AdcChannelNum::AdcChannelNum_Se14; ///< ADC0_SE14 [-]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se15             = AdcChannelNum::AdcChannelNum_Se15; ///< ADC0_SE15 [-]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se19             = AdcChannelNum::AdcChannelNum_Se19; ///< ADC0_SE19 [ADC0_DM0(p8)]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Adc0_dm0         = AdcChannelNum::AdcChannelNum_Se19; ///< Pin ADC0_DM0
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se21             = AdcChannelNum::AdcChannelNum_Se21; ///< ADC0_SE21 [ADC0_DM3]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Adc0_dm3         = AdcChannelNum::AdcChannelNum_Se21; ///< Pin ADC0_DM3
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se23             = AdcChannelNum::AdcChannelNum_Se23; ///< ADC0_SE23 [ADC0_SE23]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Adc0_se23        = AdcChannelNum::AdcChannelNum_Se23; ///< Pin ADC0_SE23
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se26             = AdcChannelNum::AdcChannelNum_Se26; ///< ADC0_SE26 [TEMP_SENSOR(Internal)]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Temp_sensor      = AdcChannelNum::AdcChannelNum_Se26; ///< Pin TEMP_SENSOR
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se27             = AdcChannelNum::AdcChannelNum_Se27; ///< ADC0_SE27 [BANDGAP(Internal)]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Bandgap          = AdcChannelNum::AdcChannelNum_Se27; ///< Pin BANDGAP
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se4b             = AdcChannelNum::AdcChannelNum_Se4b; ///< ADC0_SE4b [-]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se5b             = AdcChannelNum::AdcChannelNum_Se5b; ///< ADC0_SE5b [-]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se6b             = AdcChannelNum::AdcChannelNum_Se6b; ///< ADC0_SE6b [-]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se7b             = AdcChannelNum::AdcChannelNum_Se7b; ///< ADC0_SE7b [-]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Diff0            = AdcChannelNum::AdcChannelNum_Diff0; ///< ADC0_DP0 [ADC0_DP0(p7)]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Diff3            = AdcChannelNum::AdcChannelNum_Diff3; ///< ADC0_DP3 [ADC0_DP3]
 
 
    /**
@@ -453,6 +454,7 @@ namespace USBDM {
 class AdcBasicInfo {
 
 public:
+
    //! Common class based callback code has been generated for this class of peripheral
    // (_BasicInfoIrqGuard)
    static constexpr bool irqHandlerInstalled = false;
@@ -592,22 +594,22 @@ public:
    static constexpr int mapChannelNumToPhysicalChannelNum(AdcChannelNum adcChannelNum) {
    
 #if true // adc_sc1_diff_present
-      if (adcChannelNum<=AdcChannelNum_DiffLast) {
+      if (adcChannelNum<=AdcChannelNum::AdcChannelNum_DiffLast) {
          // channels SE0-SE4,SE4a-SE7a,SE8-SE31,DIFF0-DIFF4
          return int(adcChannelNum);
       }
 #else
-      if (adcChannelNum<=AdcChannelNum_Disabled) {
+      if (adcChannelNum<=AdcChannelNum::AdcChannelNum_Disabled) {
          // channels SE0-SE4,SE4a-SE7a,SE8-SE31
          return int(adcChannelNum);
       }
 #endif
-      if (adcChannelNum<=AdcChannelNum_BLast) {
+      if (adcChannelNum<=AdcChannelNum::AdcChannelNum_BLast) {
          // channels SE4b-SE7b
          return int(adcChannelNum)&ADC_SC1_ADCH_MASK;
       }
       return -1;
-   }   
+   }  
    /**
     * ADC calibrate.
     * Calibrates the ADC before first use.
@@ -682,14 +684,11 @@ public:
     * @return Index limited to permitted range
     */
    template<class Info>
-   static inline constexpr int limitIndex(int channel) {
-      if (channel<0) {
-         return 0;
-      }
-      if (channel>(Info::numSignals-1)) {
+   static inline constexpr int limitIndex(AdcChannelNum channel) {
+      if (int(channel)>(Info::numSignals-1)) {
          return Info::numSignals-1;
       }
-      return channel;
+      return int(channel);
    }
    
    /** Class to static check channel exists and is mapped to an input pin */
@@ -706,9 +705,9 @@ protected:
    void startConversion(int sc1Value) const {
    
       // Select A/B Mux
-      if ((sc1Value&~ADC_SC1_AIEN_MASK)>=AdcChannelNum_BFirst) {
+      if (AdcChannelNum(sc1Value&~ADC_SC1_AIEN_MASK)>=AdcChannelNum::AdcChannelNum_BFirst) {
          adc->CFG2 = adc->CFG2|ADC_CFG2_MUXSEL_MASK;
-         sc1Value -= AdcChannelNum_BFirst-4;
+         sc1Value -= uint8_t(AdcChannelNum::AdcChannelNum_BFirst)-4;
       }
       else {
          adc->CFG2 = adc->CFG2&~ADC_CFG2_MUXSEL_MASK;
@@ -817,8 +816,8 @@ public:
       adc->SC2 = (adc->SC2)|ADC_SC2_ADTRG_MASK;
    
       // Configure channel to use for hardware trigger input
-      if ((sc1Value&~ADC_SC1_AIEN_MASK)>=AdcChannelNum_BFirst) {
-         sc1Value -= AdcChannelNum_BFirst-4;
+      if (AdcChannelNum(sc1Value&~ADC_SC1_AIEN_MASK)>=AdcChannelNum::AdcChannelNum_BFirst) {
+         sc1Value -= uint8_t(AdcChannelNum::AdcChannelNum_BFirst)-4;
       }
       adc->SC1[adcPretrigger] = sc1Value;
    }
@@ -940,7 +939,7 @@ public:
     *        Note the equivalence between modes e.g. 8-bit-se = 9-bit-diff
     */
    void setResolution(AdcResolution adcResolution) const {
-      adc->CFG1 = (adc->CFG1&~ADC_CFG1_MODE_MASK) | adcResolution;
+      adc->CFG1 = (adc->CFG1&~ADC_CFG1_MODE_MASK) | uint32_t(adcResolution);
    }
    
    /**
@@ -961,7 +960,7 @@ public:
     * @param adcMuxsel Some ADC inputs may be multiplexed to two pins e.g. adcCh4a and adcCh4b
     */
    void setMuxsel(AdcMuxsel adcMuxsel) const {
-      adc->CFG2 = (adc->CFG2&~ADC_CFG2_MUXSEL_MASK) | adcMuxsel;
+      adc->CFG2 = (adc->CFG2&~ADC_CFG2_MUXSEL_MASK) | uint32_t(adcMuxsel);
    }
    
    /**
@@ -983,7 +982,7 @@ public:
     *        It also allows use of the ADC internal clock as a clock source for other peripherals
     */
    void setAsynchronousClock(AdcAsyncClock adcAsyncClock) const {
-      adc->CFG2 = (adc->CFG2&~ADC_CFG2_ADACKEN_MASK) | adcAsyncClock;
+      adc->CFG2 = (adc->CFG2&~ADC_CFG2_ADACKEN_MASK) | uint32_t(adcAsyncClock);
    }
    
    /**
@@ -1016,7 +1015,7 @@ public:
     * @param adcDma Enables use of DMA with ADC
     */
    void setDma(AdcDma adcDma) const {
-      adc->SC2 = (adc->SC2&~ADC_SC2_DMAEN_MASK) | adcDma;
+      adc->SC2 = (adc->SC2&~ADC_SC2_DMAEN_MASK) | uint32_t(adcDma);
    }
    
    /**
@@ -1038,7 +1037,7 @@ public:
     *        or following assertion of ADHWT when hardware triggered operation is selected.
     */
    void setContinuousConversions(AdcOperation adcOperation) const {
-      adc->SC3 = (adc->SC3&~ADC_SC3_ADCO_MASK) | adcOperation;
+      adc->SC3 = (adc->SC3&~ADC_SC3_ADCO_MASK) | uint32_t(adcOperation);
    }
    
    /**
@@ -1061,7 +1060,7 @@ public:
     *        by the hardware to create the ADC result
     */
    void setAveraging(AdcAveraging adcAveraging) const {
-      adc->SC3 = (adc->SC3&~(ADC_SC3_CAL_MASK|ADC_SC3_CALF_MASK|ADC_SC3_AVGE_MASK|ADC_SC3_AVGS_MASK)) | adcAveraging;
+      adc->SC3 = (adc->SC3&~(ADC_SC3_CAL_MASK|ADC_SC3_CALF_MASK|ADC_SC3_AVGE_MASK|ADC_SC3_AVGS_MASK)) | uint32_t(adcAveraging);
    }
    
    /**
@@ -1172,8 +1171,8 @@ public:
       // ADC Channel number (adc_sc1_adch)
       // Action on conversion completion (adc_sc1_aien)
       uint8_t sc1[ADC_SC1_COUNT] = {
-         AdcChannelNum_Disabled,
-         AdcChannelNum_Disabled,
+         uint8_t(AdcChannelNum::AdcChannelNum_Disabled),
+         uint8_t(AdcChannelNum::AdcChannelNum_Disabled),
       };
 
       /**
@@ -1193,10 +1192,10 @@ public:
             AdcChannelNum adcChannelNum,
             AdcAction     adcAction, Types... rest) : Init(rest...) {
    
-         if ((adcChannelNum>=AdcChannelNum_AFirst)&&(adcChannelNum<=AdcChannelNum_ALast)) {
+         if ((adcChannelNum>=AdcChannelNum::AdcChannelNum_AFirst)&&(adcChannelNum<=AdcChannelNum::AdcChannelNum_ALast)) {
             cfg2 &= ~ADC_CFG2_MUXSEL_MASK;
          }
-         else if ((adcChannelNum>=AdcChannelNum_BFirst)&&(adcChannelNum<=AdcChannelNum_BLast)) {
+         else if ((adcChannelNum>=AdcChannelNum::AdcChannelNum_BFirst)&&(adcChannelNum<=AdcChannelNum::AdcChannelNum_BLast)) {
             cfg2 |= ADC_CFG2_MUXSEL_MASK;
          }
          sc1[adcPretrigger] = mapChannelNumToPhysicalChannelNum(adcChannelNum)|adcAction;
@@ -1214,7 +1213,7 @@ public:
       template <typename... Types>
       constexpr Init(AdcClockSource adcClockSource, Types... rest) : Init(rest...) {
    
-         cfg1 = (cfg1&~ADC_CFG1_ADICLK_MASK) | adcClockSource;
+         cfg1 = (cfg1&~ADC_CFG1_ADICLK_MASK) | uint32_t(adcClockSource);
       }
    
       /**
@@ -1230,7 +1229,7 @@ public:
       template <typename... Types>
       constexpr Init(AdcResolution adcResolution, Types... rest) : Init(rest...) {
    
-         cfg1 = (cfg1&~ADC_CFG1_MODE_MASK) | adcResolution;
+         cfg1 = (cfg1&~ADC_CFG1_MODE_MASK) | uint32_t(adcResolution);
       }
    
       /**
@@ -1246,7 +1245,7 @@ public:
       template <typename... Types>
       constexpr Init(AdcPower adcPower, Types... rest) : Init(rest...) {
    
-         cfg1 = (cfg1&~ADC_CFG1_ADLPC_MASK) | adcPower;
+         cfg1 = (cfg1&~ADC_CFG1_ADLPC_MASK) | uint32_t(adcPower);
       }
    
       /**
@@ -1263,7 +1262,7 @@ public:
       template <typename... Types>
       constexpr Init(AdcClockRange adcClockRange, Types... rest) : Init(rest...) {
    
-         cfg2 = (cfg2&~ADC_CFG2_ADHSC_MASK) | adcClockRange;
+         cfg2 = (cfg2&~ADC_CFG2_ADHSC_MASK) | uint32_t(adcClockRange);
       }
    
       /**
@@ -1280,7 +1279,7 @@ public:
       template <typename... Types>
       constexpr Init(AdcAsyncClock adcAsyncClock, Types... rest) : Init(rest...) {
    
-         cfg2 = (cfg2&~ADC_CFG2_ADACKEN_MASK) | adcAsyncClock;
+         cfg2 = (cfg2&~ADC_CFG2_ADACKEN_MASK) | uint32_t(adcAsyncClock);
       }
    
       /**
@@ -1295,7 +1294,7 @@ public:
       template <typename... Types>
       constexpr Init(AdcMuxsel adcMuxsel, Types... rest) : Init(rest...) {
    
-         cfg2 = (cfg2&~ADC_CFG2_MUXSEL_MASK) | adcMuxsel;
+         cfg2 = (cfg2&~ADC_CFG2_MUXSEL_MASK) | uint32_t(adcMuxsel);
       }
    
       /**
@@ -1310,7 +1309,7 @@ public:
       template <typename... Types>
       constexpr Init(AdcReferenceSel adcReferenceSel, Types... rest) : Init(rest...) {
    
-         sc2 = (sc2&~ADC_SC2_REFSEL_MASK) | adcReferenceSel;
+         sc2 = (sc2&~ADC_SC2_REFSEL_MASK) | uint32_t(adcReferenceSel);
       }
    
       /**
@@ -1325,7 +1324,7 @@ public:
       template <typename... Types>
       constexpr Init(AdcDma adcDma, Types... rest) : Init(rest...) {
    
-         sc2 = (sc2&~ADC_SC2_DMAEN_MASK) | adcDma;
+         sc2 = (sc2&~ADC_SC2_DMAEN_MASK) | uint32_t(adcDma);
       }
    
       /**
@@ -1341,7 +1340,7 @@ public:
       template <typename... Types>
       constexpr Init(AdcTrigger adcTrigger, Types... rest) : Init(rest...) {
    
-         sc2 = (sc2&~ADC_SC2_ADTRG_MASK) | adcTrigger;
+         sc2 = (sc2&~ADC_SC2_ADTRG_MASK) | uint32_t(adcTrigger);
       }
    
       /**
@@ -1357,7 +1356,7 @@ public:
       template <typename... Types>
       constexpr Init(AdcAveraging adcAveraging, Types... rest) : Init(rest...) {
    
-         sc3 = (sc3&~(ADC_SC3_CAL_MASK|ADC_SC3_CALF_MASK|ADC_SC3_AVGE_MASK|ADC_SC3_AVGS_MASK)) | adcAveraging;
+         sc3 = (sc3&~(ADC_SC3_CAL_MASK|ADC_SC3_CALF_MASK|ADC_SC3_AVGE_MASK|ADC_SC3_AVGS_MASK)) | uint32_t(adcAveraging);
       }
    
       /**
@@ -1374,7 +1373,7 @@ public:
       template <typename... Types>
       constexpr Init(AdcOperation adcOperation, Types... rest) : Init(rest...) {
    
-         sc3 = (sc3&~ADC_SC3_ADCO_MASK) | adcOperation;
+         sc3 = (sc3&~ADC_SC3_ADCO_MASK) | uint32_t(adcOperation);
       }
    
       /**
@@ -1497,6 +1496,7 @@ public:
 class Adc0Info : public AdcBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 44;
 
@@ -1694,9 +1694,9 @@ protected:
    static void startConversion(int sc1Value) {
    
       // Select A/B Mux
-      if ((sc1Value&~ADC_SC1_AIEN_MASK)>=AdcChannelNum_BFirst) {
+      if (AdcChannelNum(sc1Value&~ADC_SC1_AIEN_MASK)>=AdcChannelNum::AdcChannelNum_BFirst) {
          adc->CFG2 = adc->CFG2|ADC_CFG2_MUXSEL_MASK;
-         sc1Value -= AdcChannelNum_BFirst-4;
+         sc1Value -= uint8_t(AdcChannelNum::AdcChannelNum_BFirst)-4;
       }
       else {
          adc->CFG2 = adc->CFG2&~ADC_CFG2_MUXSEL_MASK;
@@ -1805,8 +1805,8 @@ public:
       adc->SC2 = (adc->SC2)|ADC_SC2_ADTRG_MASK;
    
       // Configure channel to use for hardware trigger input
-      if ((sc1Value&~ADC_SC1_AIEN_MASK)>=AdcChannelNum_BFirst) {
-         sc1Value -= AdcChannelNum_BFirst-4;
+      if (AdcChannelNum(sc1Value&~ADC_SC1_AIEN_MASK)>=AdcChannelNum::AdcChannelNum_BFirst) {
+         sc1Value -= uint8_t(AdcChannelNum::AdcChannelNum_BFirst)-4;
       }
       adc->SC1[adcPretrigger] = sc1Value;
    }
@@ -1928,7 +1928,7 @@ public:
     *        Note the equivalence between modes e.g. 8-bit-se = 9-bit-diff
     */
    static void setResolution(AdcResolution adcResolution) {
-      adc->CFG1 = (adc->CFG1&~ADC_CFG1_MODE_MASK) | adcResolution;
+      adc->CFG1 = (adc->CFG1&~ADC_CFG1_MODE_MASK) | uint32_t(adcResolution);
    }
    
    /**
@@ -1949,7 +1949,7 @@ public:
     * @param adcMuxsel Some ADC inputs may be multiplexed to two pins e.g. adcCh4a and adcCh4b
     */
    static void setMuxsel(AdcMuxsel adcMuxsel) {
-      adc->CFG2 = (adc->CFG2&~ADC_CFG2_MUXSEL_MASK) | adcMuxsel;
+      adc->CFG2 = (adc->CFG2&~ADC_CFG2_MUXSEL_MASK) | uint32_t(adcMuxsel);
    }
    
    /**
@@ -1971,7 +1971,7 @@ public:
     *        It also allows use of the ADC internal clock as a clock source for other peripherals
     */
    static void setAsynchronousClock(AdcAsyncClock adcAsyncClock) {
-      adc->CFG2 = (adc->CFG2&~ADC_CFG2_ADACKEN_MASK) | adcAsyncClock;
+      adc->CFG2 = (adc->CFG2&~ADC_CFG2_ADACKEN_MASK) | uint32_t(adcAsyncClock);
    }
    
    /**
@@ -2004,7 +2004,7 @@ public:
     * @param adcDma Enables use of DMA with ADC
     */
    static void setDma(AdcDma adcDma) {
-      adc->SC2 = (adc->SC2&~ADC_SC2_DMAEN_MASK) | adcDma;
+      adc->SC2 = (adc->SC2&~ADC_SC2_DMAEN_MASK) | uint32_t(adcDma);
    }
    
    /**
@@ -2026,7 +2026,7 @@ public:
     *        or following assertion of ADHWT when hardware triggered operation is selected.
     */
    static void setContinuousConversions(AdcOperation adcOperation) {
-      adc->SC3 = (adc->SC3&~ADC_SC3_ADCO_MASK) | adcOperation;
+      adc->SC3 = (adc->SC3&~ADC_SC3_ADCO_MASK) | uint32_t(adcOperation);
    }
    
    /**
@@ -2049,7 +2049,7 @@ public:
     *        by the hardware to create the ADC result
     */
    static void setAveraging(AdcAveraging adcAveraging) {
-      adc->SC3 = (adc->SC3&~(ADC_SC3_CAL_MASK|ADC_SC3_CALF_MASK|ADC_SC3_AVGE_MASK|ADC_SC3_AVGS_MASK)) | adcAveraging;
+      adc->SC3 = (adc->SC3&~(ADC_SC3_CAL_MASK|ADC_SC3_CALF_MASK|ADC_SC3_AVGE_MASK|ADC_SC3_AVGS_MASK)) | uint32_t(adcAveraging);
    }
    
    /**
@@ -2122,7 +2122,7 @@ public:
    
       // The following values must be in order
       AdcPretrigger_0,             // sc1[0]/r[0] ,
-      AdcChannelNum_Se0 ,          // (adc_sc1[0]_adch)          ADC Channel number - ADC0_SE0 [ADC0_DP0(p7)]
+      Adc0ChannelNum_Se0 ,         // (adc_sc1[0]_adch)          ADC0 Channel number - ADC0_SE0 [ADC0_DP0(p7)]
       AdcAction_None,              // (adc_sc1[0]_aien)          Action on conversion completion - None
    };
    
@@ -2373,9 +2373,9 @@ public:
    template<AdcChannelNum channel>
    class Channel : public ChannelCommon<channel>  {
    private:
-      static constexpr AdcBasicInfo::CheckPinExistsAndIsMapped<Info, channel> check{};
+      static constexpr AdcBasicInfo::CheckPinExistsAndIsMapped<Info, int(channel)> check{};
 #if true // adc_sc1_diff_present
-      static_assert(((channel<AdcChannelNum_DiffFirst)||(channel>AdcChannelNum_DiffLast)), "Illegal channel number");
+      static_assert(((channel<AdcChannelNum::AdcChannelNum_DiffFirst)||(channel>AdcChannelNum::AdcChannelNum_DiffLast)), "Illegal channel number");
 #endif
    public:
       /** The PCR associated with this channel (Not all channels have an associated PCR!) */
@@ -2383,7 +2383,7 @@ public:
 
       /** GPIO pin associated with this channel (Not all channels have an associated GPIO!) */
       template<Polarity polarity=ActiveHigh>
-      class GpioPin : public GpioTable_T<Info, channel, polarity> {
+      class GpioPin : public GpioTable_T<Info, int(channel), polarity> {
          static_assert((Info::info[channel].pinIndex >= PinIndex::MIN_PIN_INDEX),
                "ADC channel does not have corresponding GPIO pin");
       };
@@ -2465,7 +2465,7 @@ public:
    template<AdcChannelNum channel>
    class DiffChannel : public ChannelCommon<channel> {
 
-      static_assert((channel>=AdcChannelNum_DiffFirst)&&(channel<=AdcChannelNum_DiffLast), "Illegal differential channel number");
+      static_assert((channel>=AdcChannelNum::AdcChannelNum_DiffFirst)&&(channel<=AdcChannelNum::AdcChannelNum_DiffLast), "Illegal differential channel number");
 
    private:
       /**
@@ -2474,17 +2474,17 @@ public:
       DiffChannel(const DiffChannel&) = delete;
       DiffChannel(DiffChannel&&) = delete;
 
-      static constexpr AdcBasicInfo::CheckPinExistsAndIsMapped<Info, channel>   checkPos{};
-      static constexpr AdcBasicInfo::CheckPinExistsAndIsMapped<Info, channel+8> checkNeg{};
+      static constexpr AdcBasicInfo::CheckPinExistsAndIsMapped<Info, int(channel)>   checkPos{};
+      static constexpr AdcBasicInfo::CheckPinExistsAndIsMapped<Info, int(channel)+8> checkNeg{};
 
    public:
       constexpr DiffChannel() : ChannelCommon<AdcChannelNum(channel)>() {}
 
       /** PCR associated with plus channel */
-      using PcrP = PcrTable_T<Info, channel>;
+      using PcrP = PcrTable_T<Info, int(channel)>;
 
       /** PCR associated with minus channel */
-      using PcrM = PcrTable_T<Info, channel>;
+      using PcrM = PcrTable_T<Info, int(channel)>;
 
       /** The ADC that owns this channel */
       using Owner = AdcBase_T;
@@ -2493,7 +2493,7 @@ public:
       using AdcInfo = Info;
 
       /** Channel number */
-      static constexpr int CHANNEL=channel;
+      static constexpr int CHANNEL=int(channel);
 
       /**
        * Configure the pins associated with this ADC channel.

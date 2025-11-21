@@ -15,6 +15,7 @@
  * Any manual changes will be lost.
  */
 #include "derivative.h"
+#include "pin_mapping.h"
 #include "system.h"
 
 // No handler defined for MCG

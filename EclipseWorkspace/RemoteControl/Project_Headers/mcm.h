@@ -33,6 +33,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Each bit in the ASC field indicates whether there is a corresponding connection to the crossbar switch&amp;apos;s slave input port
     * (mcm_plasc_asc)
@@ -69,12 +70,14 @@ namespace USBDM {
 class McmBasicInfo {
 
 public:
+
    // May be empty
 }; // class McmBasicInfo 
 
 class McmInfo : public McmBasicInfo {
 
 public:
+
    /*
     * Template:mcm_mk11d5
     */
@@ -91,7 +94,7 @@ public:
     */
    static void setCrossbarArbitration(McmArbitration mcmArbitration) {
    
-      mcm->PLACR = (mcm->PLACR&~MCM_PLACR_ARB_MASK) | mcmArbitration;
+      mcm->PLACR = (mcm->PLACR&~MCM_PLACR_ARB_MASK) | uint32_t(mcmArbitration);
    }
 
 }; // class McmInfo

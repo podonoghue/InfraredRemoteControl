@@ -2,7 +2,7 @@
 <launchConfiguration type="net.sourceforge.usbdm.gdb.launchConfigurationType">
     <stringAttribute key="net.sourceforge.usbdm.gdb.autoReconnect" value="AUTOCONNECT_ALWAYS"/>
     <stringAttribute key="net.sourceforge.usbdm.gdb.bdmSerialNumber" value="USBDM-MK-9226EF6A"/>
-    <booleanAttribute key="net.sourceforge.usbdm.gdb.bdmSerialNumberMatchRequired" value="true"/>
+    <booleanAttribute key="net.sourceforge.usbdm.gdb.bdmSerialNumberMatchRequired" value="false"/>
     <stringAttribute key="net.sourceforge.usbdm.gdb.buildToolId" value="net.sourceforge.usbdm.cdt.toolchain.processor.usbdmConfigure.armLtdGnuToolsForARM"/>
     <booleanAttribute key="net.sourceforge.usbdm.gdb.catchVLLSxEvents" value="false"/>
     <stringAttribute key="net.sourceforge.usbdm.gdb.clockTrimFrequency" value="0"/>
@@ -46,10 +46,10 @@
     <booleanAttribute key="net.sourceforge.usbdm.gdb.useSemiHosting" value="false"/>
     <stringAttribute key="org.eclipse.cdt.dsf.gdb.DEBUG_NAME" value="${usbdm_armLtd_arm_path}/arm-none-eabi-gdb"/>
     <intAttribute key="org.eclipse.cdt.launch.ATTR_BUILD_BEFORE_LAUNCH_ATTR" value="2"/>
-    <stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="Debug/RemoteControl.elf"/>
+    <stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="Release/RemoteControl.elf"/>
     <stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="RemoteControl"/>
     <booleanAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_AUTO_ATTR" value="true"/>
-    <stringAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_ID_ATTR" value="net.sourceforge.usbdm.cdt.arm.exe.debug.configuration.1254869853"/>
+    <stringAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_ID_ATTR" value=""/>
     <booleanAttribute key="org.eclipse.debug.core.ATTR_FORCE_SYSTEM_CONSOLE_ENCODING" value="false"/>
     <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
         <listEntry value="/RemoteControl"/>

@@ -15,7 +15,7 @@
  * Any manual changes will be lost.
  */
 /* *************************************************************
- * NOTE - Can't use other objects here as initialisation of
+ * Note - Can't use other objects here as initialisation of
  *        Flash is done very early (including writeln())
  ************************************************************* */
 
@@ -46,6 +46,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * FlexNVM - Flash EEPROM partitioning
     * (flash_partition)
@@ -93,11 +94,13 @@ namespace USBDM {
 class FtflBasicInfo {
 
 public:
+
 }; // class FtflBasicInfo 
 
 class FtflInfo : public FtflBasicInfo {
 
 public:
+
    /*
     * Template:ftfl_32k_flexrom
     */

@@ -15,7 +15,8 @@
  * Any manual changes will be lost.
  */
 #include "derivative.h"
-#include "hardware.h"
+#include "pin_mapping.h"
+#include "gpio.h"
 
 // No handler defined for EWM
 
@@ -33,6 +34,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * EWM enable
     * (ewm_ctrl_ewmen)
@@ -85,11 +87,13 @@ namespace USBDM {
 class EwmBasicInfo {
 
 public:
+
 }; // class EwmBasicInfo 
 
 class EwmInfo : public EwmBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 2;
 

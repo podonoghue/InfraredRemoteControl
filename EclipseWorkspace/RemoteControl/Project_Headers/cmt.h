@@ -16,6 +16,7 @@
  */
 #include "derivative.h"
 #include "pin_mapping.h"
+#include "gpio.h"
 
 // No handler defined for CMT 
 
@@ -33,17 +34,29 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
+   /**
+    * Modulator and Carrier Enable
+    * (cmt_msc_mcgen)
+    *
+    * Setting MCGEN will initialise the carrier generator and modulator
+    * Clearing MCGEN will disable operation of the CMT at the end of the current cycle
+    */
+   enum CmtEnable : uint8_t {
+      CmtEnable_Disabled   = CMT_MSC_MCGEN(0),  ///< Disabled
+      CmtEnable_Enabled    = CMT_MSC_MCGEN(1),  ///< Enabled
+   };
+
    /**
     * Mode of operation
     * (cmt_msc_mode)
     *
-    * Selects between Time, Baseband, FSK and direct modes
+    * Selects between Time, Baseband and FSK modes
     */
    enum CmtMode : uint8_t {
-      CmtMode_Direct            = CMT_MSC_MCGEN(0)|CMT_MSC_BASE(0)|CMT_MSC_FSK(0),  ///< Direct
-      CmtMode_Time              = CMT_MSC_MCGEN(1)|CMT_MSC_BASE(0)|CMT_MSC_FSK(0),  ///< Time
-      CmtMode_Baseband          = CMT_MSC_MCGEN(1)|CMT_MSC_BASE(1)|CMT_MSC_FSK(0),  ///< Baseband
-      CmtMode_FreqShiftKeying   = CMT_MSC_MCGEN(1)|CMT_MSC_BASE(0)|CMT_MSC_FSK(1),  ///< FreqShiftKeying
+      CmtMode_Baseband          = CMT_MSC_BASE(1)|CMT_MSC_FSK(0),  ///< Baseband
+      CmtMode_Time              = CMT_MSC_BASE(0)|CMT_MSC_FSK(0),  ///< Time
+      CmtMode_FreqShiftKeying   = CMT_MSC_BASE(0)|CMT_MSC_FSK(1),  ///< Freq-Shift-Keying (FSK)
    };
 
    /**
@@ -84,8 +97,8 @@ namespace USBDM {
     * (cmt_oc_irol)
     *
     * On reads provides the state of the IRO latch.
-    * The value written controls the state of the IRO signal when mode[MSC_MODE]
-    * is direct and output[OC_OUTPUT] is not disabled
+    * The value written controls the state of the IRO signal when CMT is 
+    * enabled [MSC_MCGEN] and output[OC_OUTPUT] is not disabled
     */
    enum CmtOutputLevel : uint8_t {
       CmtOutputLevel_Low    = CMT_OC_IROL(0),  ///< Low
@@ -245,6 +258,7 @@ namespace USBDM {
 class CmtBasicInfo {
 
 public:
+
    //! Common class based callback code has been generated for this class of peripheral
    // (_BasicInfoIrqGuard)
    static constexpr bool irqHandlerInstalled = true;
@@ -297,11 +311,11 @@ public:
     * (cmt_oc_irol)
     *
     * @param cmtOutputLevel On reads provides the state of the IRO latch.
-    *        The value written controls the state of the IRO signal when mode[MSC_MODE]
-    *        is direct and output[OC_OUTPUT] is not disabled
+    *        The value written controls the state of the IRO signal when CMT is 
+    *        enabled [MSC_MCGEN] and output[OC_OUTPUT] is not disabled
     */
    void setOutputState(CmtOutputLevel cmtOutputLevel) const {
-      cmt->OC = (cmt->OC&~CMT_OC_IROL_MASK) | cmtOutputLevel;
+      cmt->OC = (cmt->OC&~CMT_OC_IROL_MASK) | uint32_t(cmtOutputLevel);
    }
    
    /**
@@ -309,8 +323,8 @@ public:
     * (cmt_oc_irol)
     *
     * @return On reads provides the state of the IRO latch.
-    *        The value written controls the state of the IRO signal when mode[MSC_MODE]
-    *        is direct and output[OC_OUTPUT] is not disabled
+    *        The value written controls the state of the IRO signal when CMT is 
+    *        enabled [MSC_MCGEN] and output[OC_OUTPUT] is not disabled
     */
    CmtOutputLevel getOutputState() const {
       return CmtOutputLevel(cmt->OC&CMT_OC_IROL_MASK);
@@ -320,20 +334,20 @@ public:
     * Set Mode of operation
     * (cmt_msc_mode)
     *
-    * @param cmtMode Selects between Time, Baseband, FSK and direct modes
+    * @param cmtMode Selects between Time, Baseband and FSK modes
     */
    void setMode(CmtMode cmtMode) const {
-      cmt->MSC = (cmt->MSC&~(CMT_MSC_MCGEN_MASK|CMT_MSC_BASE_MASK|CMT_MSC_FSK_MASK)) | cmtMode;
+      cmt->MSC = (cmt->MSC&~(CMT_MSC_BASE_MASK|CMT_MSC_FSK_MASK)) | uint32_t(cmtMode);
    }
    
    /**
     * Get Mode of operation
     * (cmt_msc_mode)
     *
-    * @return Selects between Time, Baseband, FSK and direct modes
+    * @return Selects between Time, Baseband and FSK modes
     */
    CmtMode getMode() const {
-      return CmtMode(cmt->MSC&(CMT_MSC_MCGEN_MASK|CMT_MSC_BASE_MASK|CMT_MSC_FSK_MASK));
+      return CmtMode(cmt->MSC&(CMT_MSC_BASE_MASK|CMT_MSC_FSK_MASK));
    }
    
    /**
@@ -360,7 +374,7 @@ public:
     * @param cmtIntermediatePrescaler Causes the CMT to be clocked at the Intermediate frequency divided by 1, 2, 4, or 8
     */
    void setPrescaler(CmtIntermediatePrescaler cmtIntermediatePrescaler) const {
-      cmt->MSC = (cmt->MSC&~CMT_MSC_CMTDIV_MASK) | cmtIntermediatePrescaler;
+      cmt->MSC = (cmt->MSC&~CMT_MSC_CMTDIV_MASK) | uint32_t(cmtIntermediatePrescaler);
    }
    
    /**
@@ -388,7 +402,7 @@ public:
     *        of the next modulation period.
     */
    void setExtendedSpace(CmtExtendedSpace cmtExtendedSpace) const {
-      cmt->MSC = (cmt->MSC&~CMT_MSC_EXSPC_MASK) | cmtExtendedSpace;
+      cmt->MSC = (cmt->MSC&~CMT_MSC_EXSPC_MASK) | uint32_t(cmtExtendedSpace);
    }
    
    /**
@@ -419,7 +433,7 @@ public:
     *        MSC[MCGEN] is set or not
     */
    void setOutputControl(CmtOutput cmtOutput) const {
-      cmt->OC = (cmt->OC&~(CMT_OC_IROPEN_MASK|CMT_OC_CMTPOL_MASK)) | cmtOutput;
+      cmt->OC = (cmt->OC&~(CMT_OC_IROPEN_MASK|CMT_OC_CMTPOL_MASK)) | uint32_t(cmtOutput);
    }
    
    /**
@@ -427,7 +441,7 @@ public:
     * (cmt_msc_mcgen)
     *
     * Setting MCGEN will initialise the carrier generator and modulator
-    * Clearing MCGEN will disable operation of the CMT
+    * Clearing MCGEN will disable operation of the CMT at the end of the current cycle
     */
    void start() const {
       // Set field
@@ -439,11 +453,22 @@ public:
     * (cmt_msc_mcgen)
     *
     * Setting MCGEN will initialise the carrier generator and modulator
-    * Clearing MCGEN will disable operation of the CMT
+    * Clearing MCGEN will disable operation of the CMT at the end of the current cycle
     */
    void stop() const {
       // Clear field
       cmt->MSC = cmt->MSC&~CMT_MSC_MCGEN_MASK;
+   }
+   
+   /**
+    * Get Modulator and Carrier Enable
+    * (cmt_msc_mcgen)
+    *
+    * @return Setting MCGEN will initialise the carrier generator and modulator
+    * Clearing MCGEN will disable operation of the CMT at the end of the current cycle
+    */
+   CmtEnable isEnabled() const {
+      return CmtEnable(cmt->MSC&CMT_MSC_MCGEN_MASK);
    }
    
    /**
@@ -463,17 +488,6 @@ public:
       // Read fields in order to clear flag
       (void)cmt->MSC;
       (void)cmt->CMD2;
-   }
-   
-   /**
-    * Get Modulator and Carrier Enable
-    * (cmt_msc_mcgen)
-    *
-    * @return Setting MCGEN will initialise the carrier generator and modulator
-    * Clearing MCGEN will disable operation of the CMT
-    */
-   bool isEnabled() const {
-      return bool(cmt->MSC&CMT_MSC_MCGEN_MASK);
    }
    
    /**
@@ -506,7 +520,7 @@ public:
    void setClockDivider(CmtClockPrescaler cmtClockPrescaler) const {
    
       cmtClockPrescaler = calculateClockPrescaler(cmtClockPrescaler);
-      cmt->PPS = (cmt->PPS&~CMT_PPS_PPSDIV_MASK) | cmtClockPrescaler;
+      cmt->PPS = (cmt->PPS&~CMT_PPS_PPSDIV_MASK) | uint32_t(cmtClockPrescaler);
    }
    
    /**
@@ -693,6 +707,7 @@ public:
       // IRO Latch Control (cmt_oc_irol)
       uint8_t oc = 0;
 
+      // Modulator and Carrier Enable (cmt_msc_mcgen)
       // Intermediate frequency Prescaler (cmt_msc_cmtdiv)
       // Extended Space Enable (cmt_msc_exspc)
       // End of Cycle Event handling (cmt_dma_irq)
@@ -712,6 +727,22 @@ public:
       uint16_t space = 0;
 
       /**
+       * Constructor for Modulator and Carrier Enable
+       * (cmt_msc_mcgen)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param cmtEnable Setting MCGEN will initialise the carrier generator and modulator
+       *        Clearing MCGEN will disable operation of the CMT at the end of the current cycle
+       */
+      template <typename... Types>
+      constexpr Init(CmtEnable cmtEnable, Types... rest) : Init(rest...) {
+   
+         msc = (msc&~CMT_MSC_MCGEN_MASK) | uint32_t(cmtEnable);
+      }
+   
+      /**
        * Constructor for Output Control
        * (cmt_oc_output)
        *
@@ -726,7 +757,7 @@ public:
       template <typename... Types>
       constexpr Init(CmtOutput cmtOutput, Types... rest) : Init(rest...) {
    
-         oc = (oc&~(CMT_OC_IROPEN_MASK|CMT_OC_CMTPOL_MASK)) | cmtOutput;
+         oc = (oc&~(CMT_OC_IROPEN_MASK|CMT_OC_CMTPOL_MASK)) | uint32_t(cmtOutput);
       }
    
       /**
@@ -737,13 +768,13 @@ public:
        * @param    rest
        *
        * @param cmtOutputLevel On reads provides the state of the IRO latch.
-       *        The value written controls the state of the IRO signal when mode[MSC_MODE]
-       *        is direct and output[OC_OUTPUT] is not disabled
+       *        The value written controls the state of the IRO signal when CMT is 
+       *        enabled [MSC_MCGEN] and output[OC_OUTPUT] is not disabled
        */
       template <typename... Types>
       constexpr Init(CmtOutputLevel cmtOutputLevel, Types... rest) : Init(rest...) {
    
-         oc = (oc&~CMT_OC_IROL_MASK) | cmtOutputLevel;
+         oc = (oc&~CMT_OC_IROL_MASK) | uint32_t(cmtOutputLevel);
       }
    
       /**
@@ -758,7 +789,7 @@ public:
       template <typename... Types>
       constexpr Init(CmtIntermediatePrescaler cmtIntermediatePrescaler, Types... rest) : Init(rest...) {
    
-         msc = (msc&~CMT_MSC_CMTDIV_MASK) | cmtIntermediatePrescaler;
+         msc = (msc&~CMT_MSC_CMTDIV_MASK) | uint32_t(cmtIntermediatePrescaler);
       }
    
       /**
@@ -768,12 +799,12 @@ public:
        * @tparam   Types
        * @param    rest
        *
-       * @param cmtMode Selects between Time, Baseband, FSK and direct modes
+       * @param cmtMode Selects between Time, Baseband and FSK modes
        */
       template <typename... Types>
       constexpr Init(CmtMode cmtMode, Types... rest) : Init(rest...) {
    
-         msc = (msc&~(CMT_MSC_MCGEN_MASK|CMT_MSC_BASE_MASK|CMT_MSC_FSK_MASK)) | cmtMode;
+         msc = (msc&~(CMT_MSC_BASE_MASK|CMT_MSC_FSK_MASK)) | uint32_t(cmtMode);
       }
    
       /**
@@ -989,6 +1020,7 @@ public:
 class CmtInfo : public CmtBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 1;
 
@@ -1207,11 +1239,11 @@ public:
     * (cmt_oc_irol)
     *
     * @param cmtOutputLevel On reads provides the state of the IRO latch.
-    *        The value written controls the state of the IRO signal when mode[MSC_MODE]
-    *        is direct and output[OC_OUTPUT] is not disabled
+    *        The value written controls the state of the IRO signal when CMT is 
+    *        enabled [MSC_MCGEN] and output[OC_OUTPUT] is not disabled
     */
    static void setOutputState(CmtOutputLevel cmtOutputLevel) {
-      cmt->OC = (cmt->OC&~CMT_OC_IROL_MASK) | cmtOutputLevel;
+      cmt->OC = (cmt->OC&~CMT_OC_IROL_MASK) | uint32_t(cmtOutputLevel);
    }
    
    /**
@@ -1219,8 +1251,8 @@ public:
     * (cmt_oc_irol)
     *
     * @return On reads provides the state of the IRO latch.
-    *        The value written controls the state of the IRO signal when mode[MSC_MODE]
-    *        is direct and output[OC_OUTPUT] is not disabled
+    *        The value written controls the state of the IRO signal when CMT is 
+    *        enabled [MSC_MCGEN] and output[OC_OUTPUT] is not disabled
     */
    static CmtOutputLevel getOutputState() {
       return CmtOutputLevel(cmt->OC&CMT_OC_IROL_MASK);
@@ -1230,20 +1262,20 @@ public:
     * Set Mode of operation
     * (cmt_msc_mode)
     *
-    * @param cmtMode Selects between Time, Baseband, FSK and direct modes
+    * @param cmtMode Selects between Time, Baseband and FSK modes
     */
    static void setMode(CmtMode cmtMode) {
-      cmt->MSC = (cmt->MSC&~(CMT_MSC_MCGEN_MASK|CMT_MSC_BASE_MASK|CMT_MSC_FSK_MASK)) | cmtMode;
+      cmt->MSC = (cmt->MSC&~(CMT_MSC_BASE_MASK|CMT_MSC_FSK_MASK)) | uint32_t(cmtMode);
    }
    
    /**
     * Get Mode of operation
     * (cmt_msc_mode)
     *
-    * @return Selects between Time, Baseband, FSK and direct modes
+    * @return Selects between Time, Baseband and FSK modes
     */
    static CmtMode getMode() {
-      return CmtMode(cmt->MSC&(CMT_MSC_MCGEN_MASK|CMT_MSC_BASE_MASK|CMT_MSC_FSK_MASK));
+      return CmtMode(cmt->MSC&(CMT_MSC_BASE_MASK|CMT_MSC_FSK_MASK));
    }
    
    /**
@@ -1270,7 +1302,7 @@ public:
     * @param cmtIntermediatePrescaler Causes the CMT to be clocked at the Intermediate frequency divided by 1, 2, 4, or 8
     */
    static void setPrescaler(CmtIntermediatePrescaler cmtIntermediatePrescaler) {
-      cmt->MSC = (cmt->MSC&~CMT_MSC_CMTDIV_MASK) | cmtIntermediatePrescaler;
+      cmt->MSC = (cmt->MSC&~CMT_MSC_CMTDIV_MASK) | uint32_t(cmtIntermediatePrescaler);
    }
    
    /**
@@ -1298,7 +1330,7 @@ public:
     *        of the next modulation period.
     */
    static void setExtendedSpace(CmtExtendedSpace cmtExtendedSpace) {
-      cmt->MSC = (cmt->MSC&~CMT_MSC_EXSPC_MASK) | cmtExtendedSpace;
+      cmt->MSC = (cmt->MSC&~CMT_MSC_EXSPC_MASK) | uint32_t(cmtExtendedSpace);
    }
    
    /**
@@ -1329,7 +1361,7 @@ public:
     *        MSC[MCGEN] is set or not
     */
    static void setOutputControl(CmtOutput cmtOutput) {
-      cmt->OC = (cmt->OC&~(CMT_OC_IROPEN_MASK|CMT_OC_CMTPOL_MASK)) | cmtOutput;
+      cmt->OC = (cmt->OC&~(CMT_OC_IROPEN_MASK|CMT_OC_CMTPOL_MASK)) | uint32_t(cmtOutput);
    }
    
    /**
@@ -1337,7 +1369,7 @@ public:
     * (cmt_msc_mcgen)
     *
     * Setting MCGEN will initialise the carrier generator and modulator
-    * Clearing MCGEN will disable operation of the CMT
+    * Clearing MCGEN will disable operation of the CMT at the end of the current cycle
     */
    static void start() {
       // Set field
@@ -1349,11 +1381,22 @@ public:
     * (cmt_msc_mcgen)
     *
     * Setting MCGEN will initialise the carrier generator and modulator
-    * Clearing MCGEN will disable operation of the CMT
+    * Clearing MCGEN will disable operation of the CMT at the end of the current cycle
     */
    static void stop() {
       // Clear field
       cmt->MSC = cmt->MSC&~CMT_MSC_MCGEN_MASK;
+   }
+   
+   /**
+    * Get Modulator and Carrier Enable
+    * (cmt_msc_mcgen)
+    *
+    * @return Setting MCGEN will initialise the carrier generator and modulator
+    * Clearing MCGEN will disable operation of the CMT at the end of the current cycle
+    */
+   static CmtEnable isEnabled() {
+      return CmtEnable(cmt->MSC&CMT_MSC_MCGEN_MASK);
    }
    
    /**
@@ -1373,17 +1416,6 @@ public:
       // Read fields in order to clear flag
       (void)cmt->MSC;
       (void)cmt->CMD2;
-   }
-   
-   /**
-    * Get Modulator and Carrier Enable
-    * (cmt_msc_mcgen)
-    *
-    * @return Setting MCGEN will initialise the carrier generator and modulator
-    * Clearing MCGEN will disable operation of the CMT
-    */
-   static bool isEnabled() {
-      return bool(cmt->MSC&CMT_MSC_MCGEN_MASK);
    }
    
    /**
@@ -1416,7 +1448,7 @@ public:
    static void setClockDivider(CmtClockPrescaler cmtClockPrescaler) {
    
       cmtClockPrescaler = calculateClockPrescaler(cmtClockPrescaler);
-      cmt->PPS = (cmt->PPS&~CMT_PPS_PPSDIV_MASK) | cmtClockPrescaler;
+      cmt->PPS = (cmt->PPS&~CMT_PPS_PPSDIV_MASK) | uint32_t(cmtClockPrescaler);
    }
    
    /**
@@ -1533,11 +1565,31 @@ public:
       cmt->CGL2 = cmtSecondaryCarrierLowTime;
    }
    
-   // Pins associated with peripheral
-   typedef GpioTable_T<CmtInfo, 0, ActiveHigh> IroPin;
+   /// GPIO associated with CMT pin (CMT_IRO)
+   typedef GpioTable_T<CmtInfo, 0, ActiveHigh> GpioCmtOut;
    
-   // PCRs associated with peripheral pins
-   typedef PcrTable_T<CmtInfo, 0> OutputPin;
+   /// Allow access to PCR of CMT pin (CMT_IRO)
+   typedef PcrTable_T<CmtInfo, 0> CmtOutPin;
+   
+   /**
+    * Enable CMT_IRO pin and connects to CMT.
+    * Configures all Pin Control Register (PCR) values to device default.
+    */
+   static void setOutput() {
+   
+      CmtOutPin::setOutput();
+   }
+   
+   /**
+    * Enable CMT_IRO pin and connects to CMT.
+    * Configures all Pin Control Register (PCR) values.
+    *
+    * @param pcrValue  PCR value controlling pin characteristics
+    */
+   static void setOutput(PcrValue pcrValue) {
+   
+      CmtOutPin::setOutput(pcrValue);
+   }
    
    /**
     *   Default Constructor
@@ -1586,10 +1638,12 @@ public:
     * This value is created from Configure.usbdmProject settings
     */
    static constexpr Init DefaultInitValue = {
+
       NvicPriority_Normal ,             // (irqLevel)                 IRQ priority level - Normal
       unhandledCallback,                // (handlerName)              User declared event handler
    
-      CmtMode_Direct ,                       // (cmt_msc_mode)             Mode of operation - Direct
+      CmtEnable_Disabled ,                   // (cmt_msc_mcgen)            Modulator and Carrier Enable - Disabled
+      CmtMode_Baseband ,                     // (cmt_msc_mode)             Mode of operation - Baseband
       CmtClockPrescaler_BusClockDivBy1 ,     // (cmt_pps_ppsdiv)           Primary Prescaler Divider - Bus clock / 1
       CmtIntermediatePrescaler_DivBy1 ,      // (cmt_msc_cmtdiv)           Intermediate frequency Prescaler - Intermediate frequency /1
       CmtOutput_Disabled ,                   // (cmt_oc_output)            Output Control - Disabled

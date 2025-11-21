@@ -37,6 +37,7 @@ namespace USBDM {
  * This may include pin information, constants, register addresses, and default register values,
  * along with simple accessor functions.
  */
+
    /**
     * Timer Enable
     * (lptmr_csr_ten)
@@ -188,14 +189,30 @@ namespace USBDM {
       LptmrInputEdge_Falling   = LPTMR_CSR_TPP(1),  ///< Active-low, increment count on falling-edge
    };
 
+
+   // Bit operators for PSR register fields
+   constexpr inline uint8_t operator|(LptmrClockSel op1, LptmrPrescale op2)         { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(LptmrClockSel op1, LptmrGlitchFilter op2)     { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(LptmrPrescale op1, LptmrClockSel op2)         { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(LptmrPrescale op1, LptmrGlitchFilter op2)     { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(LptmrGlitchFilter op1, LptmrClockSel op2)     { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(LptmrGlitchFilter op1, LptmrPrescale op2)     { return uint8_t(op1)|uint8_t(op2); };
+   
+
+   // Bit operators for CSR register fields
+   constexpr inline uint8_t operator|(LptmrInput op1, LptmrInputEdge op2)     { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(LptmrInputEdge op1, LptmrInput op2)     { return uint8_t(op1)|uint8_t(op2); };
+   
 class LptmrBasicInfo {
 
 public:
+
 }; // class LptmrBasicInfo 
 
 class Lptmr0Info : public LptmrBasicInfo {
 
 public:
+
    //! Number of signals available in info table
    static constexpr int numSignals  = 3;
 
