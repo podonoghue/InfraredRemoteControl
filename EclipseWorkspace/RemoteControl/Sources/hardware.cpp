@@ -60,13 +60,12 @@ void mapAllPins() {
    PORTA->GPCLR = uint32_t(ForceLockedPins)|(0x0100UL|PORT_GPCLR_GPWE(0x0010UL));
    PORTA->GPCLR = uint32_t(ForceLockedPins)|(0x0200UL|PORT_GPCLR_GPWE(0x0006UL));
    PORTA->GPCLR = uint32_t(ForceLockedPins)|(0x0700UL|PORT_GPCLR_GPWE(0x0009UL));
-   PORTB->GPCLR = uint32_t(ForceLockedPins)|(0x0000UL|PORT_GPCLR_GPWE(0x0008UL));
-   PORTB->GPCLR = uint32_t(ForceLockedPins)|(0x0100UL|PORT_GPCLR_GPWE(0x0003UL));
-   PORTC->GPCLR = uint32_t(ForceLockedPins)|(0x0100UL|PORT_GPCLR_GPWE(0x0010UL));
-   PORTC->GPCLR = uint32_t(ForceLockedPins)|(0x0200UL|PORT_GPCLR_GPWE(0x006EUL));
-   PORTC->GPCLR = uint32_t(ForceLockedPins)|(0x0203UL|PORT_GPCLR_GPWE(0x0080UL));
-   PORTD->GPCLR = uint32_t(ForceLockedPins)|(0x0100UL|PORT_GPCLR_GPWE(0x003FUL));
-   PORTD->GPCLR = uint32_t(ForceLockedPins)|(0x0200UL|PORT_GPCLR_GPWE(0x0080UL));
+   PORTB->GPCLR = uint32_t(ForceLockedPins)|(0x0100UL|PORT_GPCLR_GPWE(0x000FUL));
+   PORTB->GPCHR = uint32_t(ForceLockedPins)|(0x0100UL|PORT_GPCHR_GPWE(0x0003UL));
+   PORTC->GPCLR = uint32_t(ForceLockedPins)|(0x0100UL|PORT_GPCLR_GPWE(0x0012UL));
+   PORTC->GPCLR = uint32_t(ForceLockedPins)|(0x0200UL|PORT_GPCLR_GPWE(0x00EDUL));
+   PORTD->GPCLR = uint32_t(ForceLockedPins)|(0x0100UL|PORT_GPCLR_GPWE(0x007FUL));
+   PORTD->GPCLR = uint32_t(ForceLockedPins)|(0x0240UL|PORT_GPCLR_GPWE(0x0080UL));
 
    if constexpr (ForceLockoutUnbondedPins) {
       PORTA->GPCLR = uint32_t(PinLock_Locked)|(0x0000UL|PORT_GPCLR_GPWE(0xFFE0UL)); // Lockout unavailable pins

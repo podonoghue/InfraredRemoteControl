@@ -55,10 +55,11 @@ protected:
    }
 
    enum Control : uint16_t {
-      c_Nop            = 0,
-      c_Begin          = 0b0001'0000'0000'0000U,
+//      ....           = 0b0000'0000'0000'0000U,
+//      ....           = 0b0001'0000'0000'0000U,
       c_Delay          = 0b0010'0000'0000'0000U,
       c_Duration       = 0b0011'0000'0000'0000U,
+//      ....           = 0b0100'0000'0000'0000U,
       c_MarkSpace      = 0b0101'0000'0000'0000U,
       c_Data           = 0b0110'0000'0000'0000U,
       c_DataLiteral    = 0b0111'0000'0000'0000U,
@@ -66,6 +67,7 @@ protected:
       c_Loop           = 0b1001'0000'0000'0000U,
       c_Repeat         = 0b1010'0000'0000'0000U,
       c_LoopFixed      = 0b1011'0000'0000'0000U,
+//      ....           = 0b1100'0000'0000'0000U,
       c_Cleanup        = 0b1101'0000'0000'0000U,
       c_Epoch_Start    = 0b1110'0000'0000'0000U,
       c_End            = 0b1111'0000'0000'0000U,
@@ -193,6 +195,8 @@ private:
 
    inline static uint8_t repeatCount;
 
+   inline static volatile bool keepRepeating = false;
+
    inline static bool complete = true;
 
    /**
@@ -243,11 +247,11 @@ private:
                continue;
 
             case c_LoopFixed:
-               loopIndex = extractLabelIndex(current); //uint8_t(current)&0b11;
+               loopIndex = extractLabelIndex(current);
 
                if (loopCounts[loopIndex] == 0) {
                   // First time through loop
-                  loopCounts[loopIndex] = extractFixedLoopCount(current); //uint8_t(current>>2);
+                  loopCounts[loopIndex] = extractFixedLoopCount(current);
                }
                if (--loopCounts[loopIndex]>0) {
                   // Loop sequence
@@ -261,7 +265,7 @@ private:
                continue;
 
             case c_Loop:
-               loopIndex = extractLabelIndex(current); //uint8_t(current)&0b11;
+               loopIndex = extractLabelIndex(current);
                if (repeatCount-->0) {
                   // Loop sequence
                   sequence  = labels[loopIndex];
@@ -271,7 +275,7 @@ private:
                continue;
 
             case c_Repeat:
-               loopIndex = extractLabelIndex(current); //uint8_t(current)&0b11;
+               loopIndex = extractLabelIndex(current);
 
                if (repeatCount--==0) {
                   // Terminate loop
@@ -445,6 +449,7 @@ private:
    static void playEvent() {
 
       eventCount++;
+      keepRepeating = true;
 
       static constexpr IntegerFormat decimal8Format {
          Width_8,
@@ -681,6 +686,13 @@ private:
 //      DebugLed::off();
    }
 
+   /**
+    * Stop any further repeats
+    */
+   void stop() {
+      keepRepeating = false;
+   }
+
 protected:
 
    /**
@@ -691,7 +703,7 @@ protected:
     * @param repeat        Number of times to repeat (including original).
     * @param delay         Delay at end of sequence 1_tick = 1us
     */
-   static void runSequence(const Control *newSequence, uint32_t data1, uint32_t data2, unsigned repeat, unsigned delay) {
+   static void start(const Control *newSequence, uint32_t data1, uint32_t data2, unsigned repeat, unsigned delay) {
 
       // Wait until previous Tx completes
       waitUntilComplete();
@@ -841,18 +853,18 @@ private:
          /*      */   //=======================
          /*      */
          /*      */   //--------------------------------------
-         /*      */   //                                                | Start-bit
-         /*  1   */   c_MarkSpace,                //                |
+         /*      */   //                                      | Start-bit
+         /*  1   */   c_MarkSpace,          //                |
          /*      */   Value(16*564_ticks),  // Start bit high | (16,-8)
          /*      */   Value(8*564_ticks),   // Start bit low  |
          /*      */
          /*      */   //--------------------------------------
-         /*      */   //                                                | 32-bit Data
-         /* 2-33 */   Data1(32),            //              | (D:8,S:8,F:8,~F:8)
+         /*      */   //                                      | 32-bit Data
+         /* 2-33 */   Data1(32),            //                | (D:8,S:8,F:8,~F:8)
          /*      */
          /*      */   //--------------------------------------
-         /*      */   //                                                 | Stop-bit
-         /* 34   */   c_MarkSpace,                 //                |
+         /*      */   //                                      | Stop-bit
+         /* 34   */   c_MarkSpace,          //                |
          /*      */   Value(1*564_ticks),   // Stop bit high  + (1,^108m)
          /*      */   Value(0),             // ---            |
          /*      */                         //                |
@@ -860,22 +872,22 @@ private:
          /*      */   DurationLow(108000),  //                +
          /*      */
          /*      */   //-----------------------------------------
-         /*      */   //                                                     | Abbreviated Repeat
-         /* 36   */   Repeat(0),               //                +
-         /*      */      c_Epoch_Start,               //                |
-         /*      */                                        //                |
-         /* 37   */      c_MarkSpace,                 //                |
+         /*      */   //                                          | Abbreviated Repeat
+         /* 36   */   Repeat(0),                //                +
+         /*      */      c_Epoch_Start,         //                |
+         /*      */                             //                |
+         /* 37   */      c_MarkSpace,           //                |
          /*      */      Value(16*564_ticks),   // 16             | (16,-4,1,^108m)R+
          /*      */      Value(4*564_ticks),    // -4             |
-         /*      */                                        //                |
-         /* 38   */      c_MarkSpace,                 //                |
+         /*      */                             //                |
+         /* 38   */      c_MarkSpace,           //                |
          /*      */      Value(1*564_ticks),    // 1              |
          /*      */      Value(0),              //                |
-         /*      */                                        //                |
+         /*      */                             //                |
          /* 39   */      DurationHigh(108000),  // ^108m          |
          /*      */      DurationLow(108000),   //                |
-         /*      */                                        //                |
-         /* 40   */   Label(0),                //                +
+         /*      */                             //                |
+         /* 40   */   Label(0),                 //                +
          /*      */
          /* 41   */   c_End,
    };
@@ -952,7 +964,7 @@ public:
       if (repeat == 0) {
          repeat = 3;
       }
-      IrRemote::runSequence(protocolSequence, code, 0, repeat, delay);
+      IrRemote::start(protocolSequence, code, 0, repeat, delay);
    }
 
    /**
@@ -997,41 +1009,41 @@ private:
          /*      */   //=======================
          /*      */
          /*      */   //--------------------------------------
-         /*      */   //                                                 | Start-bit
-         /*  1   */   c_MarkSpace,                 //                |
+         /*      */   //                                       | Start-bit
+         /*  1   */   c_MarkSpace,           //                |
          /*      */   Value(16*564_ticks),   // Start bit high | (16,-8)
          /*      */   Value(8*564_ticks),    // Start bit low  |
          /*      */
          /*      */   //--------------------------------------
-         /*      */   //                                                 | 32-bit Data
+         /*      */   //                                     | 32-bit Data
          /* 2-33 */   Data1(32),           //                | (D:8,S:8,F:8,~F:8)
          /*      */
          /*      */   //--------------------------------------
-         /*      */   //                                                 | Stop-bit
-         /* 34   */   c_MarkSpace,                 //                |
+         /*      */   //                                      | Stop-bit
+         /* 34   */   c_MarkSpace,          //                |
          /*      */   Value(1*564_ticks),   // Stop bit high  + (1,^108m)
          /*      */   Value(0),             // ---            |
-         /*      */                                    //                |
+         /*      */                         //                |
          /* 35   */   DurationHigh(108000), // ^108m          |
          /*      */   DurationLow(108000),  //                +
          /*      */
          /*      */   //-----------------------------------------
          /*      */   //                                                     | Abbreviated Repeat
-         /*      */   Repeat(0),               //                +
-         /*      */      c_Epoch_Start,               //                |
-         /*      */                                        //                |
-         /* 36   */      c_MarkSpace,                 //                |
+         /*      */   Repeat(0),                //                +
+         /*      */      c_Epoch_Start,         //                |
+         /*      */                             //                |
+         /* 36   */      c_MarkSpace,           //                |
          /*      */      Value(16*564_ticks),   // 16             | (16,-4,1,^108m)R+
          /*      */      Value(4*564_ticks),    // -4             |
-         /*      */                                        //                |
-         /* 37   */      c_MarkSpace,                 //                |
+         /*      */                             //                |
+         /* 37   */      c_MarkSpace,           //                |
          /*      */      Value(1*564_ticks),    // 1              |
          /*      */      Value(0),              //                |
-         /*      */                                        //                |
+         /*      */                             //                |
          /* 38   */      DurationHigh(108000),  // ^108m          |
          /*      */      DurationLow(108000),   //                |
-         /*      */                                        //                |
-         /*      */   Label(0),                //                +
+         /*      */                             //                |
+         /*      */   Label(0),                 //                +
          /*      */
          /* 42   */   c_End,
    };
@@ -1103,7 +1115,7 @@ public:
       if (repeat == 0) {
          repeat = 3;
       }
-      IrRemote::runSequence(protocolSequence, code, 0, repeat, delay);
+      IrRemote::start(protocolSequence, code, 0, repeat, delay);
    }
 
    /**
@@ -1151,40 +1163,40 @@ private:
          /*      */   //=======================
          /*      */
          /*      */   //--------------------------------------
-         /*      */   //                                                | Start-bit
-         /*  1   */   c_MarkSpace,                //                |
+         /*      */   //                                      | Start-bit
+         /*  1   */   c_MarkSpace,          //                |
          /*      */   Value(16*564_ticks),  // Start bit high | (16,-8)
          /*      */   Value(8*564_ticks),   // Start bit low  |
          /*      */
          /*      */   //--------------------------------------
-         /*      */   //                                                | 32-bit Data
-         /* 2-33 */   Data1(32),          //                | (D:8,S:8,F:8,~F:8)
+         /*      */   //                                      | 32-bit Data
+         /* 2-33 */   Data1(32),            //                | (D:8,S:8,F:8,~F:8)
          /*      */
          /*      */   //--------------------------------------
-         /*      */   //                                                 | Stop-bit
-         /* 34   */   c_MarkSpace,                 //                |
+         /*      */   //                                      | Stop-bit
+         /* 34   */   c_MarkSpace,          //                |
          /*      */   Value(1*564_ticks),   // Stop bit high  + (1,^108m)
          /*      */   Value(0),             // ---            |
-         /*      */                                    //                |
+         /*      */                         //                |
          /* 35   */   DurationHigh(108000), // ^108m          |
          /*      */   DurationLow(108000),  //                +
          /*      */
          /*      */   //-----------------------------------------
          /*      */   //                                                    | Abbreviated Repeat
-         /*      */   Repeat(0),              //                +
-         /*      */      c_Epoch_Start,              //                |
-         /*      */                                       //                |
-         /* 36   */      c_MarkSpace,                //                |
+         /*      */   Repeat(0),               //                +
+         /*      */      c_Epoch_Start,        //                |
+         /*      */                            //                |
+         /* 36   */      c_MarkSpace,          //                |
          /*      */      Value(16*564_ticks),  // Start bit high | (16,-4,1,^108m)R+
          /*      */      Value(4*564_ticks),   // Start bit low  |
-         /* 37   */      c_MarkSpace,                //                |
+         /* 37   */      c_MarkSpace,          //                |
          /*      */      Value(1*564_ticks),   // Stop bit high  |
          /*      */      Value(0),             // ---            |
-         /*      */                                       //                |
+         /*      */                            //                |
          /* 38   */      DurationHigh(108000), // ^108m          |
          /*      */      DurationLow(108000),  //                |
-         /*      */                                       //                |
-         /*      */   Label(0),               //                +
+         /*      */                            //                |
+         /*      */   Label(0),                //                +
          /*      */
          /* 42   */   c_End,
    };
@@ -1252,7 +1264,7 @@ public:
       if (repeat == 0) {
          repeat = 3;
       }
-      IrRemote::runSequence(protocolSequence, code, 0, repeat, delay);
+      IrRemote::start(protocolSequence, code, 0, repeat, delay);
    }
 
    /**
@@ -1410,7 +1422,7 @@ public:
       if (repeat == 0) {
          repeat = 3;
       }
-      IrRemote::runSequence(protocolSequence, code, 0, repeat, delay);
+      IrRemote::start(protocolSequence, code, 0, repeat, delay);
    }
 
    /**
@@ -1559,7 +1571,7 @@ public:
       if (repeat == 0) {
          repeat = 3;
       }
-      IrRemote::runSequence(protocolSequence, DVD, code, repeat, delay);
+      IrRemote::start(protocolSequence, DVD, code, repeat, delay);
    }
 
    /**
@@ -1610,14 +1622,14 @@ private:
          /*       */
          /*       */   //----------------------------------------------
          /*       */   //                                             | Full Repeat
-         /*       */   Repeat(0),               //                    +
-         /*      */      c_Epoch_Start,        //                |
+         /*       */   Repeat(0),                 //                  +
+         /*      */      c_Epoch_Start,           //                  |
          /*       */
          /*       */      //-------------------------------------------
          /*       */      //                                          | Start-bit
-         /*  1    */      c_MarkSpace,          //                    |
-         /*       */      Value(8*432_ticks),   // Start bit high     | (8,-4)
-         /*       */      Value(4*432_ticks),   // Start bit low      |
+         /*  1    */      c_MarkSpace,            //                  |
+         /*       */      Value(8*432_ticks),     // Start bit high   | (8,-4)
+         /*       */      Value(4*432_ticks),     // Start bit low    |
          /*       */
          /*       */      //-------------------------------------------
          /*       */      //                                          |
@@ -1655,48 +1667,48 @@ public:
     * Common codes
     */
    enum Code : uint32_t {
-      A_B                 =    0xF84820B2,
-      AUDIO               =    0x833320B2,
-      CANCEL              =    0x338320B2,
-      DISPLAY             =    0x229220B2,
-      DOWN                =    0x368620B2,
-      EJECT               =    0xB10120B2,
-      FORWARD             =    0xB50520B2,
-      FORWARD_SCENE       =    0xFA4A20B2,
-      LEFT                =    0x378720B2,
-      MENU                =    0x308020B2,
-      NUM0                =    0xA91920B2,
-      NUM1                =    0xA01020B2,
-      NUM10_PLUS          =    0x398920B2,
-      NUM2                =    0xA11120B2,
-      NUM3                =    0xA21220B2,
-      NUM4                =    0xA31320B2,
-      NUM5                =    0xA41420B2,
-      NUM6                =    0xA51520B2,
-      NUM7                =    0xA61620B2,
-      NUM8                =    0xA71720B2,
-      NUM9                =    0xA81820B2,
-      OK                  =    0x328220B2,
-      ON_OFF              =    0x8D3D20B2,
-      PAUSE_PLAY          =    0xBA0A20B2,
-      PROG                =    0xFD4D20B2,
-      RANDOM              =    0x209020B2,
-      REPEAT              =    0x3C8C20B2,
-      RETURN              =    0x318120B2,
-      REVERSE             =    0xB40420B2,
-      REVERSE_SCENE       =    0xF94920B2,
-      RIGHT               =    0x388820B2,
-      SEARCH              =    0x56E620B2,
-      SETUP               =    0x249420B2,
-      SLOW                =    0xBF0F20B2,
-      STEP                =    0xBC0C20B2,
-      STOP                =    0xB00020B2,
-      SUBTITLE            =    0x219120B2,
-      TITLE               =    0x2B9B20B2,
-      UP                  =    0x358520B2,
-      USB                 =    0xB20220B2,
-      USB_REC             =    0x3A8A20B2,
-      ZOOM                =    0x71C120B2,
+      A_B                 =    0xF84800B0,
+      AUDIO               =    0x833300B0,
+      CANCEL              =    0x338300B0,
+      DISPLAY             =    0x229200B0,
+      DOWN                =    0x368600B0,
+      EJECT               =    0xB10100B0,
+      FORWARD             =    0xB50500B0,
+      FORWARD_SCENE       =    0xFA4A00B0,
+      LEFT                =    0x378700B0,
+      MENU                =    0x308000B0,
+      NUM0                =    0xA91900B0,
+      NUM1                =    0xA01000B0,
+      NUM10_PLUS          =    0x398900B0,
+      NUM2                =    0xA11100B0,
+      NUM3                =    0xA21200B0,
+      NUM4                =    0xA31300B0,
+      NUM5                =    0xA41400B0,
+      NUM6                =    0xA51500B0,
+      NUM7                =    0xA61600B0,
+      NUM8                =    0xA71700B0,
+      NUM9                =    0xA81800B0,
+      OK                  =    0x328200B0,
+      ON_OFF              =    0x8D3D00B0,
+      PAUSE_PLAY          =    0xBA0A00B0,
+      PROG                =    0xFD4D00B0,
+      RANDOM              =    0x209000B0,
+      REPEAT              =    0x3C8C00B0,
+      RETURN              =    0x318100B0,
+      REVERSE             =    0xB40400B0,
+      REVERSE_SCENE       =    0xF94900B0,
+      RIGHT               =    0x388800B0,
+      SEARCH              =    0x56E600B0,
+      SETUP               =    0x249400B0,
+      SLOW                =    0xBF0F00B0,
+      STEP                =    0xBC0C00B0,
+      STOP                =    0xB00000B0,
+      SUBTITLE            =    0x219100B0,
+      TITLE               =    0x2B9B00B0,
+      UP                  =    0x358500B0,
+      USB                 =    0xB20200B0,
+      USB_REC             =    0x3A8A00B0,
+      ZOOM                =    0x71C100B0,
 
    };
 
@@ -1714,7 +1726,7 @@ public:
       if (repeat == 0) {
          repeat = 3;
       }
-      IrRemote::runSequence(protocolSequence, code, 0, repeat, delay);
+      IrRemote::start(protocolSequence, code, 0, repeat, delay);
    }
 
    /**
@@ -1837,21 +1849,21 @@ public:
       REVERSE              = Sony15(0x97,   0x1B),   // Sony15(151,27)
       RIGHT                = Sony12(0x01,   0x33),   // Sony12(1,51)
       SOCIAL_VIEW          = Sony15(0x1A,   0x74),   // Sony15(26,116)
-      SOURCE               = Sony12(0x01,   0x25),   // Sony12(1,37)
+      SOURCE               = Sony12(0x01,   0x25),   // Sony12(1,37)   // Source menu
       SOURCE_TV            = Sony12(0x01,   0x24),   // Sony12(1,36)
       SOURCE_HDMI_1        = Sony15(0x1A,   0x5a),   // Sony15(26,90)
       SOURCE_HDMI_2        = Sony15(0x1A,   0x5b),   // Sony15(26,91)
       SOURCE_HDMI_3        = Sony15(0x1A,   0x5c),   // Sony15(26,92)
       SOURCE_HDMI_4        = Sony15(0x1A,   0x5d),   // Sony15(26,93)
       SOURCE_HDMI_5        = Sony15(0x1A,   0x5e),   // Sony15(26,94)
-      SOURCE_1             = Sony12(0x01,   0x40),   // Sony12(1,64) Maybe?
-      SOURCE_2             = Sony12(0x01,   0x41),   // Sony12(1,65) Maybe?
-      SOURCE_3             = Sony12(0x01,   0x42),   // Sony12(1,66) Maybe?
-      SOURCE_4             = Sony12(0x01,   0x47),   // Sony12(1,71) Maybe?
-      SOURCE_5             = Sony12(0x01,   0x48),   // Sony12(1,72) Maybe?
-      SOURCE_6             = Sony12(0x01,   0x49),   // Sony12(1,73) Maybe?
-      SOURCE_RGB1          = Sony12(0x01,   0x43),   // Sony12(1,67) Maybe?
-      SOURCE_RGB2          = Sony12(0x01,   0x44),   // Sony12(1,68) Maybe?
+      SOURCE_Video_1       = Sony12(0x01,   0x40),   // Sony12(1,64)
+      SOURCE_Video_2       = Sony12(0x01,   0x41),   // Sony12(1,65)    // Composite
+//      SOURCE_3             = Sony12(0x01,   0x42),   // Sony12(1,66) Maybe?
+//      SOURCE_4             = Sony12(0x01,   0x47),   // Sony12(1,71) Maybe?
+//      SOURCE_5             = Sony12(0x01,   0x48),   // Sony12(1,72) Maybe?
+//      SOURCE_6             = Sony12(0x01,   0x49),   // Sony12(1,73) Maybe?
+//      SOURCE_RGB1          = Sony12(0x01,   0x43),   // Sony12(1,67) Maybe?
+//      SOURCE_RGB2          = Sony12(0x01,   0x44),   // Sony12(1,68) Maybe?
       STANDBY              = Sony15(0x01,   0x2F),   // Sony15(1,47) Maybe?
       STOP                 = Sony15(0x97,   0x18),   // Sony15(151,24)
       SWAP                 = Sony12(0x01,   0x3B),   // Sony12(1,59)
@@ -1897,7 +1909,7 @@ public:
       if (repeat == 0) {
          repeat = 3;
       }
-      IrRemote::runSequence(protocolSequence, code, 0, repeat, delay);
+      IrRemote::start(protocolSequence, code, 0, repeat, delay);
    }
 
    /**

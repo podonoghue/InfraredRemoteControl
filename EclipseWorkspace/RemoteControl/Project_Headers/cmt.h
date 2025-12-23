@@ -1028,7 +1028,7 @@ public:
    static constexpr PinInfo  info[] = {
 
          //      Signal                 Pin                                  PinIndex                PCR value
-         /*   0: CMT_IRO              = PTD7(p48)                      */  { PinIndex::PTD7,         PcrValue(0x00200UL) },
+         /*   0: CMT_IRO              = PTD7(p48)                      */  { PinIndex::PTD7,         PcrValue(0x00240UL) },
    };
 
    /**
@@ -1038,7 +1038,7 @@ public:
     */
    static void initPCRs() {
       enablePortClocks(USBDM::PORTD_CLOCK_MASK);
-      PORTD->GPCLR = (0x0200UL|PORT_GPCLR_GPWE(0x0080UL));
+      PORTD->GPCLR = (0x0240UL|PORT_GPCLR_GPWE(0x0080UL));
    }
 
    /**
@@ -1624,13 +1624,17 @@ public:
       // Enable peripheral
       enable();
    
-      // Configure call-back
-      if (init.callbacks[0] != nullptr) {
-         setCallback(init.callbacks[0]);
-         enableNvicInterrupts(init.priorities[0]);
-      }
+      // Disable call-back
+      disableNvicInterrupts();
+   
+      // Install call-back
+      setCallback(init.callbacks[0]);
    
       CmtBasicInfo::configure(cmt, init);
+   
+      // Enable call-back
+      enableNvicInterrupts(init.priorities[0]);
+   
    }
    
    /**

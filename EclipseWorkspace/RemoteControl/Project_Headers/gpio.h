@@ -527,6 +527,7 @@ public:
     * @param pinDriveStrength Pin drive strength of digital outputs
     * @param pinDriveMode     Pin drive mode (push-pull/open-drain) of digital outputs
     * @param pinAction        DMA and/or interrupt actions to happen on pin change or level
+    * @param pinStatusFlag    w1c flag indicating pin event detected
     * @param pinFilter        Pin filtering on digital inputs
     * @param pinSlewRate      Pin slew rate of digital outputs
     */
@@ -535,6 +536,7 @@ public:
          PinDriveStrength pinDriveStrength,
          PinDriveMode     pinDriveMode,
          PinAction        pinAction,
+         PinStatusFlag    pinStatusFlag,
          PinFilter        pinFilter,
          PinSlewRate      pinSlewRate)  {
    
@@ -543,7 +545,7 @@ public:
       // Set inactive pin state (if later made output)
       setInactive();
       // Configure PCR
-      Pcr::setPCR(pinPull|pinDriveStrength|pinDriveMode|pinAction|pinFilter|pinSlewRate);
+      Pcr::setPCR(pinPull|pinDriveStrength|pinDriveMode|pinAction|pinStatusFlag|pinFilter|pinSlewRate);
    }
    
    /**
@@ -679,19 +681,21 @@ public:
     * @note Resets the Pin Control Register value (PCR value).
     * @note Use setIn() for a lightweight change of direction without affecting other pin settings.
     *
-    * @param pinPull   Pin pull device (up/down/none) on digital inputs
-    * @param pinAction DMA and/or interrupt actions to happen on pin change or level
-    * @param pinFilter Pin filtering on digital inputs
+    * @param pinPull       Pin pull device (up/down/none) on digital inputs
+    * @param pinAction     DMA and/or interrupt actions to happen on pin change or level
+    * @param pinStatusFlag w1c flag indicating pin event detected
+    * @param pinFilter     Pin filtering on digital inputs
     */
    static void setInput(
-         PinPull   pinPull,
-         PinAction pinAction,
-         PinFilter pinFilter)  {
+         PinPull       pinPull,
+         PinAction     pinAction,
+         PinStatusFlag pinStatusFlag,
+         PinFilter     pinFilter)  {
    
       // Make input
       setIn();
       // Configure PCR
-      Pcr::setPCR(pinPull|pinAction|pinFilter);
+      Pcr::setPCR(pinPull|pinAction|pinStatusFlag|pinFilter);
    }
    
    /**
@@ -937,11 +941,11 @@ public:
    }
 
    /**
-    * Get interrupt state
+    * Get interrupt flag
     *
     * @return true/false reflecting interrupt flag in PCR
     */
-   static bool getInterruptState() {
+   static bool getInterruptFlag() {
 
       static constexpr HardwarePtr<uint32_t> PCR = PcrBase::getPcrAddress(pinIndex);
       
@@ -949,9 +953,9 @@ public:
    }
 
    /**
-    * Clear interrupt state in PCR
+    * Clear interrupt flag in PCR
     */
-   static void clearInterruptState() {
+   static void clearInterruptFlag() {
 
       static constexpr HardwarePtr<uint32_t> PCR = PcrBase::getPcrAddress(pinIndex);
       
@@ -960,11 +964,11 @@ public:
    }
    
    /**
-    * Get and clear interrupt state
+    * Get and clear interrupt flag
     *
     * @return true/false reflecting original interrupt flag in PCR
     */
-   static bool getAndClearInterruptState() {
+   static bool getAndClearInterruptFlag() {
 
       static constexpr HardwarePtr<uint32_t> PCR = PcrBase::getPcrAddress(pinIndex);
       
@@ -1317,6 +1321,7 @@ public:
     * @param pinDriveStrength Pin drive strength of digital outputs
     * @param pinDriveMode     Pin drive mode (push-pull/open-drain) of digital outputs
     * @param pinAction        DMA and/or interrupt actions to happen on pin change or level
+    * @param pinStatusFlag    w1c flag indicating pin event detected
     * @param pinFilter        Pin filtering on digital inputs
     * @param pinSlewRate      Pin slew rate of digital outputs
     */
@@ -1325,10 +1330,11 @@ public:
          PinDriveStrength pinDriveStrength,
          PinDriveMode     pinDriveMode,
          PinAction        pinAction,
+         PinStatusFlag    pinStatusFlag,
          PinFilter        pinFilter,
          PinSlewRate      pinSlewRate)  {
    
-      setInOut(pinPull|pinDriveStrength|pinDriveMode|pinAction|pinFilter|pinSlewRate);
+      setInOut(pinPull|pinDriveStrength|pinDriveMode|pinAction|pinStatusFlag|pinFilter|pinSlewRate);
    }
 
    /**
@@ -1431,16 +1437,18 @@ public:
     * @note Resets the Pin Control Register value (PCR value).
     * @note Use setIn() for a lightweight change of direction without affecting other pin settings.
     *
-    * @param pinPull   Pin pull device (up/down/none) on digital inputs
-    * @param pinAction DMA and/or interrupt actions to happen on pin change or level
-    * @param pinFilter Pin filtering on digital inputs
+    * @param pinPull       Pin pull device (up/down/none) on digital inputs
+    * @param pinAction     DMA and/or interrupt actions to happen on pin change or level
+    * @param pinStatusFlag w1c flag indicating pin event detected
+    * @param pinFilter     Pin filtering on digital inputs
     */
    static void setInput(
-         PinPull   pinPull,
-         PinAction pinAction,
-         PinFilter pinFilter)  {
+         PinPull       pinPull,
+         PinAction     pinAction,
+         PinStatusFlag pinStatusFlag,
+         PinFilter     pinFilter)  {
    
-      setInOut(pinPull|pinAction|pinFilter);
+      setInOut(pinPull|pinAction|pinStatusFlag|pinFilter);
    }
 
    /**
@@ -1569,9 +1577,41 @@ public:
     *       It is necessary to identify the originating pin in the callback
     * @note This is a convenience function for Pcr::setPinCallback(callback)
     */
-   static ErrorCode setPinCallback(PinCallbackFunction callback) {
+   static void setPinCallback(PinCallbackFunction callback) {
       static_assert(Port::HANDLER_INSTALLED, "Gpio containing GpioField not configured for interrupts - Modify Configure.usbdm");
-      return Port::setPinCallback(callback);
+      Port::setPinCallback(callback);
+   }
+
+   /**
+    * Get interrupt flags as bit mask
+    *
+    * @return Bitmask containing interrupt flags for the pins in bitfield
+    */
+   static uint32_t getInterruptFlags() {
+      return (Port::port->ISFR&BITMASK)>>RIGHT;
+   }
+
+   /**
+    * Clear interrupt flags
+    */
+   static void clearInterruptFlags() {
+      Port::port->ISFR = BITMASK;
+   }
+
+   /**
+    * Get and clear interrupt flags
+    *
+    * @return Bitmask containing original interrupt flags for the pins in bitfield
+    */
+   static bool getAndClearInterruptFlags() {
+
+      // Capture state
+      uint32_t state = Port::port->ISFR;
+
+      // Clear captured flags
+      Port::port->ISFR = state;
+
+      return (state&BITMASK)>>RIGHT;
    }
 
    /**

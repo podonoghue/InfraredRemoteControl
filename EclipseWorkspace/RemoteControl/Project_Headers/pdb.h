@@ -117,26 +117,78 @@ namespace USBDM {
     * Write 0s to clear the sequence error flags.
     */
    enum class PdbChannelSequenceErrorFlag : uint32_t {
-      PreTrigger0   = PDB_S_ERR(1U<<0),  ///< Pre-trigger 0 Sequence Error
-      PreTrigger1   = PDB_S_ERR(1U<<1),  ///< Pre-trigger 1 Sequence Error
-      NoError       = PDB_S_ERR(0x0U),   ///< No Error
-      AnyError      = PDB_S_ERR(0x3U),   ///< Any Error
+      PdbChannelSequenceErrorFlag_PreTrigger0   = PDB_S_ERR(1U<<0),  ///< Pre-trigger 0 Sequence Error
+      PdbChannelSequenceErrorFlag_PreTrigger1   = PDB_S_ERR(1U<<1),  ///< Pre-trigger 1 Sequence Error
+      PdbChannelSequenceErrorFlag_NoError       = PDB_S_ERR(0x0U),   ///< No Error
+      PdbChannelSequenceErrorFlag_AnyError      = PDB_S_ERR(0x3U),   ///< Any Error
    };
 
+   /**
+    * Combines two PdbChannelSequenceErrorFlag values (by ORing)
+    * Used to create a combined PdbChannelSequenceErrorFlag mask
+    * 
+    * @param left    Left operand
+    * @param right   Right operand
+    * 
+    * @return  Combined value
+    */
+   constexpr PdbChannelSequenceErrorFlag operator|(PdbChannelSequenceErrorFlag left, PdbChannelSequenceErrorFlag right) {
+      return PdbChannelSequenceErrorFlag(uint32_t(left)|uint32_t(right));
+   }
+   
+   /**
+    * Combines two PdbChannelSequenceErrorFlag values (by ANDing) to produce a bool result
+    * Used to check a value against a PdbChannelSequenceErrorFlag mask
+    * 
+    * @param left    Left operand
+    * @param right   Right operand
+    * 
+    * @return boolean value indicating if the result is non-zero
+    */
+   constexpr bool operator&(PdbChannelSequenceErrorFlag left, PdbChannelSequenceErrorFlag right) {
+      return bool(uint32_t(left)&uint32_t(right));
+   }
+   
    /**
     * Channel Pre-trigger Flags
     * (pdb_s_cf)
     *
     * The CF[m] bit is set when the PDB counter matches the pre-trigger delay (CHnDLYm+1).
-    * Write 0 to clear these bits
+    * Write 0s to clear these bits
     */
    enum class PdbChannelFlag : uint32_t {
-      PreTrigger0   = PDB_S_CF(1U<<0),  ///< Pre-trigger 0 Sequence Error
-      PreTrigger1   = PDB_S_CF(1U<<1),  ///< Pre-trigger 1 Sequence Error
-      NoEvent       = PDB_S_CF(0x0U),   ///< No Event
-      AnyEvent      = PDB_S_CF(0x3U),   ///< Any Event
+      PdbChannelFlag_PreTrigger0   = 1U<<16,    ///< Pre-trigger 0 Sequence Error
+      PdbChannelFlag_PreTrigger1   = 1U<<17,    ///< Pre-trigger 1 Sequence Error
+      PdbChannelFlag_NoEvent       = 0x0U,      ///< No Event
+      PdbChannelFlag_AnyEvent      = 0x30000U,  ///< Any Event
    };
 
+   /**
+    * Combines two PdbChannelFlag values (by ORing)
+    * Used to create a combined PdbChannelFlag mask
+    * 
+    * @param left    Left operand
+    * @param right   Right operand
+    * 
+    * @return  Combined value
+    */
+   constexpr PdbChannelFlag operator|(PdbChannelFlag left, PdbChannelFlag right) {
+      return PdbChannelFlag(uint32_t(left)|uint32_t(right));
+   }
+   
+   /**
+    * Combines two PdbChannelFlag values (by ANDing) to produce a bool result
+    * Used to check a value against a PdbChannelFlag mask
+    * 
+    * @param left    Left operand
+    * @param right   Right operand
+    * 
+    * @return boolean value indicating if the result is non-zero
+    */
+   constexpr bool operator&(PdbChannelFlag left, PdbChannelFlag right) {
+      return bool(uint32_t(left)&uint32_t(right));
+   }
+   
    /**
     * Trigger Input Source Select
     * (pdb_sc_trgsel)

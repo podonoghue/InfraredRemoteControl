@@ -55,6 +55,8 @@ namespace USBDM {
     * These are used to index into the jump table for PORT interrupts
     */
    enum PortIrqNum : int8_t {
+      PortIrqNum_PortA, // Used by PORTA
+      PortIrqNum_PortC, // Used by PORTC
       PortIrqNum_PortD, // Used by PORTD
    };
    
@@ -623,15 +625,15 @@ union Seconds_Ticks {
     * Priority level used to configure the NVIC
     * Subset of available levels
     */
-   enum NvicPriority : int8_t {
-      NvicPriority_Disabled   = (int8_t)255,                 ///< Interrupts Disabled
-      NvicPriority_VeryLow    = (1<<__NVIC_PRIO_BITS)-1,     ///< Very Low
-      NvicPriority_Low        = (NvicPriority_VeryLow*5/6),  ///< Low
-      NvicPriority_MidLow     = (NvicPriority_VeryLow*4/6),  ///< Mid-Low
-      NvicPriority_Normal     = (NvicPriority_VeryLow*3/6),  ///< Normal
-      NvicPriority_MidHigh    = (NvicPriority_VeryLow*2/6),  ///< Mid-High
-      NvicPriority_High       = (NvicPriority_VeryLow*1/6),  ///< High
-      NvicPriority_VeryHigh   = 0,                           ///< Very High
+   enum NvicPriority : uint16_t {
+      NvicPriority_Disabled   = 0,                                  ///< Interrupts Disabled
+      NvicPriority_VeryLow    = 0x8000|((1<<__NVIC_PRIO_BITS)-1),   ///< Very Low
+      NvicPriority_Low        = 0x8000|(NvicPriority_VeryLow*5/6),  ///< Low
+      NvicPriority_MidLow     = 0x8000|(NvicPriority_VeryLow*4/6),  ///< Mid-Low
+      NvicPriority_Normal     = 0x8000|(NvicPriority_VeryLow*3/6),  ///< Normal
+      NvicPriority_MidHigh    = 0x8000|(NvicPriority_VeryLow*2/6),  ///< Mid-High
+      NvicPriority_High       = 0x8000|(NvicPriority_VeryLow*1/6),  ///< High
+      NvicPriority_VeryHigh   = 0x8000|0,                           ///< Very High
    };
 
 
@@ -899,6 +901,23 @@ static inline void disablePortClocks(uint32_t pccAddress) {
 
 
    /**
+    * Pin Event Status Flag
+    * (port_pcr_isf)
+    *
+    * w1c flag indicating pin event detected
+    */
+   enum class PinStatusFlag : PcrValue {
+      PinStatusFlag_NoEvent      = PORT_PCR_ISF(0),  ///< No event
+      PinStatusFlag_Event        = PORT_PCR_ISF(1),  ///< Event occurred
+      PinStatusFlag_ClearEvent   = PORT_PCR_ISF(1),  ///< Clear event (w1c)
+   };
+
+   inline constexpr PinStatusFlag PinStatusFlag_NoEvent        = PinStatusFlag(PORT_PCR_ISF(0)); ///< No event
+   inline constexpr PinStatusFlag PinStatusFlag_Event          = PinStatusFlag(PORT_PCR_ISF(1)); ///< Event occurred
+   inline constexpr PinStatusFlag PinStatusFlag_ClearEvent     = PinStatusFlag(PORT_PCR_ISF(1)); ///< Clear event (w1c)
+
+
+   /**
     * Pin Control Register (PCR) lock
     * (port_pcr_lk)
     *
@@ -1017,6 +1036,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    constexpr inline PcrValue operator|(PcrValue op1, PinSlewRate op2) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
    constexpr inline PcrValue operator|(PcrValue op1, PinLock op2) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
    constexpr inline PcrValue operator|(PcrValue op1, PinAction op2) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
+   constexpr inline PcrValue operator|(PcrValue op1, PinStatusFlag op2) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
    constexpr inline PcrValue operator|(PcrValue op1, PinMux op2) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
    constexpr inline PcrValue operator|(PinPull op2, PcrValue op1) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
    constexpr inline PcrValue operator|(PinFilter op2, PcrValue op1) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
@@ -1025,6 +1045,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    constexpr inline PcrValue operator|(PinSlewRate op2, PcrValue op1) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
    constexpr inline PcrValue operator|(PinLock op2, PcrValue op1) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
    constexpr inline PcrValue operator|(PinAction op2, PcrValue op1) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
+   constexpr inline PcrValue operator|(PinStatusFlag op2, PcrValue op1) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
    constexpr inline PcrValue operator|(PinMux op2, PcrValue op1) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
    /**
     *  Convert PcrValue to PinPull
@@ -1090,6 +1111,15 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    }
    
    /**
+    *  Convert PcrValue to PinStatusFlag
+    *
+    *  @param pcrValue Value to convert
+    */
+   constexpr auto toPinStatusFlag(const PcrValue pcrValue) noexcept {
+      return PinStatusFlag(pcrValue&PORT_PCR_ISF_MASK);
+   }
+   
+   /**
     *  Convert PcrValue to PinMux
     *
     *  @param pcrValue Value to convert
@@ -1104,6 +1134,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    constexpr inline PcrValue operator|(PinFilter op1, PinDriveStrength op2)        { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinFilter op1, PinDriveMode op2)            { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinFilter op1, PinSlewRate op2)             { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinFilter op1, PinStatusFlag op2)           { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinFilter op1, PinLock op2)                 { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinFilter op1, PinAction op2)               { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinFilter op1, PinMux op2)                  { return PcrValue(op1)|PcrValue(op2); };
@@ -1111,6 +1142,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    constexpr inline PcrValue operator|(PinPull op1, PinDriveStrength op2)          { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinPull op1, PinDriveMode op2)              { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinPull op1, PinSlewRate op2)               { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinPull op1, PinStatusFlag op2)             { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinPull op1, PinLock op2)                   { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinPull op1, PinAction op2)                 { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinPull op1, PinMux op2)                    { return PcrValue(op1)|PcrValue(op2); };
@@ -1118,6 +1150,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    constexpr inline PcrValue operator|(PinDriveStrength op1, PinPull op2)          { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinDriveStrength op1, PinDriveMode op2)     { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinDriveStrength op1, PinSlewRate op2)      { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinDriveStrength op1, PinStatusFlag op2)    { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinDriveStrength op1, PinLock op2)          { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinDriveStrength op1, PinAction op2)        { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinDriveStrength op1, PinMux op2)           { return PcrValue(op1)|PcrValue(op2); };
@@ -1125,6 +1158,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    constexpr inline PcrValue operator|(PinDriveMode op1, PinPull op2)              { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinDriveMode op1, PinDriveStrength op2)     { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinDriveMode op1, PinSlewRate op2)          { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinDriveMode op1, PinStatusFlag op2)        { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinDriveMode op1, PinLock op2)              { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinDriveMode op1, PinAction op2)            { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinDriveMode op1, PinMux op2)               { return PcrValue(op1)|PcrValue(op2); };
@@ -1132,14 +1166,24 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    constexpr inline PcrValue operator|(PinSlewRate op1, PinPull op2)               { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinSlewRate op1, PinDriveStrength op2)      { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinSlewRate op1, PinDriveMode op2)          { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinSlewRate op1, PinStatusFlag op2)         { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinSlewRate op1, PinLock op2)               { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinSlewRate op1, PinAction op2)             { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinSlewRate op1, PinMux op2)                { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinStatusFlag op1, PinFilter op2)           { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinStatusFlag op1, PinPull op2)             { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinStatusFlag op1, PinDriveStrength op2)    { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinStatusFlag op1, PinDriveMode op2)        { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinStatusFlag op1, PinSlewRate op2)         { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinStatusFlag op1, PinLock op2)             { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinStatusFlag op1, PinAction op2)           { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinStatusFlag op1, PinMux op2)              { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinLock op1, PinFilter op2)                 { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinLock op1, PinPull op2)                   { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinLock op1, PinDriveStrength op2)          { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinLock op1, PinDriveMode op2)              { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinLock op1, PinSlewRate op2)               { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinLock op1, PinStatusFlag op2)             { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinLock op1, PinAction op2)                 { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinLock op1, PinMux op2)                    { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinAction op1, PinFilter op2)               { return PcrValue(op1)|PcrValue(op2); };
@@ -1147,6 +1191,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    constexpr inline PcrValue operator|(PinAction op1, PinDriveStrength op2)        { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinAction op1, PinDriveMode op2)            { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinAction op1, PinSlewRate op2)             { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinAction op1, PinStatusFlag op2)           { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinAction op1, PinLock op2)                 { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinAction op1, PinMux op2)                  { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinMux op1, PinFilter op2)                  { return PcrValue(op1)|PcrValue(op2); };
@@ -1154,6 +1199,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    constexpr inline PcrValue operator|(PinMux op1, PinDriveStrength op2)           { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinMux op1, PinDriveMode op2)               { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinMux op1, PinSlewRate op2)                { return PcrValue(op1)|PcrValue(op2); };
+   constexpr inline PcrValue operator|(PinMux op1, PinStatusFlag op2)              { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinMux op1, PinLock op2)                    { return PcrValue(op1)|PcrValue(op2); };
    constexpr inline PcrValue operator|(PinMux op1, PinAction op2)                  { return PcrValue(op1)|PcrValue(op2); };
    
@@ -1262,15 +1308,17 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
        * Constructor
        * This version is appropriate for a pin used as a digital input
        *
-       * @param pinPull   Pin pull device (up/down/none) on digital inputs
-       * @param pinFilter Pin filtering on digital inputs
-       * @param pinAction DMA and/or interrupt actions to happen on pin change or level
+       * @param pinPull       Pin pull device (up/down/none) on digital inputs
+       * @param pinFilter     Pin filtering on digital inputs
+       * @param pinAction     DMA and/or interrupt actions to happen on pin change or level
+       * @param pinStatusFlag w1c flag indicating pin event detected
        */
       constexpr PcrInit(
-            PinPull   pinPull,
-            PinFilter pinFilter,
-            PinAction pinAction
-      ) : value(uint32_t(pinPull|pinFilter|pinAction)) {
+            PinPull       pinPull,
+            PinFilter     pinFilter,
+            PinAction     pinAction,
+            PinStatusFlag pinStatusFlag
+      ) : value(uint32_t(pinPull|pinFilter|pinAction|pinStatusFlag)) {
       }
    
       /**
@@ -1283,6 +1331,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
        * @param pinPull          Pin pull device (up/down/none) on digital inputs
        * @param pinFilter        Pin filtering on digital inputs
        * @param pinAction        DMA and/or interrupt actions to happen on pin change or level
+       * @param pinStatusFlag    w1c flag indicating pin event detected
        */
       constexpr PcrInit(
             PinDriveStrength pinDriveStrength,
@@ -1290,8 +1339,9 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
             PinSlewRate      pinSlewRate,
             PinPull          pinPull,
             PinFilter        pinFilter,
-            PinAction        pinAction
-      ) : value(uint32_t(pinDriveStrength|pinDriveMode|pinSlewRate|pinPull|pinFilter|pinAction)) {
+            PinAction        pinAction,
+            PinStatusFlag    pinStatusFlag
+      ) : value(uint32_t(pinDriveStrength|pinDriveMode|pinSlewRate|pinPull|pinFilter|pinAction|pinStatusFlag)) {
       }
    
       /**
@@ -1398,6 +1448,20 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
        * @tparam   Types
        * @param    rest
        *
+       * @param pinStatusFlag Pin Event Status Flag
+       */
+      template <typename... Types>
+      constexpr PcrInit(PinStatusFlag pinStatusFlag, Types... rest) : PcrInit(rest...)  {
+   
+         value = value | uint32_t(pinStatusFlag);
+      }
+
+      /**
+       * Constructor
+       *
+       * @tparam   Types
+       * @param    rest
+       *
        * @param pinMux Pin Multiplexor setting
        */
       template <typename... Types>
@@ -1446,6 +1510,11 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
       constexpr PinAction       pinAction() const { return PinAction(value&PORT_PCR_IRQC_MASK); }
       constexpr PinAction       pinAction()       { return PinAction(value&PORT_PCR_IRQC_MASK); }
    
+      constexpr operator         PinStatusFlag() const { return PinStatusFlag(value&PORT_PCR_ISF_MASK); }
+      constexpr operator         PinStatusFlag()       { return PinStatusFlag(value&PORT_PCR_ISF_MASK); }
+      constexpr PinStatusFlag       pinStatusFlag() const { return PinStatusFlag(value&PORT_PCR_ISF_MASK); }
+      constexpr PinStatusFlag       pinStatusFlag()       { return PinStatusFlag(value&PORT_PCR_ISF_MASK); }
+   
       constexpr operator         PinMux() const { return PinMux(value&PORT_PCR_MUX_MASK); }
       constexpr operator         PinMux()       { return PinMux(value&PORT_PCR_MUX_MASK); }
       constexpr PinMux       pinMux() const { return PinMux(value&PORT_PCR_MUX_MASK); }
@@ -1457,7 +1526,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
     * Default PCR value for pins used as GPIO (including multiplexor value)
     * High drive strength + Pull-up + GPIO_MUX value
     */
-   static constexpr PcrValue GPIO_DEFAULT_PCR(PinPull_None|PinFilter_None|PinDriveStrength_Low|PinDriveMode_PushPull|PinSlewRate_Fast|PinLock_Unlocked|PinAction_None|PinMux_Gpio);
+   static constexpr PcrValue GPIO_DEFAULT_PCR(PinPull_None|PinFilter_None|PinDriveStrength_Low|PinDriveMode_PushPull|PinSlewRate_Fast|PinLock_Unlocked|PinAction_None|PinStatusFlag_ClearEvent|PinMux_Gpio);
 
 
 #if 0
@@ -1665,6 +1734,8 @@ public:
     * Callback table of programmatically set handlers for Ports
     */
    static inline PinCallbackFunction sCallbacks[] = {
+      PcrBase::unhandledCallback,  // PORTA_IRQn, used by PORTA
+      PcrBase::unhandledCallback,  // PORTC_IRQn, used by PORTC
       PcrBase::unhandledCallback,  // PORTD_IRQn, used by PORTD
    };
    
@@ -1676,6 +1747,12 @@ public:
     * @return IRQ number
     */
    static constexpr PortIrqNum getIrqIndex(PortIndex portIndex) {
+      if (portIndex == PortIndex::PortA) {
+         return PortIrqNum_PortA;
+      }
+      if (portIndex == PortIndex::PortC) {
+         return PortIrqNum_PortC;
+      }
       if (portIndex == PortIndex::PortD) {
          return PortIrqNum_PortD;
       }
@@ -1698,10 +1775,13 @@ public:
       if (pinCallback == nullptr) {
          pinCallback = PcrBase::unhandledCallback;
       }
-      // Allow either no handler set yet or removing handler
+      // Allow either no handler set yet, removing handler or setting the same handler
       usbdm_assert(
-            (sCallbacks[portIrqNum] == PcrBase::unhandledCallback) || (pinCallback == PcrBase::unhandledCallback),
+            (sCallbacks[portIrqNum] == PcrBase::unhandledCallback) ||
+            (pinCallback == PcrBase::unhandledCallback) ||
+            (pinCallback == sCallbacks[portIrqNum]),
             "Handler already set");
+   
       sCallbacks[portIrqNum] = pinCallback;
    }
    
@@ -1812,13 +1892,13 @@ public:
    static constexpr bool isHandlerInstalled(PinIndex pinIndex) {
       (void)pinIndex;
          if (pinIndex <= PinIndex::PTA31) {
-            return false;
+            return true;
          }
          if (pinIndex <= PinIndex::PTB31) {
             return false;
          }
          if (pinIndex <= PinIndex::PTC31) {
-            return false;
+            return true;
          }
          if (pinIndex <= PinIndex::PTD31) {
             return true;
@@ -2164,6 +2244,7 @@ public:
     * @param pinFilter        Pin filtering on digital inputs
     * @param pinSlewRate      Pin slew rate of digital outputs
     * @param pinMux           Which function is mapped to the pin
+    * @param pinStatusFlag    w1c flag indicating pin event detected
     */
    static void setPCR(
          PinPull          pinPull,
@@ -2172,13 +2253,14 @@ public:
          PinAction        pinAction,
          PinFilter        pinFilter,
          PinSlewRate      pinSlewRate,
-         PinMux           pinMux)  {
+         PinMux           pinMux,
+         PinStatusFlag    pinStatusFlag    = PinStatusFlag_ClearEvent)  {
    
       if constexpr (portAddress != 0) {
          PcrBase::enablePortClock(pinIndex);
    
          // Set PCR register for pin
-         *PCR = static_cast<uint32_t>(pinPull|pinDriveStrength|pinDriveMode|pinAction|pinFilter|pinSlewRate|pinMux);
+         *PCR = static_cast<uint32_t>(pinPull|pinDriveStrength|pinDriveMode|pinAction|pinStatusFlag|pinFilter|pinSlewRate|pinMux);
       }
    }
 
@@ -2250,16 +2332,18 @@ public:
     * Mux value is set appropriately for the pin function being used. Other attributes are cleared.
     * The clock to the port will be enabled before changing the PCR.
     *
-    * @param pinPull   Pin pull device (up/down/none) on digital inputs
-    * @param pinAction DMA and/or interrupt actions to happen on pin change or level
-    * @param pinFilter Pin filtering on digital inputs
+    * @param pinPull       Pin pull device (up/down/none) on digital inputs
+    * @param pinAction     DMA and/or interrupt actions to happen on pin change or level
+    * @param pinFilter     Pin filtering on digital inputs
+    * @param pinStatusFlag w1c flag indicating pin event detected
     */
    static void setInput(
-         PinPull   pinPull,
-         PinAction pinAction,
-         PinFilter pinFilter)  {
+         PinPull       pinPull,
+         PinAction     pinAction,
+         PinFilter     pinFilter,
+         PinStatusFlag pinStatusFlag = PinStatusFlag_ClearEvent)  {
    
-      setPCR(pinPull|pinAction|pinFilter);
+      setPCR(pinPull|pinAction|pinFilter|pinStatusFlag);
    }
 
    /**
@@ -2337,6 +2421,17 @@ public:
    
       if constexpr (portAddress != 0) {
          *PCR = (*PCR & ~PORT_PCR_IRQC_MASK)|uint32_t(pinAction);
+      }
+   }
+   /**
+    * Set Pin Event Status Flag
+    *
+    * pinStatusFlag w1c flag indicating pin event detected
+    */
+   static void setPcrOption(PinStatusFlag pinStatusFlag)  {
+   
+      if constexpr (portAddress != 0) {
+         *PCR = (*PCR & ~PORT_PCR_ISF_MASK)|uint32_t(pinStatusFlag);
       }
    }
    /**

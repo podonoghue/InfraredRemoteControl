@@ -37,5 +37,16 @@
 			<type>2</type>
 			<location>/home/peter/Documents/Development/InfraredRemoteControl/Hardware</location>
 		</link>
+		<link>
+			<name>index.html</name>
+			<type>1</type>
+			<locationURI>copy_PROJECT_LOC/Documentation/html/index.html</locationURI>
+		</link>
 	</linkedResources>
+	<variableList>
+		<variable>
+			<name>copy_PROJECT_LOC</name>
+			<value>$%7BPARENT-1-PROJECT_LOC%7D/RemoteControl_V2</value>
+		</variable>
+	</variableList>
 </projectDescription>

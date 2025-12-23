@@ -457,19 +457,19 @@ namespace USBDM {
 
    /**
     * External Trigger Enable
-    * (ftm_exttrig_trig)
+    * (ftm_exttrig_trig_enum)
     *
     * Bitmask enabling generation of the external trigger when the FTM
     * counter is equal to a channel CnV register or CNTIN
     */
    enum FtmExternalTrigger : uint8_t {
-      FtmExternalTrigger_Ch2     = 1U<<0,  ///< Trigger on FTM0_CH0 [-]
-      FtmExternalTrigger_Ch3     = 1U<<1,  ///< Trigger on FTM0_CH1 [-]
-      FtmExternalTrigger_Ch4     = 1U<<2,  ///< Trigger on FTM0_CH2 [-]
-      FtmExternalTrigger_Ch5     = 1U<<3,  ///< Trigger on FTM0_CH3 [-]
-      FtmExternalTrigger_Ch0     = 1U<<4,  ///< Trigger on FTM0_CH4 [-]
-      FtmExternalTrigger_Ch1     = 1U<<5,  ///< Trigger on FTM0_CH5 [-]
-      FtmExternalTrigger_Cntin   = 1U<<6,  ///< Trigger on FTM0_CH6 [-]
+      FtmExternalTrigger_OnCh0Match     = 1<<2,  ///< Trigger when CNT == Ch0
+      FtmExternalTrigger_OnCh1Match     = 1<<3,  ///< Trigger when CNT == Ch1
+      FtmExternalTrigger_OnCh2Match     = 1<<4,  ///< Trigger when CNT == Ch2
+      FtmExternalTrigger_OnCh3Match     = 1<<5,  ///< Trigger when CNT == Ch3
+      FtmExternalTrigger_OnCh4Match     = 1<<0,  ///< Trigger when CNT == Ch4
+      FtmExternalTrigger_OnCh5Match     = 1<<1,  ///< Trigger when CNT == Ch5
+      FtmExternalTrigger_OnCntinMatch   = 1<<6,  ///< Trigger when CNT == CNTIN
    };
 
    /**
@@ -1225,9 +1225,11 @@ public:
    static constexpr unsigned NumChannelVectors = 1;
 
    // Minimum resolution for PWM interval
+   // (minimumResolution)
    static constexpr uint32_t minimumResolution  = 100;
 
    // Minimum usable interval in ticks
+   // (minimumInterval)
    static constexpr uint32_t minimumInterval  = 20;
 
    /**
@@ -1319,6 +1321,7 @@ public:
 
    /**
     * Set polarity of all channels
+    * (ftm_pol_pol)
     *
     * @param channelMask   Bit mask 0 => active-high, 1 => active-low
     *                      This can be created by ORing together FtmPolarity_ChN_ActiveLow values
@@ -1653,9 +1656,11 @@ public:
    static constexpr unsigned NumChannelVectors = 1;
 
    // Minimum resolution for PWM interval
+   // (minimumResolution)
    static constexpr uint32_t minimumResolution  = 100;
 
    // Minimum usable interval in ticks
+   // (minimumInterval)
    static constexpr uint32_t minimumInterval  = 20;
 
    /**
@@ -1747,6 +1752,7 @@ public:
 
    /**
     * Set polarity of all channels
+    * (ftm_pol_pol)
     *
     * @param channelMask   Bit mask 0 => active-high, 1 => active-low
     *                      This can be created by ORing together FtmPolarity_ChN_ActiveLow values
@@ -1923,6 +1929,7 @@ public:
     * This simply disables the counter clock source. 
 
     * To restart use setClockSource() or configure();
+    * (ftm_sc_clks,ftm_sc_ps)
     *
     * @note This function will affect all channels of the timer.
     * @note A illegal access trap will occur if the timer has not been enabled
@@ -1933,6 +1940,7 @@ public:
    
    /**
     * Set Clock Source and Counter clock prescaler
+    * (ftm_sc_clks,ftm_sc_ps)
     *
     * @param ftmClockSource Selects the clock source for the module
     * @param ftmPrescale    Selects the prescaler for the module
@@ -1956,6 +1964,7 @@ public:
 
    /**
     * Set Counting mode
+    * (ftm_sc_cpwms)
     *
     * @param ftmCountMode Counting Mode
     *
@@ -1989,6 +1998,7 @@ public:
 
    /**
     * Set Clock Source
+    * (ftm_sc_clks)
     *
     * @param ftmClockSource Selects the clock source for the module
     *
@@ -2022,6 +2032,7 @@ public:
 
    /**
     * Set Counter clock prescaler
+    * (ftm_sc_ps)
     *
     * @param ftmPrescale Selects the prescaler for the module
     *
@@ -2056,6 +2067,7 @@ public:
    /**
     * Set End value for counter
     * This value is write-buffered and updated by CNTIN synchronisation
+    * (ftm_mod_mod)
     *
     * @param ticks The timer counts from 0 to this value
     *
@@ -2069,6 +2081,7 @@ public:
    
    /**
     * Get End value for counter
+    * (ftm_mod_mod)
     *
     * @param ticks The timer counts from 0 to this value
     */
@@ -2457,6 +2470,7 @@ public:
 
    /**
     * Set polarity of all channels
+    * (ftm_pol_pol)
     *
     * @param channelMask   Bit mask 0 => active-high, 1 => active-low
     *                      This can be created by ORing together FtmPolarity_ChN_ActiveLow values
@@ -2812,6 +2826,7 @@ public:
    
       /**
        * Set polarity of channels.
+       * (ftm_pol_pol)
        *
        * @param active Polarity to set
        */
@@ -3038,6 +3053,7 @@ public:
    /**
     * Enables clock to peripheral and configures all pins.
     * Configures main operating settings for timer.
+    * (ftm_sc_cpwms,ftm_sc_clks,ftm_sc_ps)
     *
     * @param ftmCountMode   Counting Mode
     * @param ftmClockSource Selects the clock source for the module
@@ -3078,6 +3094,7 @@ public:
     * This simply disables the counter clock source. 
 
     * To restart use setClockSource() or configure();
+    * (ftm_sc_clks,ftm_sc_ps)
     *
     * @note This function will affect all channels of the timer.
     * @note A illegal access trap will occur if the timer has not been enabled
@@ -3088,6 +3105,7 @@ public:
    
    /**
     * Set Clock Source and Counter clock prescaler
+    * (ftm_sc_clks,ftm_sc_ps)
     *
     * @param ftmClockSource Selects the clock source for the module
     * @param ftmPrescale    Selects the prescaler for the module
@@ -3111,6 +3129,7 @@ public:
 
    /**
     * Set Counting mode
+    * (ftm_sc_cpwms)
     *
     * @param ftmCountMode Counting Mode
     *
@@ -3144,6 +3163,7 @@ public:
 
    /**
     * Set Clock Source
+    * (ftm_sc_clks)
     *
     * @param ftmClockSource Selects the clock source for the module
     *
@@ -3177,6 +3197,7 @@ public:
 
    /**
     * Set Counter clock prescaler
+    * (ftm_sc_ps)
     *
     * @param ftmPrescale Selects the prescaler for the module
     *
@@ -3211,6 +3232,7 @@ public:
    /**
     * Set End value for counter
     * This value is write-buffered and updated by CNTIN synchronisation
+    * (ftm_mod_mod)
     *
     * @param ticks The timer counts from 0 to this value
     *
@@ -3224,6 +3246,7 @@ public:
    
    /**
     * Get End value for counter
+    * (ftm_mod_mod)
     *
     * @param ticks The timer counts from 0 to this value
     */
@@ -3993,6 +4016,7 @@ public:
    
       /**
        * Set polarity of channels.
+       * (ftm_pol_pol)
        *
        * @param active Polarity to set
        */
@@ -4192,14 +4216,9 @@ public:
     * Mux value is set appropriately for the pin function being used. Other attributes are cleared.
     * Assumes clock to the port has already been enabled
     *
-    * @param[in] pinDriveStrength One of PinDriveStrength_Low, PinDriveStrength_High
-    * @param[in] pinDriveMode     One of PinDriveMode_PushPull, PinDriveMode_OpenDrain
-    * @param[in] pinSlewRate      One of PinSlewRate_Slow, PinSlewRate_Fast
+    * @param[in] pcrValue   PCR Value controlling pin configuration as an output
     */
-   static void setOutput(
-         PinDriveStrength  pinDriveStrength  = Pcr::defaultPcrValue,
-         PinDriveMode      pinDriveMode      = Pcr::defaultPcrValue,
-         PinSlewRate       pinSlewRate       = Pcr::defaultPcrValue) {
+   static void setOutput(PcrValue pcrValue = Pcr::defaultPcrValue) {
 
       FtmBase::CheckPinExistsAndIsMapped<Info, channel>::check();
 
@@ -4207,7 +4226,7 @@ public:
       // Enable output pin in FTM
       ftm->SC = ftm->SC | (1<<(channel+FTM_SC_PWMEN0_SHIFT));
 #endif
-      Pcr::setPCR(pinDriveStrength|pinDriveMode|pinSlewRate);
+      Pcr::setPCR(pcrValue);
    }
 #elif defined(PORT_PCR_ODE_ASK)
    /**

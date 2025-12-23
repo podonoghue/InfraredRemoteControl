@@ -420,7 +420,7 @@ namespace USBDM {
       TransmitCompleteFlag            = (UART_S1_TC_MASK),    ///< Transmit Complete Flag
       TransmitDataRegisterEmptyFlag   = (UART_S1_TDRE_MASK),  ///< Transmit Data Register Empty Flag
       NoFlags                         = (0x0U),               ///< No flags
-      AllFlags                        = (0xffU),              ///< All flags
+      AllFlags                        = (0xFFU),              ///< All flags
    };
 
    /**

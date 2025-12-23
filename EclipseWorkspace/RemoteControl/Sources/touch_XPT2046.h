@@ -79,8 +79,16 @@ public:
       spi(spi),
       commandConfiguration(spi.calculateConfiguration(serialInitValue, SpiPeripheralSelect_TouchCs , SpiPeripheralSelectMode_Transaction)) {
 
+      initialise();
+   }
+
+   ~Touch_XPT2046() = default;
+
+   void initialise() {
+
       // Set CS polarities
       spi.setPcsPolarityActiveLow(SpiPeripheralSelect_TouchCs);
+
       // GPIOs
       static constexpr PcrInit pcrValue {
          PinPull_Up,
@@ -89,10 +97,10 @@ public:
          PinDriveMode_PushPull,
          PinFilter_None,
       };
+
+      // Touch IRQ pin
       TouchIrq::setInput(pcrValue);
    }
-
-   ~Touch_XPT2046() = default;
 
 protected:
    /**
@@ -298,9 +306,10 @@ public:
       static const uint8_t txData2[] = { /* X, */ 0, X,0, X,0, X,0, Y,0, Y,0, Y,0, Y,0, Last, };
       uint8_t rxData2[sizeof(txData2)];
 
-      if (z>Z_THRESHOLD) {
+//      console.write("Z1 = ", z1, ", Z2 = ", z2, ", Z = ", z);
 
-         // console.writeln("Z = ", z, ", (> ", Z_THRESHOLD, ")");
+      if (z>Z_THRESHOLD) {
+//         console.write(", Z = ", z, ", (> ", Z_THRESHOLD, ")");
 
          spi.txRx(txData2, rxData2);
          spi.endTransaction();
@@ -322,6 +331,7 @@ public:
          spi.txRxFinal(Last);
          spi.endTransaction();
       }
+//      console.writeln();
       //   console.setFormat(decimalFormat);
       //   console.writeln("                                 z1 = ", z1, ", z2=", z2, ", z=", z);
 
@@ -377,13 +387,16 @@ public:
       static const PcrInit gpioInit {
          PinPull_Up,
          PinAction_IrqFalling,
-         PinFilter_Passive
+         PinFilter_Passive,
+         PinStatusFlag_ClearEvent,
       };
 
+      // Configure Touch interface for wake-up
       sendCommand(Last);
-      TouchIrq::clearInterruptState();
-      TouchIrq::enableNvicPinInterrupts(NvicPriority_Normal);
+
+      // Configure IRQ pin
       TouchIrq::setInput(gpioInit);
+      TouchIrq::enableNvicPinInterrupts(NvicPriority_Normal);
    }
 
    /**
@@ -393,14 +406,15 @@ public:
    void disableTouchInterrupt() {
 
       static const PcrInit gpioInit {
-         PinPull_Up,
+         PinPull_None,
          PinAction_None,
          PinFilter_Passive,
+         PinStatusFlag_ClearEvent,
       };
 
+      // Disable IRQ pin
       TouchIrq::setInput(gpioInit);
       TouchIrq::disableNvicPinInterrupts();
-      TouchIrq::clearInterruptState();
    }
 
 };

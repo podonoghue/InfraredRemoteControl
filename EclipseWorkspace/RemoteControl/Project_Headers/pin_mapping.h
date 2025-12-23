@@ -131,8 +131,8 @@ namespace USBDM {
       /**
        * Information describing the priority and callback function for each interrupt
        */
-       std::array<CallbackFunction, NumVectors> callbacks = {};
-       std::array<NvicPriority,     NumVectors> priorities = {};
+       std::array<CallbackFunction, NumVectors> callbacks = {};  // = nullptr
+       std::array<NvicPriority,     NumVectors> priorities = {}; // = NvicPriority_Disabled
    
    }; // class InitVectors
    
@@ -454,7 +454,7 @@ public:
    static constexpr HardwarePtr<GPIO_Type> gpio = baseAddress;
    
    //! Class based callback handler has been installed in vector table for this instance
-   static constexpr bool irqHandlerInstalled = false;
+   static constexpr bool irqHandlerInstalled = true;
    
 }; // class GpioAInfo
 
@@ -478,8 +478,8 @@ public:
          //      Signal                 Pin                                  PinIndex                PCR value
          /*   0: GPIOB_0              = PTB0(p27)                      */  { PinIndex::PTB0,         PcrValue(0x00100UL) },
          /*   1: GPIOB_1              = PTB1(p28)                      */  { PinIndex::PTB1,         PcrValue(0x00100UL) },
-         /*   2: GPIOB_2              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
-         /*   3: GPIOB_3              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
+         /*   2: GPIOB_2              = PTB2(p29)                      */  { PinIndex::PTB2,         PcrValue(0x00100UL) },
+         /*   3: GPIOB_3              = PTB3(p30)                      */  { PinIndex::PTB3,         PcrValue(0x00100UL) },
          /*   4: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
          /*   5: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
          /*   6: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
@@ -492,8 +492,8 @@ public:
          /*  13: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
          /*  14: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
          /*  15: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
-         /*  16: GPIOB_16             = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
-         /*  17: GPIOB_17             = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
+         /*  16: GPIOB_16             = PTB16(p31)                     */  { PinIndex::PTB16,        PcrValue(0x00100UL) },
+         /*  17: GPIOB_17             = PTB17(p32)                     */  { PinIndex::PTB17,        PcrValue(0x00100UL) },
          /*  18: GPIOB_18             = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*  19: GPIOB_19             = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
    };
@@ -505,7 +505,8 @@ public:
     */
    static void initPCRs() {
       enablePortClocks(USBDM::PORTB_CLOCK_MASK);
-      PORTB->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x0003UL));
+      PORTB->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x000FUL));
+      PORTB->GPCHR = (0x0100UL|PORT_GPCHR_GPWE(0x0003UL));
    }
 
    /**
@@ -515,7 +516,8 @@ public:
     */
    static void clearPCRs() {
       enablePortClocks(USBDM::PORTB_CLOCK_MASK);
-      PORTB->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x0003UL);
+      PORTB->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x000FUL);
+      PORTB->GPCHR = uint32_t(PinMux_Disabled)|PORT_GPCHR_GPWE(0x0003UL);
    }
 
    /*
@@ -601,7 +603,7 @@ public:
 
          //      Signal                 Pin                                  PinIndex                PCR value
          /*   0: GPIOC_0              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
-         /*   1: GPIOC_1              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
+         /*   1: GPIOC_1              = PTC1(p34)                      */  { PinIndex::PTC1,         PcrValue(0x00100UL) },
          /*   2: GPIOC_2              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*   3: GPIOC_3              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*   4: GPIOC_4              = PTC4(p37)                      */  { PinIndex::PTC4,         PcrValue(0x00100UL) },
@@ -621,7 +623,7 @@ public:
     */
    static void initPCRs() {
       enablePortClocks(USBDM::PORTC_CLOCK_MASK);
-      PORTC->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x0010UL));
+      PORTC->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x0012UL));
    }
 
    /**
@@ -631,7 +633,7 @@ public:
     */
    static void clearPCRs() {
       enablePortClocks(USBDM::PORTC_CLOCK_MASK);
-      PORTC->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x0010UL);
+      PORTC->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x0012UL);
    }
 
    /*
@@ -694,7 +696,7 @@ public:
    static constexpr HardwarePtr<GPIO_Type> gpio = baseAddress;
    
    //! Class based callback handler has been installed in vector table for this instance
-   static constexpr bool irqHandlerInstalled = false;
+   static constexpr bool irqHandlerInstalled = true;
    
 }; // class GpioCInfo
 
@@ -722,7 +724,7 @@ public:
          /*   3: GPIOD_3              = PTD3(p44)                      */  { PinIndex::PTD3,         PcrValue(0x00100UL) },
          /*   4: GPIOD_4              = PTD4(p45)                      */  { PinIndex::PTD4,         PcrValue(0x00100UL) },
          /*   5: GPIOD_5              = PTD5(p46)                      */  { PinIndex::PTD5,         PcrValue(0x00100UL) },
-         /*   6: GPIOD_6              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
+         /*   6: GPIOD_6              = PTD6(p47)                      */  { PinIndex::PTD6,         PcrValue(0x00100UL) },
          /*   7: GPIOD_7              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
    };
 
@@ -733,7 +735,7 @@ public:
     */
    static void initPCRs() {
       enablePortClocks(USBDM::PORTD_CLOCK_MASK);
-      PORTD->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x003FUL));
+      PORTD->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x007FUL));
    }
 
    /**
@@ -743,7 +745,7 @@ public:
     */
    static void clearPCRs() {
       enablePortClocks(USBDM::PORTD_CLOCK_MASK);
-      PORTD->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x003FUL);
+      PORTD->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x007FUL);
    }
 
    /*
@@ -5891,7 +5893,7 @@ public:
       TsiInput_Pta4    = 5,   ///< TSI0_CH5 [-]
       TsiInput_Ptb1    = 6,   ///< TSI0_CH6 [-]
       TsiInput_Ptb2    = 7,   ///< TSI0_CH7 [-]
-      TsiInput_Ptb3    = 8,   ///< TSI0_CH8 [PTB3(p30)]
+      TsiInput_Ptb3    = 8,   ///< TSI0_CH8 [-]
       TsiInput_Ptb16   = 9,   ///< TSI0_CH9 [-]
       TsiInput_Ptb17   = 10,  ///< TSI0_CH10 [-]
       TsiInput_Ptb18   = 11,  ///< TSI0_CH11 [-]
@@ -5916,7 +5918,7 @@ public:
       PinEnableMask_Pta4    = TSI_PEN_PEN(1U<<5),   ///< TSI0_CH5 [-]
       PinEnableMask_Ptb1    = TSI_PEN_PEN(1U<<6),   ///< TSI0_CH6 [-]
       PinEnableMask_Ptb2    = TSI_PEN_PEN(1U<<7),   ///< TSI0_CH7 [-]
-      PinEnableMask_Ptb3    = TSI_PEN_PEN(1U<<8),   ///< TSI0_CH8 [PTB3(p30)]
+      PinEnableMask_Ptb3    = TSI_PEN_PEN(1U<<8),   ///< TSI0_CH8 [-]
       PinEnableMask_Ptb16   = TSI_PEN_PEN(1U<<9),   ///< TSI0_CH9 [-]
       PinEnableMask_Ptb17   = TSI_PEN_PEN(1U<<10),  ///< TSI0_CH10 [-]
       PinEnableMask_Ptb18   = TSI_PEN_PEN(1U<<11),  ///< TSI0_CH11 [-]
@@ -5941,7 +5943,7 @@ public:
       TsiLowPowerInput_Pta4    = TSI_PEN_LPSP(5),   ///< TSI0_CH5 [-]
       TsiLowPowerInput_Ptb1    = TSI_PEN_LPSP(6),   ///< TSI0_CH6 [-]
       TsiLowPowerInput_Ptb2    = TSI_PEN_LPSP(7),   ///< TSI0_CH7 [-]
-      TsiLowPowerInput_Ptb3    = TSI_PEN_LPSP(8),   ///< TSI0_CH8 [PTB3(p30)]
+      TsiLowPowerInput_Ptb3    = TSI_PEN_LPSP(8),   ///< TSI0_CH8 [-]
       TsiLowPowerInput_Ptb16   = TSI_PEN_LPSP(9),   ///< TSI0_CH9 [-]
       TsiLowPowerInput_Ptb17   = TSI_PEN_LPSP(10),  ///< TSI0_CH10 [-]
       TsiLowPowerInput_Ptb18   = TSI_PEN_LPSP(11),  ///< TSI0_CH11 [-]
@@ -5994,7 +5996,7 @@ public:
          /*   5: TSI0_CH5             = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*   6: TSI0_CH6             = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*   7: TSI0_CH7             = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
-         /*   8: TSI0_CH8             = PTB3(p30)                      */  { PinIndex::PTB3,         PcrValue(0x00000UL) },
+         /*   8: TSI0_CH8             = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*   9: TSI0_CH9             = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*  10: TSI0_CH10            = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*  11: TSI0_CH11            = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
@@ -6010,8 +6012,6 @@ public:
     * @note Only the lower 16-bits of the PCR registers are affected
     */
    static void initPCRs() {
-      enablePortClocks(USBDM::PORTB_CLOCK_MASK);
-      PORTB->GPCLR = (0x0000UL|PORT_GPCLR_GPWE(0x0008UL));
    }
 
    /**
@@ -6020,8 +6020,6 @@ public:
     * @note Only the lower 16-bits of the PCR registers are affected
     */
    static void clearPCRs() {
-      enablePortClocks(USBDM::PORTB_CLOCK_MASK);
-      PORTB->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x0008UL);
    }
 
    /*
@@ -6174,30 +6172,40 @@ public:
 ///
 ///   Pin Name      | C Identifier                  |  Functions                                         |  Location                 |  Description
 ///  -------------- | ------------------------------|--------------------------------------------------- | ------------------------- | ----------------------------------------------------
+///  ADC0_DP0       | BatteryLevel                  | ADC0_SE0                                           | p7                        | Battery Level
 ///  PTA0           | SwdClk                        | SWD_CLK                                            | p17                       | SWD_CLK
 ///  PTA1           | -                             | UART0_RX                                           | p18                       | DebugRx
 ///  PTA2           | -                             | UART0_TX                                           | p19                       | DebugTx
 ///  PTA3           | SwdDio                        | SWD_DIO                                            | p20                       | SWD_DIO
-///  PTA4           | IrReceiver                    | GPIOA_4                                            | p21                       | IR Receiver
+///  PTA4           | SwitchRow4                    | GPIOA_4                                            | p21                       | Row 4 buttons
+///  PTA4           | SwitchWakeupR4                | LLWU_P3                                            | p21                       | Wakeup from row 4 buttons
 ///  PTA18          | -                             | EXTAL0                                             | p24                       | Extal0
 ///  PTA19          | -                             | XTAL0                                              | p25                       | Xtal0
-///  PTB0           | Charging                      | GPIOB_0                                            | p27                       | Charging detection
-///  PTB1           | TftReset                      | GPIOB_1                                            | p28                       | TFT Reset 
-///  PTB3           | BatteryLevel                  | ADC0_SE13                                          | p30                       | Battery Level
-///  PTC1           | TftCs                         | SPI0_PCS3                                          | p34                       | TFT CS
+///  PTB0           | LipoChargerStatus/LipoCharging| GPIOB_0                                            | p27                       | LiPo Charger Status (STDBY,CHRG)/ LiPo - Charging
+///  PTB1           | LipoChargerStatus/LipoStandby | GPIOB_1                                            | p28                       | LiPo Charger Status (STDBY,CHRG) / LipPo - Standby
+///  PTB2           | TftReset                      | GPIOB_2                                            | p29                       | TFT Reset 
+///  PTB3           | IR_Receiver                   | GPIOB_3                                            | p30                       | IR Receiver
+///  PTB16          | PowerEnable                   | GPIOB_16                                           | p31                       | Enable for TFT Power
+///  PTB17          | TftBacklight                  | GPIOB_17                                           | p32                       | TFT Backlight
+///  PTC0           | TftCs                         | SPI0_PCS4                                          | p33                       | TFT CS
+///  PTC1           | SwitchRow1                    | GPIOC_1                                            | p34                       | Row 1 buttons
+///  PTC1           | SwitchWakeupR1                | LLWU_P6                                            | p34                       | Wakeup from row 1 buttons
 ///  PTC2           | TftDc                         | SPI0_PCS2                                          | p35                       | TFT D/C select
 ///  PTC3           | TouchCs                       | SPI0_PCS1                                          | p36                       | Touch panel CS
-///  PTC4           | TftBacklight                  | GPIOC_4                                            | p37                       | TFT Backlight
+///  PTC4           | SwitchRow3                    | GPIOC_4                                            | p37                       | Row 3 buttons
+///  PTC4           | SwitchWakeupR3                | LLWU_P8                                            | p37                       | Wakeup from row 3 buttons
 ///  PTC5           | SpiSck                        | SPI0_SCK                                           | p38                       | SPI SCK
 ///  PTC6           | SpiMOSI                       | SPI0_SOUT                                          | p39                       | SPI MOSI
 ///  PTC7           | SpiMISO                       | SPI0_SIN                                           | p40                       | SPI MISO
-///  PTD0           | Switch4a/Switches             | GPIOD_0                                            | p41                       | Switch 4x
-///  PTD1           | Switch3/Switches              | GPIOD_1                                            | p42                       | Switch 3
-///  PTD2           | Switch2/Switches              | GPIOD_2                                            | p43                       | Switch 2
-///  PTD3           | Switch1/Switches              | GPIOD_3                                            | p44                       | Switch 1
+///  PTD0           | SwitchCol1/SwitchCols         | GPIOD_0                                            | p41                       | Switch Col 1
+///  PTD1           | SwitchCol2/SwitchCols         | GPIOD_1                                            | p42                       | Switch Col 2
+///  PTD2           | SwitchCol3/SwitchCols         | GPIOD_2                                            | p43                       | Switch Col 3
+///  PTD3           | SwitchCol4/SwitchCols         | GPIOD_3                                            | p44                       | Switch Col 4
 ///  PTD4           | TouchIrq                      | GPIOD_4                                            | p45                       | Touch Panel IRQ
 ///  PTD4           | TouchWakeup                   | LLWU_P14                                           | p45                       | Touch Wakeup
-///  PTD5           | DebugLed                      | GPIOD_5                                            | p46                       | DebugLed
+///  PTD5           | DebugLed                      | GPIOD_5                                            | p46                       | Debug LED
+///  PTD6           | SwitchRow2                    | GPIOD_6                                            | p47                       | Row 2 buttons
+///  PTD6           | SwitchWakeupR2                | LLWU_P15                                           | p47                       | Wakeup from row 2 buttons
 ///  PTD7           | -                             | CMT_IRO                                            | p48                       | CMT Infra-red output
 ///  RESET_b        | Resetb                        | RESET_b                                            | p26                       | Reset*
 ///  USB0_DM        | -                             | USB0_DM                                            | p4                        | USB_DM
@@ -6225,6 +6233,7 @@ public:
 ///  USB0_DM        | -                             | USB0_DM                                            | p4                        | USB_DM
 ///  VOUT33         | -                             | VOUT33                                             | p5                        | Vout 3.3V
 ///  VREGIN         | -                             | VREGIN                                             | p6                        | Vregin
+///  ADC0_DP0       | BatteryLevel                  | ADC0_SE0                                           | p7                        | Battery Level
 ///  VDDA           | -                             | VDDA                                               | p9                        | VddA
 ///  VREFH          | -                             | VREFH                                              | p10                       | VrefH
 ///  VREFL          | -                             | VREFL                                              | p11                       | VrefL
@@ -6234,29 +6243,38 @@ public:
 ///  PTA1           | -                             | UART0_RX                                           | p18                       | DebugRx
 ///  PTA2           | -                             | UART0_TX                                           | p19                       | DebugTx
 ///  PTA3           | SwdDio                        | SWD_DIO                                            | p20                       | SWD_DIO
-///  PTA4           | IrReceiver                    | GPIOA_4                                            | p21                       | IR Receiver
+///  PTA4           | SwitchRow4                    | GPIOA_4                                            | p21                       | Row 4 buttons
+///  PTA4           | SwitchWakeupR4                | LLWU_P3                                            | p21                       | Wakeup from row 4 buttons
 ///  VDD2           | -                             | VDD2                                               | p22                       | Vdd
 ///  VSS2           | -                             | VSS2                                               | p23                       | Vss
 ///  PTA18          | -                             | EXTAL0                                             | p24                       | Extal0
 ///  PTA19          | -                             | XTAL0                                              | p25                       | Xtal0
 ///  RESET_b        | Resetb                        | RESET_b                                            | p26                       | Reset*
-///  PTB0           | Charging                      | GPIOB_0                                            | p27                       | Charging detection
-///  PTB1           | TftReset                      | GPIOB_1                                            | p28                       | TFT Reset 
-///  PTB3           | BatteryLevel                  | ADC0_SE13                                          | p30                       | Battery Level
-///  PTC1           | TftCs                         | SPI0_PCS3                                          | p34                       | TFT CS
+///  PTB0           | LipoChargerStatus/LipoCharging| GPIOB_0                                            | p27                       | LiPo Charger Status (STDBY,CHRG)/ LiPo - Charging
+///  PTB1           | LipoChargerStatus/LipoStandby | GPIOB_1                                            | p28                       | LiPo Charger Status (STDBY,CHRG) / LipPo - Standby
+///  PTB2           | TftReset                      | GPIOB_2                                            | p29                       | TFT Reset 
+///  PTB3           | IR_Receiver                   | GPIOB_3                                            | p30                       | IR Receiver
+///  PTB16          | PowerEnable                   | GPIOB_16                                           | p31                       | Enable for TFT Power
+///  PTB17          | TftBacklight                  | GPIOB_17                                           | p32                       | TFT Backlight
+///  PTC0           | TftCs                         | SPI0_PCS4                                          | p33                       | TFT CS
+///  PTC1           | SwitchRow1                    | GPIOC_1                                            | p34                       | Row 1 buttons
+///  PTC1           | SwitchWakeupR1                | LLWU_P6                                            | p34                       | Wakeup from row 1 buttons
 ///  PTC2           | TftDc                         | SPI0_PCS2                                          | p35                       | TFT D/C select
 ///  PTC3           | TouchCs                       | SPI0_PCS1                                          | p36                       | Touch panel CS
-///  PTC4           | TftBacklight                  | GPIOC_4                                            | p37                       | TFT Backlight
+///  PTC4           | SwitchRow3                    | GPIOC_4                                            | p37                       | Row 3 buttons
+///  PTC4           | SwitchWakeupR3                | LLWU_P8                                            | p37                       | Wakeup from row 3 buttons
 ///  PTC5           | SpiSck                        | SPI0_SCK                                           | p38                       | SPI SCK
 ///  PTC6           | SpiMOSI                       | SPI0_SOUT                                          | p39                       | SPI MOSI
 ///  PTC7           | SpiMISO                       | SPI0_SIN                                           | p40                       | SPI MISO
-///  PTD0           | Switch4a/Switches             | GPIOD_0                                            | p41                       | Switch 4x
-///  PTD1           | Switch3/Switches              | GPIOD_1                                            | p42                       | Switch 3
-///  PTD2           | Switch2/Switches              | GPIOD_2                                            | p43                       | Switch 2
-///  PTD3           | Switch1/Switches              | GPIOD_3                                            | p44                       | Switch 1
+///  PTD0           | SwitchCol1/SwitchCols         | GPIOD_0                                            | p41                       | Switch Col 1
+///  PTD1           | SwitchCol2/SwitchCols         | GPIOD_1                                            | p42                       | Switch Col 2
+///  PTD2           | SwitchCol3/SwitchCols         | GPIOD_2                                            | p43                       | Switch Col 3
+///  PTD3           | SwitchCol4/SwitchCols         | GPIOD_3                                            | p44                       | Switch Col 4
 ///  PTD4           | TouchIrq                      | GPIOD_4                                            | p45                       | Touch Panel IRQ
 ///  PTD4           | TouchWakeup                   | LLWU_P14                                           | p45                       | Touch Wakeup
-///  PTD5           | DebugLed                      | GPIOD_5                                            | p46                       | DebugLed
+///  PTD5           | DebugLed                      | GPIOD_5                                            | p46                       | Debug LED
+///  PTD6           | SwitchRow2                    | GPIOD_6                                            | p47                       | Row 2 buttons
+///  PTD6           | SwitchWakeupR2                | LLWU_P15                                           | p47                       | Wakeup from row 2 buttons
 ///  PTD7           | -                             | CMT_IRO                                            | p48                       | CMT Infra-red output
 ///
 ///
@@ -6264,24 +6282,34 @@ public:
 ///
 ///   Pin Name      | C Identifier                  |  Functions                                         |  Location                 |  Description
 ///  -------------- | ------------------------------|--------------------------------------------------- | ------------------------- | ----------------------------------------------------
-///  PTB3           | BatteryLevel                  | ADC0_SE13                                          | p30                       | Battery Level
+///  ADC0_DP0       | BatteryLevel                  | ADC0_SE0                                           | p7                        | Battery Level
 ///  PTD7           | -                             | CMT_IRO                                            | p48                       | CMT Infra-red output
 ///  PTA18          | -                             | EXTAL0                                             | p24                       | Extal0
-///  PTA4           | IrReceiver                    | GPIOA_4                                            | p21                       | IR Receiver
-///  PTB0           | Charging                      | GPIOB_0                                            | p27                       | Charging detection
-///  PTB1           | TftReset                      | GPIOB_1                                            | p28                       | TFT Reset 
-///  PTC4           | TftBacklight                  | GPIOC_4                                            | p37                       | TFT Backlight
-///  PTD0           | Switch4a/Switches             | GPIOD_0                                            | p41                       | Switch 4x
-///  PTD1           | Switch3/Switches              | GPIOD_1                                            | p42                       | Switch 3
-///  PTD2           | Switch2/Switches              | GPIOD_2                                            | p43                       | Switch 2
-///  PTD3           | Switch1/Switches              | GPIOD_3                                            | p44                       | Switch 1
+///  PTA4           | SwitchRow4                    | GPIOA_4                                            | p21                       | Row 4 buttons
+///  PTB0           | LipoChargerStatus/LipoCharging| GPIOB_0                                            | p27                       | LiPo Charger Status (STDBY,CHRG)/ LiPo - Charging
+///  PTB1           | LipoChargerStatus/LipoStandby | GPIOB_1                                            | p28                       | LiPo Charger Status (STDBY,CHRG) / LipPo - Standby
+///  PTB2           | TftReset                      | GPIOB_2                                            | p29                       | TFT Reset 
+///  PTB3           | IR_Receiver                   | GPIOB_3                                            | p30                       | IR Receiver
+///  PTB16          | PowerEnable                   | GPIOB_16                                           | p31                       | Enable for TFT Power
+///  PTB17          | TftBacklight                  | GPIOB_17                                           | p32                       | TFT Backlight
+///  PTC1           | SwitchRow1                    | GPIOC_1                                            | p34                       | Row 1 buttons
+///  PTC4           | SwitchRow3                    | GPIOC_4                                            | p37                       | Row 3 buttons
+///  PTD0           | SwitchCol1/SwitchCols         | GPIOD_0                                            | p41                       | Switch Col 1
+///  PTD1           | SwitchCol2/SwitchCols         | GPIOD_1                                            | p42                       | Switch Col 2
+///  PTD2           | SwitchCol3/SwitchCols         | GPIOD_2                                            | p43                       | Switch Col 3
+///  PTD3           | SwitchCol4/SwitchCols         | GPIOD_3                                            | p44                       | Switch Col 4
 ///  PTD4           | TouchIrq                      | GPIOD_4                                            | p45                       | Touch Panel IRQ
-///  PTD5           | DebugLed                      | GPIOD_5                                            | p46                       | DebugLed
+///  PTD5           | DebugLed                      | GPIOD_5                                            | p46                       | Debug LED
+///  PTD6           | SwitchRow2                    | GPIOD_6                                            | p47                       | Row 2 buttons
+///  PTA4           | SwitchWakeupR4                | LLWU_P3                                            | p21                       | Wakeup from row 4 buttons
+///  PTC1           | SwitchWakeupR1                | LLWU_P6                                            | p34                       | Wakeup from row 1 buttons
+///  PTC4           | SwitchWakeupR3                | LLWU_P8                                            | p37                       | Wakeup from row 3 buttons
 ///  PTD4           | TouchWakeup                   | LLWU_P14                                           | p45                       | Touch Wakeup
+///  PTD6           | SwitchWakeupR2                | LLWU_P15                                           | p47                       | Wakeup from row 2 buttons
 ///  RESET_b        | Resetb                        | RESET_b                                            | p26                       | Reset*
 ///  PTC3           | TouchCs                       | SPI0_PCS1                                          | p36                       | Touch panel CS
 ///  PTC2           | TftDc                         | SPI0_PCS2                                          | p35                       | TFT D/C select
-///  PTC1           | TftCs                         | SPI0_PCS3                                          | p34                       | TFT CS
+///  PTC0           | TftCs                         | SPI0_PCS4                                          | p33                       | TFT CS
 ///  PTC5           | SpiSck                        | SPI0_SCK                                           | p38                       | SPI SCK
 ///  PTC7           | SpiMISO                       | SPI0_SIN                                           | p40                       | SPI MISO
 ///  PTC6           | SpiMOSI                       | SPI0_SOUT                                          | p39                       | SPI MOSI

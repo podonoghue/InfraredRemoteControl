@@ -5,7 +5,7 @@
  *           Equivalent: 
  *
  * @version  V1.6
- * @date     2025/11
+ * @date     2025/12
  *
  */
 
@@ -134,9 +134,7 @@ extern void USBDCD0_IRQHandler(void);                /**< USB Device Charger Det
 extern void TSI0_IRQHandler(void);                   /**< Touch Sense Interface                                                            */
 extern void MCG_IRQHandler(void);                    /**< Multipurpose Clock Generator                                                     */
 extern void LPTMR0_IRQHandler(void);                 /**< Low Power Timer                                                                  */
-extern void PORTA_IRQHandler(void);                  /**< General Purpose Input/Output                                                     */
 extern void PORTB_IRQHandler(void);                  /**< General Purpose Input/Output                                                     */
-extern void PORTC_IRQHandler(void);                  /**< General Purpose Input/Output                                                     */
 extern void PORTE_IRQHandler(void);                  /**< General Purpose Input/Output                                                     */
 extern void SWI_IRQHandler(void);                    /**< Software interrupt                                                               */
 

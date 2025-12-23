@@ -51,7 +51,7 @@ extern void mapAllPins();
 // Hardware declarations
 
 /// Battery Level
-typedef Adc0::Channel<Adc0ChannelNum_Se13>                   BatteryLevel;                                 // PTB3(p30)
+typedef Adc0::Channel<Adc0ChannelNum_Se0>                    BatteryLevel;                                 // ADC0_DP0(p7)
 
 /// Reset*
 typedef PcrTable_T<ControlInfo, 0>                           Resetb;                                       // RESET_b(p26)
@@ -62,40 +62,73 @@ typedef PcrTable_T<ControlInfo, 2>                           SwdClk;            
 /// SWD_DIO
 typedef PcrTable_T<ControlInfo, 7>                           SwdDio;                                       // PTA3(p20)
 
-/// IR Receiver
-typedef USBDM::GpioA<4,ActiveHigh>                           IrReceiver;                                   // PTA4(p21)
-
-/// TFT Reset 
-typedef USBDM::GpioB<1,ActiveHigh>                           TftReset;                                     // PTB1(p28)
-
-/// Charging detection
-typedef USBDM::GpioB<0,ActiveLow>                            Charging;                                     // PTB0(p27)
+/// Row 4 buttons
+typedef USBDM::GpioA<4,ActiveHigh>                           SwitchRow4;                                   // PTA4(p21)
 
 /// TFT Backlight
-typedef USBDM::GpioC<4,ActiveHigh>                           TftBacklight;                                 // PTC4(p37)
+typedef USBDM::GpioB<17,ActiveHigh>                          TftBacklight;                                 // PTB17(p32)
 
-/// Switch 3
-typedef USBDM::GpioD<1,ActiveLow>                            Switch3;                                      // PTD1(p42)
+/// TFT Reset 
+typedef USBDM::GpioB<2,ActiveLow>                            TftReset;                                     // PTB2(p29)
 
-/// Switch 2
-typedef USBDM::GpioD<2,ActiveLow>                            Switch2;                                      // PTD2(p43)
+/// LiPo Charger Status (STDBY,CHRG) (Bit Field)
+typedef USBDM::GpioBField<1,0,ActiveLow>                     LipoChargerStatus;                            // PTB0(p27), PTB1(p28)
 
-/// Switch 1
-typedef USBDM::GpioD<3,ActiveLow>                            Switch1;                                      // PTD3(p44)
+/// Enable for TFT Power
+typedef USBDM::GpioB<16,ActiveHigh>                          PowerEnable;                                  // PTB16(p31)
 
-typedef USBDM::GpioDField<3,0,ActiveLow>                     Switches;                                     // PTD0(p41), PTD1(p42), PTD2(p43), PTD3(p44)
+/// IR Receiver
+typedef USBDM::GpioB<3,ActiveHigh>                           IR_Receiver;                                  // PTB3(p30)
 
-/// Switch 4x
-typedef USBDM::GpioD<0,ActiveLow>                            Switch4a;                                     // PTD0(p41)
+///  LiPo - Charging
+typedef USBDM::GpioB<0,ActiveLow>                            LipoCharging;                                 // PTB0(p27)
 
-/// DebugLed
+///  LipPo - Standby
+typedef USBDM::GpioB<1,ActiveLow>                            LipoStandby;                                  // PTB1(p28)
+
+/// Row 1 buttons
+typedef USBDM::GpioC<1,ActiveHigh>                           SwitchRow1;                                   // PTC1(p34)
+
+/// Row 3 buttons
+typedef USBDM::GpioC<4,ActiveHigh>                           SwitchRow3;                                   // PTC4(p37)
+
+/// Switch Col 1
+typedef USBDM::GpioD<0,ActiveHigh>                           SwitchCol1;                                   // PTD0(p41)
+
+typedef USBDM::GpioDField<3,0,ActiveHigh>                    SwitchCols;                                   // PTD0(p41), PTD1(p42), PTD2(p43), PTD3(p44)
+
+/// Switch Col 3
+typedef USBDM::GpioD<2,ActiveHigh>                           SwitchCol3;                                   // PTD2(p43)
+
+/// Switch Col 2
+typedef USBDM::GpioD<1,ActiveHigh>                           SwitchCol2;                                   // PTD1(p42)
+
+/// Row 2 buttons
+typedef USBDM::GpioD<6,ActiveHigh>                           SwitchRow2;                                   // PTD6(p47)
+
+/// Switch Col 4
+typedef USBDM::GpioD<3,ActiveHigh>                           SwitchCol4;                                   // PTD3(p44)
+
+/// Debug LED
 typedef USBDM::GpioD<5,ActiveHigh>                           DebugLed;                                     // PTD5(p46)
 
 /// Touch Panel IRQ
 typedef USBDM::GpioD<4,ActiveHigh>                           TouchIrq;                                     // PTD4(p45)
 
+/// Wakeup from row 4 buttons
+typedef Llwu::Pin<LlwuPin_Pta4>                              SwitchWakeupR4;                               // PTA4(p21)
+
+/// Wakeup from row 1 buttons
+typedef Llwu::Pin<LlwuPin_Ptc1>                              SwitchWakeupR1;                               // PTC1(p34)
+
+/// Wakeup from row 3 buttons
+typedef Llwu::Pin<LlwuPin_Ptc4>                              SwitchWakeupR3;                               // PTC4(p37)
+
 /// Touch Wakeup
 typedef Llwu::Pin<LlwuPin_Ptd4>                              TouchWakeup;                                  // PTD4(p45)
+
+/// Wakeup from row 2 buttons
+typedef Llwu::Pin<LlwuPin_Ptd6>                              SwitchWakeupR2;                               // PTD6(p47)
 
 typedef Pit::Channel<0>                                      ButtonTimerChannel;                           // PIT_CH0
 

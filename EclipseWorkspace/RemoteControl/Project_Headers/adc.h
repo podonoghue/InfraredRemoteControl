@@ -101,16 +101,15 @@ namespace USBDM {
     *
     * Selects an ADC0 channel
     */
-   inline constexpr AdcChannelNum Adc0ChannelNum_Se0              = AdcChannelNum::AdcChannelNum_Se0; ///< ADC0_SE0 [ADC0_DP0(p7)]
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se0              = AdcChannelNum::AdcChannelNum_Se0; ///< Battery Level [ADC0_DP0(p7)]
+   inline constexpr AdcChannelNum Adc0ChannelNum_BatteryLevel     = AdcChannelNum::AdcChannelNum_Se0; ///< Battery Level
    inline constexpr AdcChannelNum Adc0ChannelNum_Adc0_dp0         = AdcChannelNum::AdcChannelNum_Se0; ///< Pin ADC0_DP0
    inline constexpr AdcChannelNum Adc0ChannelNum_Se3              = AdcChannelNum::AdcChannelNum_Se3; ///< ADC0_SE3 [ADC0_DP3]
    inline constexpr AdcChannelNum Adc0ChannelNum_Adc0_dp3         = AdcChannelNum::AdcChannelNum_Se3; ///< Pin ADC0_DP3
    inline constexpr AdcChannelNum Adc0ChannelNum_Se8              = AdcChannelNum::AdcChannelNum_Se8; ///< ADC0_SE8 [-]
    inline constexpr AdcChannelNum Adc0ChannelNum_Se9              = AdcChannelNum::AdcChannelNum_Se9; ///< ADC0_SE9 [-]
    inline constexpr AdcChannelNum Adc0ChannelNum_Se12             = AdcChannelNum::AdcChannelNum_Se12; ///< ADC0_SE12 [-]
-   inline constexpr AdcChannelNum Adc0ChannelNum_Se13             = AdcChannelNum::AdcChannelNum_Se13; ///< Battery Level [PTB3(p30)]
-   inline constexpr AdcChannelNum Adc0ChannelNum_BatteryLevel     = AdcChannelNum::AdcChannelNum_Se13; ///< Battery Level
-   inline constexpr AdcChannelNum Adc0ChannelNum_Ptb3             = AdcChannelNum::AdcChannelNum_Se13; ///< Pin PTB3
+   inline constexpr AdcChannelNum Adc0ChannelNum_Se13             = AdcChannelNum::AdcChannelNum_Se13; ///< ADC0_SE13 [-]
    inline constexpr AdcChannelNum Adc0ChannelNum_Se14             = AdcChannelNum::AdcChannelNum_Se14; ///< ADC0_SE14 [-]
    inline constexpr AdcChannelNum Adc0ChannelNum_Se15             = AdcChannelNum::AdcChannelNum_Se15; ///< ADC0_SE15 [-]
    inline constexpr AdcChannelNum Adc0ChannelNum_Se19             = AdcChannelNum::AdcChannelNum_Se19; ///< ADC0_SE19 [ADC0_DM0(p8)]
@@ -438,19 +437,6 @@ namespace USBDM {
       AdcStatus_Busy   = ADC_SC2_ADACT(1),  ///< Conversion in progress.
    };
 
-   /**
-    * Combine two ADC register bit-fields
-    * (Just to quieten warnings in C++20)
-    *
-    * @param adcPower
-    * @param adcClockRange
-    *
-    * @return Combined fields
-    */
-   constexpr uint8_t  operator|(AdcPower adcPower, AdcClockRange adcClockRange) {
-      return uint8_t(adcPower)|uint8_t(adcClockRange);
-   }
-   
 class AdcBasicInfo {
 
 public:
@@ -1517,7 +1503,7 @@ public:
          /*  10: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
          /*  11: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
          /*  12: ADC0_SE12            = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
-         /*  13: ADC0_SE13            = PTB3(p30)                      */  { PinIndex::PTB3,         PcrValue(0x00000UL) },
+         /*  13: ADC0_SE13            = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*  14: ADC0_SE14            = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*  15: ADC0_SE15            = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*  16: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
@@ -1556,8 +1542,6 @@ public:
     * @note Only the lower 16-bits of the PCR registers are affected
     */
    static void initPCRs() {
-      enablePortClocks(USBDM::PORTB_CLOCK_MASK);
-      PORTB->GPCLR = (0x0000UL|PORT_GPCLR_GPWE(0x0008UL));
    }
 
    /**
@@ -1566,15 +1550,13 @@ public:
     * @note Only the lower 16-bits of the PCR registers are affected
     */
    static void clearPCRs() {
-      enablePortClocks(USBDM::PORTB_CLOCK_MASK);
-      PORTB->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x0008UL);
    }
 
    /*
     * Template:adc0_diff_a
     */
    //! Map all allocated pins on a peripheral when enabled
-   static constexpr bool mapPinsOnEnable = true;
+   static constexpr bool mapPinsOnEnable = false;
 
 
    
@@ -2107,6 +2089,7 @@ public:
       enable();
    
       AdcBasicInfo::configure(adc, init);
+   
    }
    
    /**
@@ -2122,7 +2105,7 @@ public:
    
       // The following values must be in order
       AdcPretrigger_0,             // sc1[0]/r[0] ,
-      Adc0ChannelNum_Se0 ,         // (adc_sc1[0]_adch)          ADC0 Channel number - ADC0_SE0 [ADC0_DP0(p7)]
+      Adc0ChannelNum_Se0 ,         // (adc_sc1[0]_adch)          ADC0 Channel number - Battery Level [ADC0_DP0(p7)]
       AdcAction_None,              // (adc_sc1[0]_aien)          Action on conversion completion - None
    };
    
@@ -2502,8 +2485,8 @@ public:
        */
       static void setInput() {
          // Map pins to ADC
-         PcrP::setPCR(Info::info[channel].pcrValue);
-         PcrM::setPCR(Info::info[channel].pcrValue);
+         PcrP::setPCR(Info::info[unsigned(channel)].pcrValue);
+         PcrM::setPCR(Info::info[unsigned(channel)].pcrValue);
       }
 
       /**

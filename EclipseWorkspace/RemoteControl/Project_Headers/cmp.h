@@ -35,7 +35,7 @@ namespace USBDM {
  * @brief Pins used for Analogue Comparator
  * @{
  */
-
+// /CMP/peripheral_h_types
    /**
     * CMP Positive Input Select
     * (cmp_muxcr_psel_base)
@@ -43,14 +43,14 @@ namespace USBDM {
     * Selects the positive input source
     */
    enum class CmpInputPlus : uint8_t {
-      CmpInputPlus_0   = CMP_MUXCR_PSEL(0),  ///< External input 0
-      CmpInputPlus_1   = CMP_MUXCR_PSEL(1),  ///< External input 1
-      CmpInputPlus_2   = CMP_MUXCR_PSEL(2),  ///< External input 2
-      CmpInputPlus_3   = CMP_MUXCR_PSEL(3),  ///< External input 3
-      CmpInputPlus_4   = CMP_MUXCR_PSEL(4),  ///< External input 4
-      CmpInputPlus_5   = CMP_MUXCR_PSEL(5),  ///< External input 5
-      CmpInputPlus_6   = CMP_MUXCR_PSEL(6),  ///< External input 6
-      CmpInputPlus_7   = CMP_MUXCR_PSEL(7),  ///< External input 7
+      CmpInputPlus_0   = CMP_MUXCR_PSEL(0),  ///< Cmp input 0
+      CmpInputPlus_1   = CMP_MUXCR_PSEL(1),  ///< Cmp input 1
+      CmpInputPlus_2   = CMP_MUXCR_PSEL(2),  ///< Cmp input 2
+      CmpInputPlus_3   = CMP_MUXCR_PSEL(3),  ///< Cmp input 3
+      CmpInputPlus_4   = CMP_MUXCR_PSEL(4),  ///< Cmp input 4
+      CmpInputPlus_5   = CMP_MUXCR_PSEL(5),  ///< Cmp input 5
+      CmpInputPlus_6   = CMP_MUXCR_PSEL(6),  ///< Cmp input 6
+      CmpInputPlus_7   = CMP_MUXCR_PSEL(7),  ///< Cmp input 7
    };
 
    /**
@@ -78,14 +78,14 @@ namespace USBDM {
     * Selects the negative input source
     */
    enum class CmpInputMinus : uint8_t {
-      CmpInputMinus_0   = CMP_MUXCR_MSEL(0),  ///< External input 0
-      CmpInputMinus_1   = CMP_MUXCR_MSEL(1),  ///< External input 1
-      CmpInputMinus_2   = CMP_MUXCR_MSEL(2),  ///< External input 2
-      CmpInputMinus_3   = CMP_MUXCR_MSEL(3),  ///< External input 3
-      CmpInputMinus_4   = CMP_MUXCR_MSEL(4),  ///< External input 4
-      CmpInputMinus_5   = CMP_MUXCR_MSEL(5),  ///< External input 5
-      CmpInputMinus_6   = CMP_MUXCR_MSEL(6),  ///< External input 6
-      CmpInputMinus_7   = CMP_MUXCR_MSEL(7),  ///< External input 7
+      CmpInputMinus_0   = CMP_MUXCR_MSEL(0),  ///< Cmp input 0
+      CmpInputMinus_1   = CMP_MUXCR_MSEL(1),  ///< Cmp input 1
+      CmpInputMinus_2   = CMP_MUXCR_MSEL(2),  ///< Cmp input 2
+      CmpInputMinus_3   = CMP_MUXCR_MSEL(3),  ///< Cmp input 3
+      CmpInputMinus_4   = CMP_MUXCR_MSEL(4),  ///< Cmp input 4
+      CmpInputMinus_5   = CMP_MUXCR_MSEL(5),  ///< Cmp input 5
+      CmpInputMinus_6   = CMP_MUXCR_MSEL(6),  ///< Cmp input 6
+      CmpInputMinus_7   = CMP_MUXCR_MSEL(7),  ///< Cmp input 7
    };
 
    /**
@@ -148,6 +148,7 @@ namespace USBDM {
 
 
 
+///CMP/peripheral_h_definition
 /**
  * Peripheral information for CMP, Analogue Comparator.
  * 
@@ -679,7 +680,9 @@ public:
 }; // class Cmp1Info
 
 
+///CMP/InputMapping
 // /CMP/InputMapping None Found
+///CMP/declarations
 
 
 /**

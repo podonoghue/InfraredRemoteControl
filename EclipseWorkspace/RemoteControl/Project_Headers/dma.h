@@ -25,7 +25,7 @@
 
 namespace USBDM {
 
-#if false // /DMA/_BasicInfoGuard
+#if true // /DMA/_BasicInfoGuard
 
 /**
  * @addtogroup DMA_Group DMA, Direct Memory Access (DMA)
@@ -355,10 +355,317 @@ namespace USBDM {
       DmaMinorLoopOffsetSelect_Both          = DMA_NBYTES_MLOFFYES_SMLOE(1)|DMA_NBYTES_MLOFFYES_DMLOE(1),  ///< Offset Source and Destination
    };
 
+   /**
+    * Union used to do initialisation of a TCD CSR in Dma0
+    *
+    * This class has a templated constructor that accepts various values:
+    *
+    * @note This constructor may be used to create a const instance in ROM
+    *
+    * Example:
+    * @code
+    * // Creating value
+    * static const Dma0::DmaTcdCsr txCsr {
+    *    DmaSpeed_NoStalls ,           // Bandwidth Control - No eDMA engine stalls
+    *    DmaMajorLink_Disabled ,       // Channel linking on major loop complete - Channel-to-channel linking is disabled
+    *    DmaScatterGather_Disabled ,   // Scatter/Gather Processing - TCD is normal format
+    *    DmaStopOnComplete_Disabled ,  // Clear request on complete - ERQ bit is not affected
+    *    DmaIntHalf_Disabled ,         // Interrupt when major counter is half complete - The half-point interrupt is disabled
+    *    DmaIntMajor_Disabled ,        // Interrupt when major counter completes - The end-of-major loop interrupt is disabled
+    *    DmaStart_Hardware,            // Channel Start - Channel started by hardware request
+    * };
+    * @endcode
+    */
+   union __attribute__((__packed__)) DmaTcdCsr {
+   
+   public:
+      /**
+       * Copy Constructor
+       */
+      constexpr DmaTcdCsr(const DmaTcdCsr &other) {
+         csr = other.csr;
+      }
+   
+      /**
+       * Default Constructor
+       */
+      constexpr DmaTcdCsr() : csr(0) {}
+   
+      /**
+       * CSR value as uint16_t
+       */
+      operator uint16_t() const { return csr; }
+   
+   private:
+      ///  DMA TCD Control and Status
+      uint16_t csr;
+      struct {
+         bool          START:1;       //!< Channel Start
+         bool          INTMAJOR:1;    //!< Interrupt on major complete
+         bool          INTHALF:1;     //!< Interrupt on major half complete
+         bool          DREQ:1;        //!< Disable Request
+         bool          ESG:1;         //!< Enable Scatter/Gather
+         bool          MAJORELINK:1;  //!< Enable channel linking
+         bool          ACTIVE:1;      //!< Channel Active
+         bool          DONE:1;        //!< Channel Done
+         unsigned      MAJORLINKCH:4; //!< Link Channel Number
+         unsigned      :2;
+         unsigned      BWC:2;         //!< Bandwidth Control
+      };
+   
+   public:
+   
+      /**
+       * Constructor for Bandwidth Control
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaSpeed Throttles the amount of bus bandwidth consumed by the eDMA. 
+       *        Generally, as the eDMA processes the minor loop, it continuously generates 
+       *        read/write sequences until the minor count is exhausted. This field 
+       *        forces the eDMA to stall after the completion of each read/write access 
+       *        to control the bus request bandwidth seen by the crossbar switch
+       */
+      template <typename... Types>
+      constexpr DmaTcdCsr(DmaSpeed dmaSpeed, Types... rest) : DmaTcdCsr(rest...) {
+   
+         csr |= dmaSpeed;
+      }
+   
+      /**
+       * Constructor for Channel linking on major loop complete
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaMajorLink As the channel completes the major loop, this option enables the linking to another channel. 
+       *        The link target channel initiates a channel service request via an internal mechanism that sets the 
+       *        TCDn_CSR[START] bit of the specified channel. 
+       *        @note To support the dynamic linking coherency model, the DMA_CSR_MAJORELINK field is forced to zero when 
+       *        written to while the TCDn_CSR[DONE] bit is set
+       */
+      template <typename... Types>
+      constexpr DmaTcdCsr(DmaMajorLink dmaMajorLink, Types... rest) : DmaTcdCsr(rest...) {
+   
+         csr |= dmaMajorLink;
+      }
+   
+      /**
+       * Constructor for Scatter/Gather Processing
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaScatterGather If selected, scatter/gather processing occurs when the channel completes the major loop. 
+       *        The eDMA engine uses DLASTSGA as a memory pointer to a 0-modulo-32 address containing a 32-byte 
+       *        data structure loaded as the transfer control descriptor into the local memory. 
+       *        @note To support the dynamic scatter/gather coherency model, this field is forced to zero when written 
+       *        to while the TCDn_CSR[DONE] bit is set
+       */
+      template <typename... Types>
+      constexpr DmaTcdCsr(DmaScatterGather dmaScatterGather, Types... rest) : DmaTcdCsr(rest...) {
+   
+         csr |= dmaScatterGather;
+      }
+   
+      /**
+       * Constructor for Clear request on complete
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaStopOnComplete If selected, the eDMA hardware automatically clears the ERQ bit when 
+       *        the current major iteration count reaches zero
+       */
+      template <typename... Types>
+      constexpr DmaTcdCsr(DmaStopOnComplete dmaStopOnComplete, Types... rest) : DmaTcdCsr(rest...) {
+   
+         csr |= dmaStopOnComplete;
+      }
+   
+      /**
+       * Constructor for Interrupt when major counter is half complete
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaIntHalf If selected, the channel generates an interrupt request by setting the appropriate bit in the INT 
+       *        register when the current major iteration count reaches the halfway point. Specifically, the comparison 
+       *        performed by the eDMA engine is (CITER == (BITER &gt;&gt; 1)). This halfway point interrupt request is 
+       *        provided to support double-buffered, also known as ping-pong, schemes or other types of data movement 
+       *        where the processor needs an early indication of the transfer?s progress. 
+       *        @note If BITER = 1, do not use INTHALF. Use INTMAJOR instead
+       */
+      template <typename... Types>
+      constexpr DmaTcdCsr(DmaIntHalf dmaIntHalf, Types... rest) : DmaTcdCsr(rest...) {
+   
+         csr |= dmaIntHalf;
+      }
+   
+      /**
+       * Constructor for Interrupt when major counter completes
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaIntMajor If selected, the channel generates an interrupt request by setting the appropriate bit in 
+       *        the INT when the current major iteration count reaches zero
+       */
+      template <typename... Types>
+      constexpr DmaTcdCsr(DmaIntMajor dmaIntMajor, Types... rest) : DmaTcdCsr(rest...) {
+   
+         csr |= dmaIntMajor;
+      }
+   
+      /**
+       * Constructor for Channel Start
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaStart The channel immediately requests service, 
+       *        otherwise start is triggered later by a hardware request. 
+       *        The eDMA hardware automatically clears this flag after the channel begins execution
+       */
+      template <typename... Types>
+      constexpr DmaTcdCsr(DmaStart dmaStart, Types... rest) : DmaTcdCsr(rest...) {
+   
+         csr |= dmaStart;
+      }
+   
+   }; // DmaTcdCsr
+
+   /**
+    * Class used to do initialisation of Dma0
+    *
+    * This class has a templated constructor that accepts various values:
+    *
+    * @note This constructor may be used to create a const instance in ROM
+    *
+    * Example:
+    * @code
+    * // Creating value
+    * static const Dma0::DmaConfig config {
+    *    DmaActionOnError_Continue ,    // DMA halt on error - Transfer continues on any error
+    *    DmaContinuousLink_Disabled ,   // Link mode - Link mode disabled
+    *    DmaMinorLoopMapping_Disabled , // Minor loop mapping - Mapping disabled
+    *    DmaArbitration_Fixed ,         // Channel Arbitration - Fixed (within group)
+    *    DmaInDebug_Halt,               // Operation in Debug mode - Halt in debug
+    * };
+    *
+    * // Enable DMAC with settings from above
+    * Dma0::configure(config);
+    * @endcode
+    */
+   union __attribute__((__packed__)) DmaConfig {
+   
+   public:
+      /**
+       * Copy Constructor
+       */
+      constexpr DmaConfig(const DmaConfig &other) = default;
+   
+      /**
+       * Default Constructor
+       */
+      constexpr DmaConfig() : cr(0) {}
+   
+      /**
+       * CSR value as uint16_t
+       */
+      operator uint16_t() const { return cr; }
+   
+      ///  DMA TCD Control and Status
+      uint32_t cr;
+   
+      /**
+       * Constructor for DMA halt on error
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaActionOnError Whether to halt transfer when a DMA error occurs
+       */
+      template <typename... Types>
+      constexpr DmaConfig(DmaActionOnError dmaActionOnError, Types... rest) : DmaConfig(rest...) {
+   
+         cr |= dmaActionOnError;
+      }
+   
+      /**
+       * Constructor for Continuous Link mode
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaContinuousLink Whether to enable continuous link mode 
+       *        If enabled, on minor loop completion, the channel activates again if that 
+       *        channel has a minor loop channel link enabled and the link channel is itself. 
+       *        This effectively applies the minor loop offsets and restarts the next minor loop
+       */
+      template <typename... Types>
+      constexpr DmaConfig(DmaContinuousLink dmaContinuousLink, Types... rest) : DmaConfig(rest...) {
+   
+         cr |= dmaContinuousLink;
+      }
+   
+      /**
+       * Constructor for Minor loop mapping
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaMinorLoopMapping Whether to enable minor loop mapping
+       *        When enabled, TCDn.word2 is redefined to include individual enable fields, an offset field 
+       *        and the NBYTES field. The individual enable fields allow the minor loop offset to be 
+       *        applied to the source address, the destination address, or both.  
+       *        The NBYTES field is reduced when either offset is enabled.
+       */
+      template <typename... Types>
+      constexpr DmaConfig(DmaMinorLoopMapping dmaMinorLoopMapping, Types... rest) : DmaConfig(rest...) {
+   
+         cr |= dmaMinorLoopMapping;
+      }
+   
+      /**
+       * Constructor for Channel Arbitration
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaArbitration How to arbitrate between requests from different channels
+       */
+      template <typename... Types>
+      constexpr DmaConfig(DmaArbitration dmaArbitration, Types... rest) : DmaConfig(rest...) {
+   
+         cr |= dmaArbitration;
+      }
+   
+      /**
+       * Constructor for Operation in Debug mode
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmaInDebug Control DMA operation in debug mode
+       */
+      template <typename... Types>
+      constexpr DmaConfig(DmaInDebug dmaInDebug, Types... rest) : DmaConfig(rest...) {
+   
+         cr |= dmaInDebug;
+      }
+   
+   }; // DmaConfig
+
 class DmaBasicInfo {
 
 public:
 
+   //! Common class based callback code has been generated for this class of peripheral
+   // (_BasicInfoIrqGuard)
+   static constexpr bool irqHandlerInstalled = false;
+   
 }; // class DmaBasicInfo 
 
 class Dma0Info : public DmaBasicInfo {
@@ -368,6 +675,10 @@ public:
    /*
     * Template:dma0_4ch
     */
+   //! Class based interrupt code has been generated for this class of peripheral
+   // (_BasicInfoIrqGuard)
+   static constexpr bool irqHandlerInstalled = false;
+   
    //! IRQ numbers for hardware
    static constexpr IRQn_Type irqNums[]  = DMA0_IRQS;
    
@@ -429,6 +740,28 @@ public:
       SIM->SCGC7 = SIM->SCGC7 & ~SIM_SCGC7_DMA0_MASK;
    }
    
+   /**
+    * Basic enable of Dma0
+    * Includes enabling clock and configuring all mapped pins if mapPinsOnEnable is selected in configuration
+    */
+   static void enable() {
+      enableClock();
+   }
+   
+   /**
+    * Disables Dma0
+    */
+   static void disable() {
+   
+      
+      disableNvicInterrupts(IrqNum_Ch0);
+      disableNvicInterrupts(IrqNum_Ch1);
+      disableNvicInterrupts(IrqNum_Ch2);
+      disableNvicInterrupts(IrqNum_Ch3);
+      disableNvicInterrupts(IrqNum_Error);
+      disableClock();
+   }
+   
    //! Hardware base address as uint32_t
    static constexpr uint32_t baseAddress = DMA0_BasePtr;
    
@@ -449,6 +782,32 @@ public:
    //! Whether vectors are paired wrt channels i.e. Ch0_Ch16, Ch1_Ch17 etc
    static constexpr bool VectorsPaired = 4>5;
 
+   /**
+    * Default initialisation value for Dma0
+    * This value is created from Configure.usbdmProject settings
+    */
+   static constexpr DmaTcdCsr DefaultDmaTcdCsrValue = {
+      DmaSpeed_NoStalls ,     // (dma_csr_bwc)              Bandwidth Control - No eDMA engine stalls
+      DmaMajorLink_Disabled , // (dma_csr_majorelink)       Channel linking on major loop complete - Channel-to-channel linking is disabled
+      DmaScatterGather_Disabled , // (dma_csr_esg)              Scatter/Gather Processing - TCD is normal format
+      DmaStopOnComplete_Disabled , // (dma_csr_dreq)             Clear request on complete - ERQ bit is not affected
+      DmaIntHalf_Disabled ,   // (dma_csr_inthalf)          Interrupt when major counter is half complete - The half-point interrupt is disabled
+      DmaIntMajor_Disabled ,  // (dma_csr_intmajor)         Interrupt when major counter completes - The end-of-major loop interrupt is disabled
+      DmaStart_Hardware,      // (dma_csr_start)            Channel Start - Channel started by hardware request
+   };
+   
+   /**
+    * Default initialisation value for Dma0
+    * This value is created from Configure.usbdmProject settings
+    */
+   static constexpr DmaConfig DefaultDmaConfigValue = {
+      DmaActionOnError_Halt , // (dma_cr_hoe)               DMA halt on error - Transfer halts on any error
+      DmaContinuousLink_Disabled , // (dma_cr_clm)               Continuous Link mode - Continuous Link disabled
+      DmaMinorLoopMapping_Disabled , // (dma_cr_emlm)              Minor loop mapping - Mapping disabled
+      DmaArbitration_Fixed ,  // (dma_cr_erca)              Channel Arbitration - Fixed (within group)
+      DmaInDebug_Halt,        // (dma_cr_edbg)              Operation in Debug mode - Halt in debug
+   };
+   
 }; // class Dma0Info
 
 
@@ -475,6 +834,99 @@ class DmamuxBasicInfo {
 
 public:
 
+   /**
+    * Class used to do initialisation of a Dmamux channel (slot)
+    *
+    * This class has a templated constructor that accepts various values.
+    * Parameters available may vary with device - see Dmamux0::DefaultInitValue for relevant example.
+    * Omitted parameters default to zero (disabled) or unchanged if initialiser is provided as last parameter.
+    *
+    * @note This constructor may be used to create a const instance in Flash
+    *
+    * Example:
+    * @code
+    * static const Dmamux0::Init dmamux0Init {
+    *    {
+    *    DmaChannelNum_3,
+    *    DmamuxSlot_TPM0_Channel2,   // Mapping of DMA slot to DMA channel - TPM0 Channel 2
+    *    DmamuxMode_Continuous ,     // DMA Channel Enable - Channel enabled
+    *    },
+    *    {
+    *    DmaChannelNum_1,
+    *    DmamuxSlot_TPM0_Overflow,   // Mapping of DMA slot to DMA channel - TPM0 overflow
+    *    DmamuxMode_Throttled ,      // DMA Channel Enable - Channel enabled and throttled by PIT channel
+    *    },
+    * };
+    *
+    * // Initialise Dmamux0 from values specified above
+    * Dmamux0::configure(dmamux0Init)
+    * @endcode
+    */
+   class Init {
+   
+   public:
+      /**
+       * Copy Constructor
+       */
+      constexpr Init(const Init &other) = default;
+   
+      /**
+       * Default Constructor
+       */
+      constexpr Init() = default;
+   
+      /// Channel number for this configuration
+      DmaChannelNum channelNum = DmaChannelNum_None;
+
+      /// Channel Configuration Register
+      uint8_t chcfg = 0;
+
+      /**
+       * Constructor for Dma ChannelNum
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param  dmaChannelNum DMA ChannelNumber for this configuration
+       */
+      template <typename... Types>
+      constexpr Init(DmaChannelNum dmaChannelNum, Types... rest) : Init(rest...) {
+   
+         channelNum = dmaChannelNum;
+      }
+   
+      /**
+       * Constructor for DMA Channel Mode
+       * (dmamux_chcfg_mode)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmamuxMode Controls the mode of operation of the channel
+       */
+      template <typename... Types>
+      constexpr Init(DmamuxMode dmamuxMode, Types... rest) : Init(rest...) {
+   
+         chcfg = (chcfg&~(DMAMUX_CHCFG_ENBL_MASK|DMAMUX_CHCFG_TRIG_MASK)) | dmamuxMode;
+      }
+   
+      /**
+       * Constructor for Mapping of DMA slot to DMA channel
+       * (dmamux_chcfg_source)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param dmamuxSlot Specifies which DMA source (slot) is routed to a particular DMA channel
+       */
+      template <typename... Types>
+      constexpr Init(DmamuxSlot dmamuxSlot, Types... rest) : Init(rest...) {
+   
+         chcfg = (chcfg&~DMAMUX_CHCFG_SOURCE_MASK) | dmamuxSlot;
+      }
+   
+   }; // class DmamuxBasicInfo::Init
+   
 }; // class DmamuxBasicInfo 
 
 class Dmamux0Info : public DmamuxBasicInfo {
@@ -498,6 +950,23 @@ public:
       SIM->SCGC6 = SIM->SCGC6 & ~SIM_SCGC6_DMAMUX0_MASK;
    }
    
+   /**
+    * Basic enable of Dmamux0
+    * Includes enabling clock and configuring all mapped pins if mapPinsOnEnable is selected in configuration
+    */
+   static void enable() {
+      enableClock();
+   }
+   
+   /**
+    * Disables Dmamux0
+    */
+   static void disable() {
+   
+      
+      disableClock();
+   }
+   
    //! Hardware base address as uint32_t
    static constexpr uint32_t baseAddress = DMAMUX0_BasePtr;
    
@@ -513,6 +982,122 @@ public:
    // Each periodic channel may be controlled by the corresponding PIT channel
    static constexpr unsigned NumPeriodicChannels = 4;  // (NumPeriodicChannels)      Number of DMA channels with periodic feature;
    
+   /**
+    * Configures the hardware requests on a channel.
+    *
+    * @param[in] dmaChannelNum   The DMA channel being enabled
+    * @param[in] dmaSlot         The DMA slot (source) to connect to this channel
+    * @param[in] DmamuxMode      The mode for the channel
+    */
+   static void configure(DmaChannelNum dmaChannelNum, DmaSlot dmaSlot, DmamuxMode DmamuxMode=DmamuxMode_Continuous) {
+   
+      // Throttled DMA channels limited by PIT channels available
+      usbdm_assert((DmamuxMode != DmamuxMode_Continuous) || (dmaChannelNum<=NumPeriodicChannels),
+            "Illegal PIT throttled channel");
+   
+      // DmaSlots 0-63 must associate with DMA channels 0-15
+      // DmaSlots 64-128 must associate with DMA channels 15-31
+      usbdm_assert(((dmaChannelNum<16)&&(dmaSlot<64))||((dmaChannelNum>=16)&&(dmaSlot>=64)),
+            "Illegal DMA channel");
+   
+      // Enable clock to peripheral
+      enableClock();
+   
+      // Configure channel - must be disabled to change
+      dmamux->CHCFG[dmaChannelNum] = 0;
+      dmamux->CHCFG[dmaChannelNum] = DmamuxMode|DMAMUX_CHCFG_SOURCE(dmaSlot);
+   }
+   
+   /**
+    * Disable hardware requests on channel
+    *
+    * @param dmaChannelNum Channel to modify
+    */
+   static void disable(DmaChannelNum dmaChannelNum) {
+   
+      // Enable clock to peripheral
+      enableClock();
+   
+      // Disable channel
+      dmamux->CHCFG[dmaChannelNum] = 0;
+   }
+   
+   /**
+    * Default initialisation value for Dmamux0
+    * This value is created from Configure.usbdmProject settings
+    */
+   static constexpr Init DefaultInitValue[] = {
+   }; // Dmamux0Info::DefaultInitValue
+   
+   /**
+    * Indices into DefaultInitValue array by DMA slot
+    */
+   enum InitSlotIndex {
+   };
+   
+   /**
+    * Configure DMAMUX channel
+    * It is assumed that the clock to the peripheral is already enabled.
+    *
+    * @param dmaChannelNum Identifies channel to initialise
+    * @param init          Initialisation values
+    *
+    * @note The channel number in the initialisation is ignored
+    */
+   static void configure(DmaChannelNum dmaChannelNum, const Init &init) {
+   
+#if defined(DEBUG_BUILD)
+      if constexpr (NumChannels>NumPeriodicChannels) {
+         DmamuxMode mode = DmamuxMode(init.chcfg&(DMAMUX_CHCFG_ENBL_MASK|DMAMUX_CHCFG_TRIG_MASK));
+         usbdm_assert((dmaChannelNum>NumPeriodicChannels) && (mode == DmamuxMode_Throttled), "Channel cannot be throttled");
+      }
+#endif
+   
+      // Must clear before changing
+      dmamux->CHCFG[dmaChannelNum] = 0;
+      dmamux->CHCFG[dmaChannelNum] = init.chcfg;
+   }
+   
+   /**
+    * Configure DMAMUX channel
+    * It is assumed that the clock to the peripheral is enabled.
+    *
+    * @param init Initialisation values
+    *
+    * @note The channel number in the initialisation is used to select the channel being updated
+    */
+   static void configure(const Init &init) {
+   
+      configure(init.channelNum, init);
+   }
+   
+   /**
+    * Configure all DMAMUX channels
+    * The clock to the peripheral is enabled.
+    *
+    * @param init Array of initialisation values
+    *
+    * @note The channel numbers in the initialisations are used to select the channel being updated
+    */
+   template<size_t N>
+   static void configure(const Init (&init)[N]) {
+   
+      // Enable peripheral clock
+      enableClock();
+   
+      for (unsigned channel=0; channel<N; channel++) {
+         configure(init[channel]);
+      }
+   }
+   
+   /**
+    * Configure with default settings.
+    * Configuration determined from Configure.usbdmProject
+    * The clock to the peripheral is enabled.
+    */
+   static inline void defaultConfigure() {
+   
+   }
 }; // class Dmamux0Info
 
 
@@ -1037,7 +1622,7 @@ public:
 
       // Clear call-backs
       for (unsigned channel=0; channel<Info::NumVectors; channel++) {
-         Info::sCallbacks[channel] = Info::unhandledCallback;
+         Info::sCallbacks[channel] = unhandledCallback;
       }
 #ifndef NDEBUG
       // Clear the TCDs
@@ -1508,7 +2093,17 @@ constexpr DmaSlot inline operator+(DmaSlot slot, int offset) {
 /** Bit-mask of allocated channels */
 template<class Info> uint32_t DmaBase_T<Info>::allocatedChannels = (1<<Info::NumChannels)-1;
 
+   /**
+    * Class representing DMA0
+    */
+   typedef DmaBase_T<Dma0Info> Dma0;
+   
 
+   /**
+    * Class representing DMAMUX0
+    */
+   using Dmamux0 = Dmamux0Info;
+   
 
 
 /**

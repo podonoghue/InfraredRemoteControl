@@ -16,7 +16,7 @@
  */
 #include "pin_mapping.h"
 
-// No handler defined for LLWU 
+extern void llwuCallback();
 
 
 namespace USBDM {
@@ -118,21 +118,25 @@ namespace USBDM {
     * Selects wake-up pin to be used
     */
    enum LlwuPin : uint8_t {
-      LlwuPin_Pte1          = 0,   ///< LLWU_P0 [-]
-      LlwuPin_Pta4          = 3,   ///< LLWU_P3 [PTA4(p21)]
-      LlwuPin_Pta13         = 4,   ///< LLWU_P4 [-]
-      LlwuPin_Ptb0          = 5,   ///< LLWU_P5 [PTB0(p27)]
-      LlwuPin_Ptc1          = 6,   ///< LLWU_P6 [-]
-      LlwuPin_Ptc3          = 7,   ///< LLWU_P7 [-]
-      LlwuPin_Ptc4          = 8,   ///< LLWU_P8 [PTC4(p37)]
-      LlwuPin_Ptc5          = 9,   ///< LLWU_P9 [-]
-      LlwuPin_Ptc6          = 10,  ///< LLWU_P10 [-]
-      LlwuPin_Ptc11         = 11,  ///< LLWU_P11 [-]
-      LlwuPin_Ptd0          = 12,  ///< LLWU_P12 [PTD0(p41)]
-      LlwuPin_Ptd2          = 13,  ///< LLWU_P13 [PTD2(p43)]
-      LlwuPin_Ptd4          = 14,  ///< Touch Wakeup [PTD4(p45)]
-      LlwuPin_TouchWakeup   = 14,  ///< Touch Wakeup
-      LlwuPin_Ptd6          = 15,  ///< LLWU_P15 [-]
+      LlwuPin_Pte1             = 0,   ///< LLWU_P0 [-]
+      LlwuPin_Pta4             = 3,   ///< Wakeup from row 4 buttons [PTA4(p21)]
+      LlwuPin_SwitchWakeupR4   = 3,   ///< Wakeup from row 4 buttons
+      LlwuPin_Pta13            = 4,   ///< LLWU_P4 [-]
+      LlwuPin_Ptb0             = 5,   ///< LLWU_P5 [PTB0(p27)]
+      LlwuPin_Ptc1             = 6,   ///< Wakeup from row 1 buttons [PTC1(p34)]
+      LlwuPin_SwitchWakeupR1   = 6,   ///< Wakeup from row 1 buttons
+      LlwuPin_Ptc3             = 7,   ///< LLWU_P7 [-]
+      LlwuPin_Ptc4             = 8,   ///< Wakeup from row 3 buttons [PTC4(p37)]
+      LlwuPin_SwitchWakeupR3   = 8,   ///< Wakeup from row 3 buttons
+      LlwuPin_Ptc5             = 9,   ///< LLWU_P9 [-]
+      LlwuPin_Ptc6             = 10,  ///< LLWU_P10 [-]
+      LlwuPin_Ptc11            = 11,  ///< LLWU_P11 [-]
+      LlwuPin_Ptd0             = 12,  ///< LLWU_P12 [PTD0(p41)]
+      LlwuPin_Ptd2             = 13,  ///< LLWU_P13 [PTD2(p43)]
+      LlwuPin_Ptd4             = 14,  ///< Touch Wakeup [PTD4(p45)]
+      LlwuPin_TouchWakeup      = 14,  ///< Touch Wakeup
+      LlwuPin_Ptd6             = 15,  ///< Wakeup from row 2 buttons [PTD6(p47)]
+      LlwuPin_SwitchWakeupR2   = 15,  ///< Wakeup from row 2 buttons
 
    };
 
@@ -196,7 +200,7 @@ public:
       constexpr uint8_t pe_wupe_masks[] =
          {LLWU_PE1_WUPE0_MASK, LLWU_PE1_WUPE1_MASK, LLWU_PE1_WUPE2_MASK, LLWU_PE1_WUPE3_MASK, };
    
-      return pe_wupe_masks[llwuPin&0x11];
+      return pe_wupe_masks[llwuPin&0b11];
       //return LLWU_PE1_WUPE0_MASK<<(LLWU_PE1_WUPE1_SHIFT*(llwuPin&0x11));
    }
    
@@ -666,7 +670,7 @@ public:
          /*   3: LLWU_P3              = PTA4(p21)                      */  { PinIndex::PTA4,         PcrValue(0x00100UL) },
          /*   4: LLWU_P4              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*   5: LLWU_P5              = PTB0(p27)                      */  { PinIndex::PTB0,         PcrValue(0x00100UL) },
-         /*   6: LLWU_P6              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
+         /*   6: LLWU_P6              = PTC1(p34)                      */  { PinIndex::PTC1,         PcrValue(0x00100UL) },
          /*   7: LLWU_P7              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
          /*   8: LLWU_P8              = PTC4(p37)                      */  { PinIndex::PTC4,         PcrValue(0x00100UL) },
          /*   9: LLWU_P9              = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
@@ -675,7 +679,7 @@ public:
          /*  12: LLWU_P12             = PTD0(p41)                      */  { PinIndex::PTD0,         PcrValue(0x00100UL) },
          /*  13: LLWU_P13             = PTD2(p43)                      */  { PinIndex::PTD2,         PcrValue(0x00100UL) },
          /*  14: LLWU_P14             = PTD4(p45)                      */  { PinIndex::PTD4,         PcrValue(0x00100UL) },
-         /*  15: LLWU_P15             = --                             */  { PinIndex::UNMAPPED_PCR, PcrValue(0)         },
+         /*  15: LLWU_P15             = PTD6(p47)                      */  { PinIndex::PTD6,         PcrValue(0x00100UL) },
          /*  16: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
          /*  17: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
          /*  18: --                   = --                             */  { PinIndex::INVALID_PCR,  PcrValue(0)         },
@@ -711,8 +715,8 @@ public:
       enablePortClocks(USBDM::PORTA_CLOCK_MASK|USBDM::PORTB_CLOCK_MASK|USBDM::PORTC_CLOCK_MASK|USBDM::PORTD_CLOCK_MASK);
       PORTA->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x0010UL));
       PORTB->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x0001UL));
-      PORTC->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x0010UL));
-      PORTD->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x0015UL));
+      PORTC->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x0012UL));
+      PORTD->GPCLR = (0x0100UL|PORT_GPCLR_GPWE(0x0055UL));
    }
 
    /**
@@ -724,15 +728,15 @@ public:
       enablePortClocks(USBDM::PORTA_CLOCK_MASK|USBDM::PORTB_CLOCK_MASK|USBDM::PORTC_CLOCK_MASK|USBDM::PORTD_CLOCK_MASK);
       PORTA->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x0010UL);
       PORTB->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x0001UL);
-      PORTC->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x0010UL);
-      PORTD->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x0015UL);
+      PORTC->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x0012UL);
+      PORTD->GPCLR = uint32_t(PinMux_Disabled)|PORT_GPCLR_GPWE(0x0055UL);
    }
 
    /*
     * Template:llwu_me_pe4_filt2_rst_mk20d5
     */
    //! Map all allocated pins on a peripheral when enabled
-   static constexpr bool mapPinsOnEnable = true;
+   static constexpr bool mapPinsOnEnable = false;
 
 
    
@@ -1230,13 +1234,17 @@ public:
       // Enable peripheral
       enable();
    
-      // Configure call-back
-      if (init.callbacks[0] != nullptr) {
-         setCallback(init.callbacks[0]);
-         enableNvicInterrupts(init.priorities[0]);
-      }
+      // Disable call-back
+      disableNvicInterrupts();
+   
+      // Install call-back
+      setCallback(init.callbacks[0]);
    
       LlwuBasicInfo::configure(llwu, init);
+   
+      // Enable call-back
+      enableNvicInterrupts(init.priorities[0]);
+   
    }
    
    /**
@@ -1244,9 +1252,11 @@ public:
     * This value is created from Configure.usbdmProject settings
     */
    static constexpr LlwuBasicInfo::Init DefaultInitValue = {
-      LlwuPin_Ptd2, LlwuPinMode_FallingEdge,      // (llwu_pe4_wupe13)          Wake-up by PTD2 [LLWU_P13] - Wake-up on pin falling edge, 
-      LlwuFilterNum_1, LlwuPin_Ptd4,              // (llwu_filt1_filtsel)       Pin Filter 1 Pin Select - Touch Wakeup [PTD4(p45)], 
-      LlwuFilterPinMode_FallingEdge,              // (llwu_filt1_filte)         Pin Filter 1 Mode - Wake-up on filtered falling edge, 
+      LlwuPin_Pta4, LlwuPinMode_FallingEdge,      // (llwu_pe1_wupe3)           Wake-up by PTA4 [LLWU_P3] - Wake-up on pin falling edge, 
+      LlwuPin_Ptc1, LlwuPinMode_FallingEdge,      // (llwu_pe2_wupe6)           Wake-up by PTC1 [LLWU_P6] - Wake-up on pin falling edge, 
+      LlwuPin_Ptc4, LlwuPinMode_FallingEdge,      // (llwu_pe3_wupe8)           Wake-up by PTC4 [LLWU_P8] - Wake-up on pin falling edge, 
+      LlwuPin_Ptd4, LlwuPinMode_FallingEdge,      // (llwu_pe4_wupe14)          Wake-up by PTD4 [LLWU_P14] - Wake-up on pin falling edge, 
+      LlwuPin_Ptd6, LlwuPinMode_FallingEdge,      // (llwu_pe4_wupe15)          Wake-up by PTD6 [LLWU_P15] - Wake-up on pin falling edge, 
       
       LlwuResetWakeup_Enabled , // (llwu_rst_llrste)          Low-Leakage Mode RESET Enable - RESET enabled as LLWU exit source
       LlwuResetFilter_Enabled,  // (llwu_rst_rstfilt)         Digital Filter On RESET Pin - Filter enabled,  

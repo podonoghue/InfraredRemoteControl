@@ -19,7 +19,7 @@
 #include "derivative.h"
 #include "system.h"
 #include "pin_mapping.h"
-#if false // (/DMA/_BasicInfoGuard)
+#if true // (/DMA/_BasicInfoGuard)
 #include "dma.h"
 #endif
 
@@ -724,7 +724,7 @@ public:
 
       PitChannelEnable_Enabled ,   // (pit_tctrl_ten[0])         Timer Channel Enable - Channel enabled
       PitChannelAction_Interrupt , // (pit_tctrl_tie[0])         Action on timer event - Interrupt
-      479999_ticks,                // (pit_ldval_tsv[0])         Reload value channel 0
+      59999_ticks,                 // (pit_ldval_tsv[0])         Reload value channel 0
 
       NvicPriority_Normal ,        // (irqLevel_Ch0)             IRQ priority level for Ch0 - Normal
       buttonCallback,              // (handlerName_Ch0)          User declared event handler
@@ -821,7 +821,7 @@ public:
       return (PitChannelNum) channelNum;
    }
 
-#if false // (/DMA/_BasicInfoGuard)
+#if true // (/DMA/_BasicInfoGuard)
    /**
     * Allocate PIT channel associated with DMA channel.
     * This is a channel that may be used to throttle the associated DMA channel.

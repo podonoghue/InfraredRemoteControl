@@ -112,6 +112,108 @@ class RcmBasicInfo {
 
 public:
 
+   /**
+    * Class used to do initialisation of the Rcm
+    *
+    * This class has a templated constructor that accepts various values.
+    * Parameters available may vary with device - see Rcm::DefaultInitValue for relevant example.
+    * Omitted parameters default to zero (disabled) or unchanged if initialiser is provided as last parameter.
+    *
+    * @note This constructor may be used to create a const instance in Flash
+    *
+    * Example:
+    * @code
+    * ///
+    * /// RCM call-back
+    * ///
+    * /// @param status  Status reflecting active inputs
+    * ///
+    * void rcmCallback(uint32_t status) {
+    *    (void) status;
+    * }
+    *
+    * static const Rcm::Init rcmInit {
+    *
+    *   // Setup values
+    *   RcmResetPinStopFilter_LowPowerOscillator ,    // Reset pin filter select in low power modes - LPO clock based filter
+    *   RcmResetPinRunWaitFilter_LowPowerOscillator , // Reset pin filter select in run and wait modes - LPO clock based filter
+    *   RcmResetFilterBusClockCount_16Cycles,         // Reset pin filter bus clock select - 16 clock cycles
+    *
+    *   // Optional base value to start with (must be last parameter)
+    *   Rcm::DefaultInitValue   // Used as base value modified by above
+    * };
+    *
+    * // Initialise Rcm from values specified above
+    * Rcm::configure(rcmInit)
+    * @endcode
+    */
+   class Init {
+   
+   public:
+      /**
+       * Copy Constructor
+       */
+      constexpr Init(const Init &other) = default;
+   
+      /**
+       * Default Constructor
+       */
+      constexpr Init() = default;
+   
+      /// Reset Pin Filter Control Register
+      uint8_t rpfc = 0;
+
+      /// Reset Pin Filter Width Register
+      uint8_t rpfw = 0;
+
+      /**
+       * Constructor for Reset pin filter select in low power modes
+       * (rcm_rpfc_rstfltss)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param rcmResetPinStopFilter Controls the reset reset pin filter in STOP and VLPS modes
+       *        On exit from VLLS mode, this bit should be reconfigured before clearing PMC_REGSC[ACKISO]
+       */
+      template <typename... Types>
+      constexpr Init(RcmResetPinStopFilter rcmResetPinStopFilter, Types... rest) : Init(rest...) {
+   
+         rpfc = (rpfc&~RCM_RPFC_RSTFLTSS_MASK) | uint32_t(rcmResetPinStopFilter);
+      }
+   
+      /**
+       * Constructor for Reset pin filter select in run and wait modes
+       * (rcm_rpfc_rstfltsrw)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param rcmResetPinRunWaitFilter Controls the reset reset pin filter in RUN and WAIT modes
+       */
+      template <typename... Types>
+      constexpr Init(RcmResetPinRunWaitFilter rcmResetPinRunWaitFilter, Types... rest) : Init(rest...) {
+   
+         rpfc = (rpfc&~RCM_RPFC_RSTFLTSRW_MASK) | uint32_t(rcmResetPinRunWaitFilter);
+      }
+   
+      /**
+       * Constructor for Reset pin filter bus clock select
+       * (rcm_rpfw_rstfltsel)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param rcmResetFilter Selects the reset pin filter width
+       */
+      template <typename... Types>
+      constexpr Init(RcmResetFilter rcmResetFilter, Types... rest) : Init(rest...) {
+   
+         rpfw = (rpfw&~RCM_RPFW_RSTFLTSEL_MASK) | uint32_t(rcmResetFilter);
+      }
+   
+   }; // class RcmBasicInfo::Init
+   
 }; // class RcmBasicInfo 
 
 class RcmInfo : public RcmBasicInfo {
@@ -121,17 +223,39 @@ public:
    /*
     * Template:rcm_mk10d5
     */
+   /**
+    * Basic enable of Rcm
+    * Includes enabling clock and configuring all mapped pins if mapPinsOnEnable is selected in configuration
+    */
+   static void enable() {
+   }
+   
+   /**
+    * Disables Rcm
+    */
+   static void disable() {
+   
+      
+   }
+   
    //! Hardware base address as uint32_t
    static constexpr uint32_t baseAddress = RCM_BasePtr;
    
    //! Hardware base pointer
    static constexpr HardwarePtr<RCM_Type> rcm = baseAddress;
    
+   /**
+    * Default initialisation value for Rcm
+    * This value is created from Configure.usbdmProject settings
+    */
+   static constexpr Init DefaultInitValue = {
+   };
+   
 }; // class RcmInfo
 
 
 
-#if false // /RCM/_BasicInfoGuard
+#if true // /RCM/_BasicInfoGuard
 /**
  * Indicates reason for reset
  */
@@ -199,6 +323,27 @@ public:
 
 public:
 // /RCM/publicMethods not found
+   /**
+    * Configure with default settings.
+    * Configuration determined from Configure.usbdmProject
+    */
+   static inline void defaultConfigure() {
+   
+      // Update settings
+      configure(DefaultInitValue);
+   }
+   
+   /**
+    * Configure RCM from values specified in init
+    *
+    * @param init Class containing initialisation values
+    */
+   static void configure(const Init &init) {
+   
+      rcm->RPFC    = init.rpfc;
+      rcm->RPFW    = init.rpfw;
+   }
+   
 
    /**
     * Returns a bit mask indicating the source of the last reset.
@@ -319,6 +464,11 @@ public:
 };
 
 // No static declarations found
+   /**
+    * Class representing RCM
+    */
+   class Rcm : public RcmBase {};
+   
 
 #endif  // /RCM/_BasicInfoGuard
 

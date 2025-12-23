@@ -200,6 +200,7 @@ namespace USBDM {
       SmcPowerMode_VLPS          = make16(SmcRunMode_Normal|SmcStopMode_VeryLowPowerStop),                               /* (RUN,VLPR)->VLPS  7,6    Deep Sleep wfi+sleepDeep+SMC_PMCTRL_STOPM(2)                      */ ///<  Very low power stop mode
       /*                               or if SmcRunMode_VeryLowPower,                                                       VLPR->VLPS        6      Deep Sleep wfi+sleepDeep+SMC_PMCTRL_STOPM(0/2)                    */ ///<  Very low power stop mode    
    
+      SmcPowerMode_LLS           = make16(SmcRunMode_Normal|SmcStopMode_LowLeakageStop),                                 /* (RUN,VLPR)->LLS   10,11  Deep Sleep wfi+sleepDeep+SMC_PMCTRL_STOPM(3)+SMC_STOPCTRL_LLSM(2) */ ///<  Low leakage stop mode 2   
       SmcPowerMode_VLLS0         = make16(SmcRunMode_Normal|SmcStopMode_VeryLowLeakageStop,SmcLowLeakageStopMode_VLLS0), /* (RUN,VLPR)->VLLS0 8,9a   Deep Sleep wfi+sleepDeep+SMC_PMCTRL_STOPM(4)+SMC_STOPCTRL_LLSM(0) */ ///<  Very low leakage stop mode 0
       SmcPowerMode_VLLS1         = make16(SmcRunMode_Normal|SmcStopMode_VeryLowLeakageStop,SmcLowLeakageStopMode_VLLS1), /* (RUN,VLPR)->VLLS1 8,9b   Deep Sleep wfi+sleepDeep+SMC_PMCTRL_STOPM(4)+SMC_STOPCTRL_LLSM(1) */ ///<  Very low leakage stop mode 1
       SmcPowerMode_VLLS2         = make16(SmcRunMode_Normal|SmcStopMode_VeryLowLeakageStop,SmcLowLeakageStopMode_VLLS2), /* (RUN,VLPR)->VLLS2 8,9c   Deep Sleep wfi+sleepDeep+SMC_PMCTRL_STOPM(4)+SMC_STOPCTRL_LLSM(2) */ ///<  Very low leakage stop mode 2
@@ -897,9 +898,10 @@ public:
                return E_ILLEGAL_POWER_TRANSITION;
             }
             [[fallthrough]];
-         case SmcPowerMode_VLPS  :        // (RUN,VLPR)->VLPS  Transition 7,6 
-         case SmcPowerMode_VLLS0 :        // (RUN,VLPR)->VLLS0 Transition 8a,9a
-         case SmcPowerMode_VLLS1 :        // (RUN,VLPR)->VLLS1 Transition 8b,9b
+         case SmcPowerMode_VLPS  :        // (RUN,VLPR)->VLPS       Transition 7,6 
+         case SmcPowerMode_LLS   :        // (RUN,VLPR)->LLS        Transition 10,11 
+         case SmcPowerMode_VLLS0 :        // (RUN,VLPR)->VLLS0      Transition 8a,9a
+         case SmcPowerMode_VLLS1 :        // (RUN,VLPR)->VLLS1      Transition 8b,9b
          case SmcPowerMode_VLLS2 :        // (RUN,VLPR)->VLLS2/LLS2 Transition 8c,9c
          case SmcPowerMode_VLLS3 :        // (RUN,VLPR)->VLLS3/LLS3 Transition 8d,9d 
             // Set partial_stop and (v)lls options
@@ -919,6 +921,7 @@ public:
       SmcAllowVeryLowPower_Enabled , // (smc_pmprot_avlp)          Allow Very Low Power modes - VLPR, VLPW and VLPS are allowed
       SmcAllowLowLeakageStop_Enabled , // (smc_pmprot_alls)          Allow Low Leakage Stop mode - LLS is allowed
       SmcAllowVeryLowLeakageStop_Enabled , // (smc_pmprot_avlls)         Allow Very Low Leakage Stop mode - VLLSx is allowed
+      SmcStopMode_VeryLowLeakageStop , // (smc_pmctrl_stopm)         Stop Mode Control - Very-Low-Leakage Stop (VLLSx)
       SmcLowLeakageStopMode_VLLS3,  // (smc_stopctrl_vllsm)       Low Leakage Mode Control - Enter VLLS3 in VLLSx mode
    };
    

@@ -177,10 +177,224 @@ namespace USBDM {
       PmcRegulator_InRunMode    = PMC_REGSC_REGONS(1),  ///< Run mode
    };
 
+   /**
+    * Indicates reason for execution of PMC call-back
+    */
+   enum PmcInterruptReason {
+      PmcInterruptReason_LowVoltageDetect,//!< Low Voltage Detect
+      PmcInterruptReason_LowVoltageWarning//!< Low Voltage Warning
+   };
+   
 class PmcBasicInfo {
 
 public:
 
+   //! Common class based callback code has been generated for this class of peripheral
+   // (_BasicInfoIrqGuard)
+   static constexpr bool irqHandlerInstalled = false;
+   
+   // Pointer to PMC hardware instance
+   volatile PMC_Type *pmc;
+   
+   /**
+    * Constructor
+    *
+    * @param pmc PMC hardware instance
+    */
+   PmcBasicInfo(volatile PMC_Type * pmc) : pmc(pmc) {
+   }
+   
+   /**
+    * Class used to do initialisation of the Pmc
+    *
+    * This class has a templated constructor that accepts various values.
+    * Parameters available may vary with device - see Pmc::DefaultInitValue for relevant example.
+    * Omitted parameters default to zero (disabled) or unchanged if initialiser is provided as last parameter.
+    *
+    * @note This constructor may be used to create a const instance in Flash
+    *
+    * Example:
+    * @code
+    * ///
+    * /// PMC call-back
+    * ///
+    * /// @param status  Status reflecting active inputs
+    * ///
+    * void pmcCallback(uint32_t status) {
+    *    ....
+    * }
+    *
+    * static const Pmc::Init pmcInit {
+    *
+    *   // Setup values
+    *   PmcLowVoltageAction_Interrupt ,           // Low-voltage detect action - Interrupt
+    *   PmcLowVoltageDetectLevel_Low ,            // Low-Voltage Detect level select - Low trip point selected
+    *   PmcLowVoltageWarningAction_None ,         // Low-Voltage Warning Interrupt Enable - No action
+    *   PmcLowVoltageWarningLevel_Low ,           // Low-Voltage Warning Voltage Select - Low trip point selected
+    *   PmcBandgapOperationInLowPower_Disabled ,  // Bandgap Enable In VLPx Operation - Disabled
+    *   PmcBandgapBuffer_Disabled,                // Bandgap Buffer Enable - Disabled
+    *   NvicPriority_VeryLow,                     // IRQ level for this peripheral - VeryLow
+    *   pmcCallback,                              // Call-back function
+    *
+    *   pmcCallback,                 // Call-back to execute on event - call-back function name
+    *   NvicPriority_Low,                 // Priority for interrupt - Low
+    *
+    *   // Optional base value to start with (must be last parameter)
+    *   Pmc::DefaultInitValue   // Used as base value modified by above
+    * };
+    *
+    * // Initialise Pmc from values specified above
+    * Pmc::configure(pmcInit)
+    * @endcode
+    */
+   class Init {
+   
+   private:
+      /**
+       * Prevent implicit parameter conversions
+       */
+      template <typename... Types>
+      constexpr Init(Types...) = delete;
+   
+   public:
+      /**
+       * Copy Constructor
+       */
+      constexpr Init(const Init &other) = default;
+   
+      /**
+       * Default Constructor
+       */
+      constexpr Init() = default;
+   
+      // Low-voltage detect action (pmc_lvdsc1_action)
+      // Low-Voltage Detect level select (pmc_lvdsc1_lvdv)
+      uint8_t lvdsc1 = 0;
+
+      // Acknowledge Low-Voltage Warning (pmc_lvdsc2_lvwack)
+      // Low-Voltage Warning Interrupt Enable (pmc_lvdsc2_lvwie)
+      // Low-Voltage Warning Voltage Select (pmc_lvdsc2_lvwv)
+      uint8_t lvdsc2 = 0;
+
+      // Bandgap Enable In VLPx Operation (pmc_regsc_bgen)
+      // Acknowledge Isolation (pmc_regsc_ackiso)
+      // Bandgap Buffer Enable (pmc_regsc_bgbe)
+      uint8_t regsc = 0;
+
+      // IRQ priority levels (nvic_irqLevel)
+      NvicPriority irqlevel = NvicPriority_Normal;
+
+      /**
+       * Constructor for IRQ priority levels
+       * (nvic_irqLevel)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param nvicPriority Priority level used to configure the NVIC
+       *        Subset of available levels
+       */
+      template <typename... Types>
+      constexpr Init(NvicPriority nvicPriority, Types... rest) : Init(rest...) {
+   
+         irqlevel = nvicPriority;
+      }
+   
+      /**
+       * Constructor for Low-voltage detect action
+       * (pmc_lvdsc1_action)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param pmcLowVoltageAction Selects interrupt or reset on low voltage detect
+       *        Note that selecting reset is a write-once selection
+       */
+      template <typename... Types>
+      constexpr Init(PmcLowVoltageAction pmcLowVoltageAction, Types... rest) : Init(rest...) {
+   
+         lvdsc1 = (lvdsc1&~(PMC_LVDSC1_LVDRE_MASK|PMC_LVDSC1_LVDIE_MASK)) | uint32_t(pmcLowVoltageAction);
+      }
+   
+      /**
+       * Constructor for Low-Voltage Detect level select
+       * (pmc_lvdsc1_lvdv)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param pmcLowVoltageDetectLevel Selects the LVD trip point voltage (Vlvd)
+       */
+      template <typename... Types>
+      constexpr Init(PmcLowVoltageDetectLevel pmcLowVoltageDetectLevel, Types... rest) : Init(rest...) {
+   
+         lvdsc1 = (lvdsc1&~PMC_LVDSC1_LVDV_MASK) | uint32_t(pmcLowVoltageDetectLevel);
+      }
+   
+      /**
+       * Constructor for Low-Voltage Warning Interrupt Enable
+       * (pmc_lvdsc2_lvwie)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param pmcLowVoltageWarningAction Action to take on Low Voltage Warning
+       */
+      template <typename... Types>
+      constexpr Init(PmcLowVoltageWarningAction pmcLowVoltageWarningAction, Types... rest) : Init(rest...) {
+   
+         lvdsc2 = (lvdsc2&~PMC_LVDSC2_LVWIE_MASK) | uint32_t(pmcLowVoltageWarningAction);
+      }
+   
+      /**
+       * Constructor for Low-Voltage Warning Voltage Select
+       * (pmc_lvdsc2_lvwv)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param pmcLowVoltageWarningLevel Selects the LVW trip point voltage (Vlvw)
+       *        The actual voltage for the warning depends on pmc_lvdsc1_lvdv
+       */
+      template <typename... Types>
+      constexpr Init(PmcLowVoltageWarningLevel pmcLowVoltageWarningLevel, Types... rest) : Init(rest...) {
+   
+         lvdsc2 = (lvdsc2&~PMC_LVDSC2_LVWV_MASK) | uint32_t(pmcLowVoltageWarningLevel);
+      }
+   
+      /**
+       * Constructor for Bandgap Enable In VLPx Operation
+       * (pmc_regsc_bgen)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param pmcBandgapOperationInLowPower BGEN controls whether the bandgap is enabled in 
+       *        lower power modes of operation (VLPx, LLS, and VLLSx)
+       */
+      template <typename... Types>
+      constexpr Init(PmcBandgapOperationInLowPower pmcBandgapOperationInLowPower, Types... rest) : Init(rest...) {
+   
+         regsc = (regsc&~PMC_REGSC_BGEN_MASK) | uint32_t(pmcBandgapOperationInLowPower);
+      }
+   
+      /**
+       * Constructor for Bandgap Buffer Enable
+       * (pmc_regsc_bgbe)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param pmcBandgapBuffer Controls whether the band-gap reference is available to internal devices e.g. CMP etc
+       */
+      template <typename... Types>
+      constexpr Init(PmcBandgapBuffer pmcBandgapBuffer, Types... rest) : Init(rest...) {
+   
+         regsc = (regsc&~PMC_REGSC_BGBE_MASK) | uint32_t(pmcBandgapBuffer);
+      }
+   
+   }; // class PmcBasicInfo::Init
+   
 }; // class PmcBasicInfo 
 
 class PmcInfo : public PmcBasicInfo {
@@ -190,6 +404,10 @@ public:
    /*
     * Template:pmc_mk
     */
+   //! Class based interrupt code has been generated for this class of peripheral
+   // (_BasicInfoIrqGuard)
+   static constexpr bool irqHandlerInstalled = false;
+   
    //! IRQ numbers for hardware
    static constexpr IRQn_Type irqNums[]  = PMC_IRQS;
    
@@ -220,6 +438,22 @@ public:
       NVIC_DisableIRQ(irqNums[0]);
    }
    
+   /**
+    * Basic enable of Pmc
+    * Includes enabling clock and configuring all mapped pins if mapPinsOnEnable is selected in configuration
+    */
+   static void enable() {
+   }
+   
+   /**
+    * Disables Pmc
+    */
+   static void disable() {
+   
+      
+      disableNvicInterrupts();
+   }
+   
    //! Hardware base address as uint32_t
    static constexpr uint32_t baseAddress = PMC_BasePtr;
    
@@ -245,6 +479,49 @@ public:
    static void releaseIsolation() {
       pmc->REGSC = pmc->REGSC|PMC_REGSC_ACKISO_MASK;
    }
+   
+   /**
+    * Configure with default settings.
+    * Configuration determined from Configure.usbdmProject
+    */
+   static inline void defaultConfigure() {
+   
+      // Update settings
+      configure(DefaultInitValue);
+   }
+   
+   /**
+    * Configure PMC from values specified in init
+    *
+    * @param init Class containing initialisation values
+    */
+   static void configure(const Init &init) {
+   
+   
+      // Low-voltage detect action (pmc_lvdsc1_action)
+      // Low-Voltage Detect level select (pmc_lvdsc1_lvdv)
+      pmc->LVDSC1 = init.lvdsc1;
+   
+   
+      // Low-Voltage Warning Interrupt Enable (pmc_lvdsc2_lvwie)
+      // Low-Voltage Warning Voltage Select (pmc_lvdsc2_lvwv)
+      pmc->LVDSC2 = init.lvdsc2;
+   
+   
+      // Bandgap Enable In VLPx Operation (pmc_regsc_bgen)
+      // Bandgap Buffer Enable (pmc_regsc_bgbe)
+      pmc->REGSC = init.regsc;
+   
+   }
+   
+   /**
+    * Default initialisation value for Pmc
+    * This value is created from Configure.usbdmProject settings
+    */
+   static constexpr Init DefaultInitValue = {
+      PmcLowVoltageAction_None ,        // (pmc_lvdsc1_action)        Low-voltage detect action - None
+      NvicPriority_Disabled,            // (irqLevel)                 IRQ priority level - Interrupts Disabled
+   };
    
 }; // class PmcInfo
 
@@ -383,6 +660,11 @@ public:
 
 };
 
+   /**
+    * Class representing PMC
+    */
+   class Pmc : public PmcBase {};
+   
 
 
 /**
