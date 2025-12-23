@@ -1,0 +1,10 @@
+Output: Generates pick and place files
+Type  : Pick Place
+From  : PCB Document [IR_Remote_LEDs.PcbDoc]
+   Generated File[Pick Place for IR_Remote_LEDs.csv]
+
+
+Files Generated   : 1
+Documents Printed : 0
+
+Finished Output Generation At 10:26:15 AM On 22-Nov-25

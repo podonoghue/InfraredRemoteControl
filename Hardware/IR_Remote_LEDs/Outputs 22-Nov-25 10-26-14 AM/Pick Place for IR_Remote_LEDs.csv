@@ -1,0 +1,18 @@
+Altium Designer Pick and Place Locations
+Z:\Documents\Development\InfraredRemoteControl\Hardware\IR_Remote_LEDs\Outputs 22-Nov-25 10-26-14 AM\Pick Place for IR_Remote_LEDs.csv
+
+========================================================================================================================
+File Design Information:
+
+Date:       22-11-25
+Time:       10:26
+Revision:   9e528d514a6032245605c35a0783aed90b24b501
+Variant:    No variations
+Units used: mil
+
+"Designator","Layer","Footprint","Center-X(mil)","Center-Y(mil)","Rotation"
+"D1","TopLayer","LED5MM","433.071","0.000","270"
+"D2","TopLayer","LED5MM","-433.071","0.000","270"
+"J1","BottomLayer","JST-P2B-PH","-610.236","0.000","90"
+"R1","BottomLayer","CR1608-0603_N","255.905","-39.370","0"
+"R2","BottomLayer","CR1608-0603_N","-255.906","-39.370","180"
