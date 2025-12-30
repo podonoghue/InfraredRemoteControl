@@ -1722,6 +1722,7 @@ public:
    int startTransaction() {
       spi->MCR = spi->MCR & ~SPI_MCR_HALT_MASK;
       clearStatusFlags();
+      clearFifos(SpiClearFifo_Both);
       return 0;
    }
    
@@ -1739,6 +1740,7 @@ public:
       setConfiguration(configuration);
       spi->MCR = spi->MCR & ~SPI_MCR_HALT_MASK;
       clearStatusFlags();
+      clearFifos(SpiClearFifo_Both);
       return 0;
    }
    
