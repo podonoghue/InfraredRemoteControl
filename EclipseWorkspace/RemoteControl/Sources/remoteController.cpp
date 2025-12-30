@@ -40,6 +40,7 @@
 #include <cstdlib>
 #include <iterator> // For std::forward_iterator_tag
 #include <cstddef>  // For std::ptrdiff_t
+#include <atomic>
 
 #include "../Project_Headers/llwu.h"
 #include "../Project_Headers/stringFormatter.h"
@@ -149,8 +150,6 @@ enum ButtonCode : uint8_t {
    Button_Last = Button_16,
    Button_None = 0xFF,
 };
-
-const char *checkBatteryLevel();
 
 /**
  * Prefix operator
@@ -313,6 +312,247 @@ public:
    }
 };
 
+// GPIO with pull-ups
+static constexpr PcrInit gpioHighInit {
+
+   PinAction_None,
+   PinPull_Up,
+   PinDriveMode_PushPull,
+   PinDriveStrength_Low,
+   PinFilter_Passive,
+   PinSlewRate_Slow,
+};
+
+// GPIO with pull-downs
+static constexpr PcrInit gpioLowInit {
+
+   PinAction_None,
+   PinPull_Down,
+   PinDriveMode_PushPull,
+   PinDriveStrength_Low,
+   PinFilter_Passive,
+   PinSlewRate_Slow,
+};
+
+/*
+ * ============================  Battery Monitoring  ============================
+ */
+class BatteryMonitor {
+
+private:
+
+enum BatteryStatus {
+   BatteryStatus_NoPower   = 0b00,
+   BatteryStatus_Charging  = 0b01,
+   BatteryStatus_Completed = 0b10,
+   BatteryStatus_Unknown   = 0b11,
+};
+
+static inline BatteryStatus batteryStatus = BatteryStatus_Unknown;
+static inline int   lipoPercentage = 0;
+
+// These limits are updated when the battery is checked
+static inline float lipo_0Percent            = 3.7;
+static inline float lipo_100Percent          = 4.3;
+static inline float lipoCharging_0Percent    = 3.7;
+static inline float lipoCharging_100Percent  = 4.3;
+static inline float batteryVoltage           = 0.0;
+
+static inline PitChannelNum pitChannelNum = PitChannelNum_None;
+
+static inline unsigned idleCount = 0;
+
+static void timeCallback() {
+   idleCount = idleCount + 1;
+   updateBatteryStatus();
+}
+
+public:
+
+/**
+ * Get idle time
+ *
+ * @return Idle time in seconds
+ */
+static unsigned getIdleTime() {
+   return idleCount;
+}
+
+/**
+ * Clear idle time counter
+ */
+static void clearIdleTimer() {
+   idleCount = 0;
+}
+
+/**
+ * Initialise the battery monitor
+ */
+static void initialise() {
+
+   static constexpr Adc::Init adcInit {
+
+      AdcResolution_16bit_se ,         // (adc_cfg1_mode)            ADC Resolution - 16-bit unsigned (single-ended mode)
+      AdcClockSource_Asynch ,          // (adc_cfg1_adiclk)          ADC Input Clock - Asynchronous clock (ADACK)
+      AdcMuxsel_B ,                    // (adc_cfg2_muxsel)          A/B multiplexor selection - The multiplexor selects B channels
+      AdcAveraging_16 ,                // (adc_sc3_avg)              Hardware Average Select - 1 sample
+      AdcSample_4cycles,               // (adc_sample)               Sample Time Configuration - 4 ADCK total
+
+      // The following values must be in order
+      AdcPretrigger_0,                 // sc1[0]/r[0] ,
+      BatteryLevel::CHANNEL ,          // (adc_sc1[0]_adch)          ADC Channel number - ADC0_SE0 [-]
+      AdcAction_None,                  // (adc_sc1[0]_aien)          Action on conversion completion - None
+   };
+   BatteryLevel::Owner::configure(adcInit);
+   BatteryLevel::setInput();
+
+   LipoChargerStatus::setInput(gpioHighInit);
+
+   Pit::defaultConfigureIfNeeded();
+
+   if (pitChannelNum == PitChannelNum_None) {
+      pitChannelNum = Pit::allocateChannel();
+      checkError();
+   }
+   static const Pit::ChannelInit idleTimeSettings {
+      PitChannelEnable_Enabled ,   // (pit_tctrl_ten[x])     Timer Channel Enable - Channel enabled
+      PitChannelAction_Interrupt , // (pit_tctrl_tie[x])     Action on timer event - Interrupt
+      47999999_ticks,              // (pit_ldval_tsv[x])     Reload value ~1 s
+      timeCallback,                // (handlerName)          User declared event handler
+      NvicPriority_Normal,         // (irqLevel)             IRQ priority level for Ch0 - Normal
+   };
+   Pit::configure(pitChannelNum, idleTimeSettings);
+
+   idleCount = 0;
+}
+
+static void suspend() {
+
+   Pit::disableNvicInterrupts(pitChannelNum);
+}
+
+/**
+ * Update battery status from battery measurements
+ */
+static void updateBatteryStatus() {
+
+   // Always update this
+   batteryStatus = BatteryStatus(LipoChargerStatus::read());
+
+   // Only update battery measurements if not under significant load
+   if (PowerEnable::isActive()) {
+      return;
+   }
+
+   batteryVoltage = 2*3.3*BatteryLevel::readAnalogue(AdcResolution_16bit_se)/Adc0::getSingleEndedMaximum(AdcResolution_16bit_se);
+
+   switch (batteryStatus) {
+
+      case BatteryStatus_NoPower :   // Not charging - update battery level
+      case BatteryStatus_Completed : // Charging Completed - report charging done
+         DebugLed::off();
+         if (batteryVoltage<lipo_0Percent) {
+            // Record new operating low
+            lipo_0Percent = batteryVoltage;
+            lipoPercentage = 0;
+         }
+         else if (batteryVoltage>lipo_100Percent) {
+            // Record new operating high
+            lipo_100Percent = batteryVoltage;
+            lipoPercentage = 100;
+         }
+         else {
+            lipoPercentage = round(100*(batteryVoltage-lipo_0Percent)/(lipo_100Percent-lipo_0Percent));
+         }
+         break;
+      case BatteryStatus_Charging:
+         DebugLed::on();
+         if (batteryVoltage<lipoCharging_0Percent) {
+            // Record new charging low
+            lipoCharging_0Percent = batteryVoltage;
+            lipoPercentage = 0;
+         }
+         else if (batteryVoltage>lipoCharging_100Percent) {
+            // Record new charging high
+            lipoCharging_100Percent = batteryVoltage;
+            lipoPercentage = 100;
+         }
+         else {
+            lipoPercentage = round(100*(batteryVoltage-lipoCharging_0Percent)/(lipoCharging_100Percent-lipoCharging_0Percent));
+         }
+         break;
+      case BatteryStatus_Unknown : // Invalid ??
+         break;
+   }
+
+   static const char *lipoStatus[] = {
+        /* STDBY, CHRG */
+        /*   0      0  */ "No power",
+        /*   0      1  */ "Charging",
+        /*   1      0  */ "Charging Completed",
+        /*   1      1  */ "Invalid",
+   };
+
+   console.writeln("Battery = ", batteryVoltage, "V, ",lipoPercentage, "%, ", lipoStatus[batteryStatus]);
+}
+
+/**
+ * Return description of battery state
+ *
+ * @return Pointer to statically allocated string
+ */
+static const char *getBatteryLevel() {
+
+   static char buff[10];
+
+   const char *status = "unk";
+
+   BatteryStatus bs;
+   int           per;
+   {
+   CriticalSection cs;
+   bs = batteryStatus;
+   per = lipoPercentage;
+   }
+   switch (bs) {
+
+      case BatteryStatus_NoPower :   // Not charging - update battery level
+      case BatteryStatus_Completed : // Charging Completed - report charging done
+         {
+            StringFormatter sf(buff);
+            sf.write(per,"%");
+         }
+         status = buff;
+         break;
+      case BatteryStatus_Charging : // Charging - report charging
+         status = "Ch+";
+         break;
+      case BatteryStatus_Unknown : // Invalid ??
+         status = "Inv";
+         break;
+   }
+
+   return status;
+}
+
+static const char *getInfo() {
+   static char buff[100];
+
+   StringFormatter sf(buff);
+   static constexpr FloatFormat fmt {Precision_2};
+
+   if (batteryStatus == BatteryStatus_Charging) {
+      sf.write(lipoCharging_0Percent, fmt, "<", batteryVoltage, fmt, "<", lipoCharging_100Percent, fmt, "(", lipoPercentage,"%)");
+   }
+   else {
+      sf.write(lipo_0Percent, fmt, "<", batteryVoltage, fmt, "<", lipo_100Percent, fmt, "(", lipoPercentage,"%)");
+   }
+
+   return buff;
+}
+};
+
+
 /*
  * ============================  Actions  ============================
  */
@@ -320,11 +560,13 @@ class Action {
 
 protected:
 
+   static constexpr inline const char *noTitle = "No Title";
+
    inline static bool busy = false;
 
    char const * const title;
 
-   static constexpr inline const char *noTitle = "No Title";
+   const Ticks delay;
 
    ~Action() = default;
  
@@ -334,8 +576,10 @@ public:
     *  Create action
     *
     * @param title         Title for logging
+    * @param delayTime     Delay after action. 1_tick = 1us
+    *
     */
-   constexpr Action(const char *title=noTitle) : title(title) {
+   constexpr Action(const char *title=noTitle, Ticks delay=0_ticks) : title(title), delay(delay) {
    }
 
    virtual void action() const {
@@ -348,9 +592,13 @@ public:
       return title;
    };
 
+   Ticks getDelay() const {
+      return delay;
+   };
+
 };
 
-const inline Action Action::nullAction;
+const Action Action::nullAction{"Null Action"};
 
 class StatusAction : public Action {
 
@@ -391,6 +639,8 @@ public:
 
 class MessageAction : public Action {
 
+protected:
+
 public:
    /**
     *
@@ -419,7 +669,7 @@ public:
     *
     * @param title  Title identifying action sequence
     */
-   SequenceAction(const char *title=noTitle) : Action(title) {
+   SequenceAction(const char *title=noTitle, Ticks delay=0_ticks) : Action(title, delay) {
    }
 
    virtual ~SequenceAction() = default;
@@ -450,7 +700,6 @@ class IrAction : public Action {
 
 protected:
    typename IrClass::Code code;
-   const unsigned delayTime;
    static const inline char *noTitle = "IR action";
 
 public:
@@ -466,8 +715,8 @@ public:
          const typename IrClass::Code  code,
          const char                   *title=noTitle,
          Ticks                         delay=100_ticks) :
-         Action(title),
-         code(code), delayTime(delay) {
+         Action(title, delay),
+         code(code) {
    }
 
    virtual ~IrAction() = default;
@@ -475,7 +724,7 @@ public:
    void action() const override {
 
       Action::action();
-      IrClass::send(code, delayTime);
+      IrClass::send(code, delay);
    }
 };
 
@@ -562,6 +811,14 @@ public:
    const uint16_t width;
    const uint16_t height;
 
+   /**
+    * Create button
+    *
+    * @param width         Width
+    * @param height        Height
+    * @param action        Action associated with button
+    * @param background    Background colour
+    */
    constexpr Button(uint16_t width, uint16_t height, const Action &action, Colour background=Colour::RED) :
       action(action),
       background(background),
@@ -605,6 +862,14 @@ protected:
    const Colour  foreground;
 
 public:
+   /**
+    * Button with an image
+    *
+    * @param action        Action associated with button
+    * @param image         Image for button
+    * @param foreground    Foreground colour for image
+    * @param background    Background colour for image
+    */
    constexpr ImageButton(const Action &action, const ButtonImage<N> &image, Colour foreground=Colour::WHITE, Colour background=Colour::RED) :
    Button(4*H_BORDER_WIDTH+2*image.width, 4*V_BORDER_WIDTH+2*image.height, action, background),
    image(image),
@@ -620,6 +885,34 @@ public:
       unsigned xx = x + (width-2*image.width)/2;
       unsigned yy = y + (height-2*image.height)/2;
       drawMyBitmap(image, xx, yy, 2);
+   }
+};
+
+class ImageButton32 : public ImageButton<32> {
+
+   static constexpr ButtonImage<32> const &blank = Blank;
+
+public:
+
+   using ImageButton<32>::ImageButton;
+
+   /**
+    * Solid coloured button
+    *
+    * @param action        Action associated with button
+    * @param colour        Colour for button
+    */
+   constexpr ImageButton32(const Action &action, Colour colour=Colour::WHITE) :
+      ImageButton<32>(action, blank, colour, colour)
+   {
+   }
+
+   /**
+    * Fill button
+    */
+   constexpr ImageButton32() :
+      ImageButton<32>(Action::nullAction, blank, BACKGROUND_COLOUR, BACKGROUND_COLOUR)
+   {
    }
 };
 
@@ -648,39 +941,6 @@ public:
       tft.moveXY(xx, yy);
       tft.setFont(font);
       tft.write(text);
-   }
-};
-
-class ColourButton : public Button {
-
-protected:
-   const Colour colour;
-
-public:
-   constexpr ColourButton(const Action &action, unsigned width, unsigned height, Colour colour) :
-      Button(width, height, action, colour),
-      colour(colour) {
-   }
-
-   virtual ~ColourButton() = default;
-
-   void draw(int x, int y) const override {
-      Button::draw(x, y);
-   }
-};
-
-class FillButton : public Button {
-
-protected:
-
-public:
-   FillButton(unsigned width, unsigned height) :
-      Button(width, height, Action::nullAction, BACKGROUND_COLOUR) {
-   }
-
-   virtual ~FillButton() = default;
-
-   void draw(int, int) const override {
    }
 };
 
@@ -735,7 +995,8 @@ public:
       tft.setBackgroundColour(BACKGROUND_COLOUR);
       tft.setColour(Colour::WHITE);
       tft.moveXY(tft.WIDTH-50, 0);
-      tft.write(checkBatteryLevel());
+      tft.write(BatteryMonitor::getBatteryLevel());
+      setStatusLine(BatteryMonitor::getInfo());
    }
 
 };
@@ -976,7 +1237,7 @@ const Action *Screen::findButtonAction(ButtonCode code) {
  * ============================================================================================
  */
 constexpr SonyTvAction   sonyTvOnOff(                     IrSonyTV::ON_OFF,          "TV On/Off",        1000_ticks);
-constexpr SonyTvAction   sonyTvOn(                        IrSonyTV::ON,              "TV On",            1'000'000_ticks);
+constexpr SonyTvAction   sonyTvOn(                        IrSonyTV::ON,              "TV On",            2'000'000_ticks);
 constexpr SonyTvAction   sonyTvOff(                       IrSonyTV::OFF,             "TV Off"            );
 
 constexpr SonyTvAction   sonyTvSourceTv(                  IrSonyTV::SOURCE_TV,       "TV Source TV"      );
@@ -986,7 +1247,7 @@ constexpr SonyTvAction   sonyTvSourceHdmi3_DVD_Samsung(   IrSonyTV::SOURCE_HDMI_
 constexpr SonyTvAction   sonyTvSourceHdmi4_DVD_Laser(     IrSonyTV::SOURCE_HDMI_4,   "TV Source HDMI 4"  );
 constexpr SonyTvAction   sonyTvSourceVideo1_DVD_Panasonic(IrSonyTV::SOURCE_Video_1,  "TV Source Video 1" );
 
-constexpr SonyTvAction   sonyTvMute(                      IrSonyTV::MUTE,            "TV Mute",          100'000_ticks);
+constexpr SonyTvAction   sonyTvMute(                      IrSonyTV::MUTE,            "TV Mute",         1'000'000_ticks);
 
 constexpr SonyTvAction   sonyTvVolumeUp(                  IrSonyTV::VOLUME_UP,       "TV Vol Up",        100'000_ticks);
 constexpr SonyTvAction   sonyTvVolumeDown(                IrSonyTV::VOLUME_DOWN,     "TV Vol Down",      100'000_ticks);
@@ -1009,10 +1270,12 @@ constexpr SamsungDvdAction       samsungDvdOnOff(   IrSamsungDVD::ON_OFF,   "Sam
 constexpr SamsungDvdStatusAction samsungDvdOn(      IrSamsungDVD::ON_OFF,   "Samsung DVD On",      100_ticks,   samsungDvdPowerStatus,   true);
 constexpr SamsungDvdStatusAction samsungDvdOff(     IrSamsungDVD::ON_OFF,   "Samsung DVD Off",     100_ticks,   samsungDvdPowerStatus,   false);
 
-bool panasonicDvdPowerStatus  = false;
 constexpr PanasonicDvdAction       panasonicDvdOnOff(   IrPanasonicDVD::ON_OFF,   "Panasonic DVD On/Off",  100_ticks);
+bool panasonicDvdPowerStatus  = false;
 constexpr PanasonicDVDStatusAction panasonicDvdOn(      IrPanasonicDVD::ON_OFF,   "Panasonic DVD On",      100_ticks,   panasonicDvdPowerStatus,   true);
 constexpr PanasonicDVDStatusAction panasonicDvdOff(     IrPanasonicDVD::ON_OFF,   "Panasonic DVD Off",     100_ticks,   panasonicDvdPowerStatus,   false);
+//constexpr PanasonicDvdAction panasonicDvdOn(      IrPanasonicDVD::ON,       "Panasonic DVD On",      100_ticks);
+//constexpr PanasonicDvdAction panasonicDvdOff(     IrPanasonicDVD::OFF,      "Panasonic DVD Off",     100_ticks);
 
 bool blaupunktDvdPowerStatus  = false;
 constexpr BlaupunktDvdAction       blaupunktDvdOnOff(   IrBlaupunktDVD::ON_OFF,   "Blaupunkt DVD On/Off",  100_ticks);
@@ -1062,11 +1325,12 @@ BackFromHelpAction backFromHelpAction;
 /*
  * Common buttons
  */
-constexpr ImageButton<32> showMainPageButton     { showMainPage,        Exit,    Colour::RED, Colour::WHITE };
-constexpr ImageButton<32> sonyTvVolumeUpButton   { sonyTvVolumeUp,      VolPlus  };
-constexpr ImageButton<32> sonyTvVolumeDownButton { sonyTvVolumeDown,    VolMinus };
-constexpr ImageButton<32> sonyTvMuteButton       { sonyTvMute,          Mute     };
-constexpr ImageButton<32> backFromHelpButton     { backFromHelpAction,  Exit,    Colour::RED, Colour::WHITE };
+constexpr ImageButton32 showMainPageButton     { showMainPage,        Exit,    Colour::RED,   Colour::WHITE };
+constexpr ImageButton32 sonyTvVolumeUpButton   { sonyTvVolumeUp,      VolPlus  };
+constexpr ImageButton32 sonyTvVolumeDownButton { sonyTvVolumeDown,    VolMinus };
+constexpr ImageButton32 sonyTvMuteButton       { sonyTvMute,          Mute     };
+constexpr ImageButton32 backFromHelpButton     { backFromHelpAction,  Exit,    Colour::RED,   Colour::WHITE };
+constexpr ImageButton32   blankButton            { Action::nullAction,           Colour::BLACK };
 
 /*
  * Screen pages
@@ -1078,12 +1342,13 @@ class HelpPage : public PageWithButtons<7> {
 protected:
 
    static inline constexpr TextButton buttons[6] {
-      TextButton(laserDvdOnOff,     "1. Laser DVD"      ),
-      TextButton(samsungDvdOnOff,   "2. Samsung DVD"    ),
-      TextButton(teacPvrOnOff,      "3. Teac PVR"       ),
-      TextButton(blaupunktDvdOnOff, "4. Blaupunkt DVD"  ),
-      TextButton(panasonicDvdOnOff, "5. Panasonic DVD"  ),
-      TextButton(sonyTvOnOff,       "6. Sony TV"        ),
+      TextButton(sonyTvOnOff,        "1. Sony TV"        ),
+      TextButton(teacPvrOnOff,       "2. Teac PVR"       ),
+      TextButton(laserDvdOnOff,      "3. Laser DVD"      ),
+      TextButton(panasonicDvdOnOff,  "4. Panasonic DVD"  ),
+//      TextButton(samsungDvdOnOff,    "4. Samsung DVD"    ),
+      TextButton(blaupunktDvdOnOff,  "5. Blaupunkt DVD"  ),
+      TextButton(backFromHelpAction, "6. Back",          Colour::RED, Colour::WHITE),
    };
 
 public:
@@ -1105,7 +1370,7 @@ public:
       // Maps physical button to screen button
       static const int buttonMapping[] = {
             //    1, 2, 3, up, 4, 5, 6, down, 7, 8,  9,  Left, OK,  0, Exit, Right
-            /* */ 0, 1, 2, -1, 3, 4, 5, -1,   -1, -1, -1, -1,  -1,  -1,  6,   -1,
+            /* */ 0, 1, 2, -1, 3, 4, 5, -1,  -1, -1, -1, -1,  -1,  -1,  6,   -1,
       };
       if (code>=sizeofArray(buttonMapping)) {
          return nullptr;
@@ -1127,7 +1392,7 @@ public:
 
 HelpPage       helpPage;
 
-constexpr TextButton      helpPageButton         { helpPage,            "Help",           Colour::RED, Colour::WHITE};
+constexpr ImageButton32      helpPageButton         { helpPage, Help, Colour::RED, Colour::WHITE};
 
 class MainPage : public PageWithButtons<8> {
 
@@ -1137,8 +1402,8 @@ protected:
       TextButton( watchTeacPvr,        "2. Teac PVR"        ),
       TextButton( watchLaserDvd,       "3. Laser DVD"       ),
       TextButton( watchPanasonicDVD,   "4. Panasonic DVD"   ),
-      TextButton( watchSamsungDvd,     "5. Samsung DVD"     ),
-//      TextButton( watchBlauPunktDVD,   "6. BlauPunkt DVD"   ),
+//      TextButton( watchSamsungDvd,     "5. Samsung DVD"     ),
+      TextButton( watchBlauPunktDVD,   "5. BlauPunkt DVD"   ),
       TextButton( allOff,              "6. All Off"         ),
       TextButton( helpPage,            "7. Help",           Colour::RED, Colour::WHITE),
    };
@@ -1214,55 +1479,56 @@ protected:
          /*  0   */ SonyTvAction{IrSonyTV::Code::NUM1,   "TV Num 1"   },
          /*  1   */ SonyTvAction{IrSonyTV::Code::NUM2,   "TV Num 2"   },
          /*  2   */ SonyTvAction{IrSonyTV::Code::NUM3,   "TV Num 3"   },
-         /*  3   */ SonyTvAction{IrSonyTV::Code::UP,     "TV Up"      },
-
-         /*  4   */ SonyTvAction{IrSonyTV::Code::NUM4,   "TV Num 4"   },
-         /*  5   */ SonyTvAction{IrSonyTV::Code::NUM5,   "TV Num 5"   },
-         /*  6   */ SonyTvAction{IrSonyTV::Code::NUM6,   "TV Num 6"   },
-         /*  7   */ SonyTvAction{IrSonyTV::Code::DOWN,   "TV Down"    },
-
-         /*  8   */ SonyTvAction{IrSonyTV::Code::NUM7,   "TV Num 7"   },
-         /*  9   */ SonyTvAction{IrSonyTV::Code::NUM8,   "TV Num 8"   },
-         /* 10   */ SonyTvAction{IrSonyTV::Code::NUM9,   "TV Num 9"   },
-         /* 11   */ SonyTvAction{IrSonyTV::Code::LEFT,   "TV Left"    },
-
-         /* Main Page */
-         /* 12   */ SonyTvAction{IrSonyTV::Code::NUM0,   "TV Num 0"   },
-         /* Mute */
-         /* 13   */ SonyTvAction{IrSonyTV::Code::RIGHT,  "TV Right"   },
-
          /* Vol+ */
+
+         /*  3   */ SonyTvAction{IrSonyTV::Code::NUM4,   "TV Num 4"   },
+         /*  4   */ SonyTvAction{IrSonyTV::Code::NUM5,   "TV Num 5"   },
+         /*  5   */ SonyTvAction{IrSonyTV::Code::NUM6,   "TV Num 6"   },
          /* Vol- */
-         /* 14   */ SonyTvAction{IrSonyTV::Code::GUIDE,  "TV Guide"   },
+
+         /*  6   */ SonyTvAction{IrSonyTV::Code::NUM7,   "TV Num 7"   },
+         /*  7   */ SonyTvAction{IrSonyTV::Code::NUM8,   "TV Num 8"   },
+         /*  8   */ SonyTvAction{IrSonyTV::Code::NUM9,   "TV Num 9"   },
+         /* Mute */
+
+         /*  9   */ SonyTvAction{IrSonyTV::Code::I_PLUS, "Info"       },
+         /* 10   */ SonyTvAction{IrSonyTV::Code::NUM0,   "TV Num 0"   },
+         /* Main Page */
+         /* Help */
+
+         /* 11   */ SonyTvAction{IrSonyTV::Code::UP,     "TV Up"      },
+         /* 12   */ SonyTvAction{IrSonyTV::Code::DOWN,   "TV Down"    },
+         /* 13   */ SonyTvAction{IrSonyTV::Code::LEFT,   "TV Left"    },
+         /* 14   */ SonyTvAction{IrSonyTV::Code::RIGHT,  "TV Right"   },
 
          /* 15   */ SonyTvAction{IrSonyTV::Code::SOURCE, "TV Source"  },
    };
 
-   static inline constexpr ImageButton<32> buttons[19] = {
-         ImageButton<32>( actions[ 0],      One      ),
-         ImageButton<32>( actions[ 1],      Two      ),
-         ImageButton<32>( actions[ 2],      Three    ),
-         ImageButton<32>( actions[ 3],      Up       ),
-
-         ImageButton<32>( actions[ 4],      Four     ),
-         ImageButton<32>( actions[ 5],      Five     ),
-         ImageButton<32>( actions[ 6],      Six      ),
-         ImageButton<32>( actions[ 7],      Down     ),
-
-         ImageButton<32>( actions[ 8],      Seven    ),
-         ImageButton<32>( actions[ 9],      Eight    ),
-         ImageButton<32>( actions[10],      Nine     ),
-         ImageButton<32>( actions[11],      Left     ),
-
-         showMainPageButton,
-         ImageButton<32>( actions[12],      Zero     ),
-         sonyTvMuteButton,
-         ImageButton<32>( actions[13],      Right    ),
-
+   static inline constexpr ImageButton32 buttons[20] = {
+         ImageButton32( actions[ 0],        One      ),
+         ImageButton32( actions[ 1],        Two      ),
+         ImageButton32( actions[ 2],        Three    ),
          sonyTvVolumeUpButton,
-         sonyTvVolumeDownButton,
-         ImageButton<32>( actions[14],      Info     ),
 
+         ImageButton32( actions[ 3],        Four     ),
+         ImageButton32( actions[ 4],        Five     ),
+         ImageButton32( actions[ 5],        Six      ),
+         sonyTvVolumeDownButton,
+
+         ImageButton32( actions[ 6],        Seven    ),
+         ImageButton32( actions[ 7],        Eight    ),
+         ImageButton32( actions[ 8],        Nine     ),
+         sonyTvMuteButton,
+
+         ImageButton32( actions[ 9],        Info     ),
+         ImageButton32( actions[10],        Zero     ),
+         showMainPageButton,
+         helpPageButton,
+
+         ImageButton32( actions[11],        Up       ),
+         ImageButton32( actions[12],        Down     ),
+         ImageButton32( actions[13],        Left     ),
+         ImageButton32( actions[14],        Right    ),
    };
 //   static inline TestAction testAction;
 //   static inline constexpr TextButton sourceButton {actions[15], "Src"  };
@@ -1276,7 +1542,6 @@ public:
          add(&buttons[index]);
       }
 
-      add(&helpPageButton);
 //      add(&sourceButton);
 //      add(&testButton);
 
@@ -1298,10 +1563,10 @@ public:
    }
 };
 
-class SamsungDvdPage : public  PageWithButtons<20> {
+class SamsungDvdPage : public  PageWithButtons<21> {
 
 protected:
-   static inline constexpr SamsungDvdAction actions[15] = {
+   static inline constexpr SamsungDvdAction actions[16] = {
       /*  0 */ SamsungDvdAction{IrSamsungDVD::Code::REVERSE_SCENE, "DVD Reverse Scene" },
       /*  1 */ SamsungDvdAction{IrSamsungDVD::Code::UP           , "DVD Up"            },
       /*  2 */ SamsungDvdAction{IrSamsungDVD::Code::FORWARD_SCENE, "DVD Forward Scene" },
@@ -1320,32 +1585,35 @@ protected:
       /* 12 */ SamsungDvdAction{IrSamsungDVD::Code::EJECT        , "DVD Eject"         },
       /* 13 */ SamsungDvdAction{IrSamsungDVD::Code::MENU         , "DVD Menu"          },
       /* 14 */ SamsungDvdAction{IrSamsungDVD::Code::INFO         , "DVD Info"          },
+      /* 15 */ SamsungDvdAction{IrSamsungDVD::Code::SUBTITLE     , "DVD Subtitle"      },
    };
 
-   static inline constexpr ImageButton<32> buttons[19] {
-      /* Scene Back    */ ImageButton<32>( actions[ 0], ReverseScene ),
-      /* Up            */ ImageButton<32>( actions[ 1], Up           ),
-      /* Scene Forward */ ImageButton<32>( actions[ 2], ForwardScene ),
-      /* Pause         */ ImageButton<32>( actions[ 3], Pause        ),
+   static inline constexpr ImageButton32 buttons[21] {
+      /* Scene Back    */ ImageButton32( actions[ 0], ReverseScene ),
+      /* Up            */ ImageButton32( actions[ 1], Up           ),
+      /* Scene Forward */ ImageButton32( actions[ 2], ForwardScene ),
+      /* Pause         */ ImageButton32( actions[ 3], Pause        ),
 
-      /* Left          */ ImageButton<32>( actions[ 4], Left         ),
-      /* OK            */ ImageButton<32>( actions[ 5], Enter       ),
-      /* Right         */ ImageButton<32>( actions[ 6], Right        ),
-      /* Play          */ ImageButton<32>( actions[ 7], Play,        Colour::WHITE, Colour::BLUE ),
+      /* Left          */ ImageButton32( actions[ 4], Left         ),
+      /* OK            */ ImageButton32( actions[ 5], Enter        ),
+      /* Right         */ ImageButton32( actions[ 6], Right        ),
+      /* Play          */ ImageButton32( actions[ 7], Play,        Colour::WHITE, Colour::BLUE ),
 
-      /* Rewind        */ ImageButton<32>( actions[ 8], FastReverse  ),
-      /* Down          */ ImageButton<32>( actions[ 9], Down         ),
-      /* Fast Forward  */ ImageButton<32>( actions[10], FastForward  ),
-      /* Stop          */ ImageButton<32>( actions[11], Halt         ),
+      /* Rewind        */ ImageButton32( actions[ 8], FastReverse  ),
+      /* Down          */ ImageButton32( actions[ 9], Down         ),
+      /* Fast Forward  */ ImageButton32( actions[10], FastForward  ),
+      /* Stop          */ ImageButton32( actions[11], Halt         ),
 
       /* Vol +         */ sonyTvVolumeUpButton,
       /* Vol -         */ sonyTvVolumeDownButton,
       /* Mute          */ sonyTvMuteButton,
-      /* Eject         */ ImageButton<32>( actions[12], Eject        ),
+      /* Eject         */ ImageButton32( actions[12], Eject        ),
 
-      /* Menu          */ ImageButton<32>( actions[13], Menu         ),
-      /* Info          */ ImageButton<32>( actions[14], Info         ),
+      /* Menu          */ ImageButton32( actions[13], Menu         ),
+      /* Info          */ ImageButton32( actions[14], Info         ),
       /* Main page     */ showMainPageButton,
+      /* Help page     */ helpPageButton,
+      /* Subtitle      */ ImageButton32( actions[15], Subtitle      ),
 };
       
 public:
@@ -1355,8 +1623,6 @@ public:
       for (unsigned index=0; index<(sizeof(buttons)/sizeof(buttons[0])); index++) {
          add(&buttons[index]);
       }
-      add(&helpPageButton);
-
       layout();
    }
 
@@ -1375,10 +1641,10 @@ public:
 //   }
 };
 
-class LaserDvdPage : public  PageWithButtons<20> {
+class LaserDvdPage : public  PageWithButtons<21> {
 
 protected:
-   static inline constexpr LaserDvdAction actions[15] = {
+   static inline constexpr LaserDvdAction actions[16] = {
          /*  0 */ LaserDvdAction{IrLaserDVD::Code::REVERSE_SCENE, "DVD Reverse Scene" },
          /*  1 */ LaserDvdAction{IrLaserDVD::Code::UP           , "DVD Up"            },
          /*  2 */ LaserDvdAction{IrLaserDVD::Code::FORWARD_SCENE, "DVD Forward Scene" },
@@ -1397,32 +1663,35 @@ protected:
          /* 12 */ LaserDvdAction{IrLaserDVD::Code::EJECT        , "DVD Eject"         },
          /* 13 */ LaserDvdAction{IrLaserDVD::Code::MENU         , "DVD Menu"          },
          /* 14 */ LaserDvdAction{IrLaserDVD::Code::OSD          , "DVD OSD"           },
+         /* 15 */ LaserDvdAction{IrLaserDVD::Code::SUBTITLE     , "DVD Subtitle"      },
    };
 
-   static inline constexpr ImageButton<32> buttons[19] {
-      /* Scene Back    */ ImageButton<32>( actions[ 0], ReverseScene  ),
-      /* Up            */ ImageButton<32>( actions[ 1], Up            ),
-      /* Scene Forward */ ImageButton<32>( actions[ 2], ForwardScene  ),
-      /* Pause         */ ImageButton<32>( actions[ 3], Pause         ),
+   static inline constexpr ImageButton32 buttons[21] {
+      /* Scene Back    */ ImageButton32( actions[ 0], ReverseScene  ),
+      /* Up            */ ImageButton32( actions[ 1], Up            ),
+      /* Scene Forward */ ImageButton32( actions[ 2], ForwardScene  ),
+      /* Pause         */ ImageButton32( actions[ 3], Pause         ),
 
-      /* Left          */ ImageButton<32>( actions[ 4], Left          ),
-      /* OK            */ ImageButton<32>( actions[ 5], Enter        ),
-      /* Right         */ ImageButton<32>( actions[ 6], Right         ),
-      /* Play          */ ImageButton<32>( actions[ 7], Play,         Colour::WHITE, Colour::BLUE ),
+      /* Left          */ ImageButton32( actions[ 4], Left          ),
+      /* OK            */ ImageButton32( actions[ 5], Enter        ),
+      /* Right         */ ImageButton32( actions[ 6], Right         ),
+      /* Play          */ ImageButton32( actions[ 7], Play,         Colour::WHITE, Colour::BLUE ),
 
-      /* Rewind        */ ImageButton<32>( actions[ 8], FastReverse   ),
-      /* Down          */ ImageButton<32>( actions[ 9], Down          ),
-      /* Fast Forward  */ ImageButton<32>( actions[10], FastForward   ),
-      /* Stop          */ ImageButton<32>( actions[11], Halt          ),
+      /* Rewind        */ ImageButton32( actions[ 8], FastReverse   ),
+      /* Down          */ ImageButton32( actions[ 9], Down          ),
+      /* Fast Forward  */ ImageButton32( actions[10], FastForward   ),
+      /* Stop          */ ImageButton32( actions[11], Halt          ),
 
       /* Vol +         */ sonyTvVolumeUpButton,
       /* Vol -         */ sonyTvVolumeDownButton,
       /* Mute          */ sonyTvMuteButton,
-      /* Eject         */ ImageButton<32>( actions[12], Eject         ),
+      /* Eject         */ ImageButton32( actions[12], Eject         ),
 
-      /* Menu          */ ImageButton<32>( actions[13], Menu          ),
-      /* Info          */ ImageButton<32>( actions[14], Info          ),
+      /* Menu          */ ImageButton32( actions[13], Menu          ),
+      /* Info          */ ImageButton32( actions[14], Info          ),
       /* Main page     */ showMainPageButton,
+      /* Help page     */ helpPageButton,
+      /* Subtitle      */ ImageButton32( actions[15], Subtitle      ),
    };
       
 public:
@@ -1432,8 +1701,6 @@ public:
       for (unsigned index=0; index<(sizeof(buttons)/sizeof(buttons[0])); index++) {
          add(&buttons[index]);
       }
-      add(&helpPageButton);
-
       layout();
    }
 
@@ -1452,19 +1719,19 @@ public:
 //   }
 };
 
-class PanasonicDvdPage : public  PageWithButtons<20> {
+class PanasonicDvdPage : public  PageWithButtons<21> {
 
 protected:
-   static inline constexpr PanasonicDvdAction actions[14] = {
+   static inline constexpr PanasonicDvdAction actions[16] = {
          /*  0 */ PanasonicDvdAction( IrPanasonicDVD::Code::REVERSE_SCENE, "DVD Reverse Scene" ),
          /*  1 */ PanasonicDvdAction( IrPanasonicDVD::Code::UP           , "DVD Up"            ),
          /*  2 */ PanasonicDvdAction( IrPanasonicDVD::Code::FORWARD_SCENE, "DVD Forward Scene" ),
-         /*  3 */ PanasonicDvdAction( IrPanasonicDVD::Code::PAUSE_PLAY   , "DVD Pause"         ),
+         /*  3 */ PanasonicDvdAction( IrPanasonicDVD::Code::PAUSE        , "DVD Pause"         ),
 
          /*  4 */ PanasonicDvdAction( IrPanasonicDVD::Code::LEFT         , "DVD Left"          ),
          /*  5 */ PanasonicDvdAction( IrPanasonicDVD::Code::OK           , "DVD OK"            ),
          /*  6 */ PanasonicDvdAction( IrPanasonicDVD::Code::RIGHT        , "DVD Right"         ),
-         /*  7 */ PanasonicDvdAction( IrPanasonicDVD::Code::PAUSE_PLAY   , "DVD Play"          ),
+         /*  7 */ PanasonicDvdAction( IrPanasonicDVD::Code::PLAY         , "DVD Play"          ),
 
          /*  8 */ PanasonicDvdAction( IrPanasonicDVD::Code::REVERSE      , "DVD Fast Reverse"  ),
          /*  9 */ PanasonicDvdAction( IrPanasonicDVD::Code::DOWN         , "DVD Down"          ),
@@ -1473,31 +1740,36 @@ protected:
 
          /* 12 */ PanasonicDvdAction( IrPanasonicDVD::Code::EJECT        , "DVD Eject"         ),
          /* 13 */ PanasonicDvdAction( IrPanasonicDVD::Code::MENU         , "DVD Menu"          ),
+         /* 14 */ PanasonicDvdAction( IrPanasonicDVD::Code::DISPLAY      , "DVD Display"       ),
+         /* 15 */ PanasonicDvdAction{ IrPanasonicDVD::Code::SUBTITLE     , "DVD Subtitle"      },
    };
 
-   static inline constexpr ImageButton<32> buttons[18] {
-      /* Scene Back    */ ImageButton<32>( actions[ 0], ReverseScene  ),
-      /* Up            */ ImageButton<32>( actions[ 1], Up            ),
-      /* Scene Forward */ ImageButton<32>( actions[ 2], ForwardScene  ),
-      /* Pause         */ ImageButton<32>( actions[ 3], Pause         ),
+   static inline constexpr ImageButton32 buttons[21] {
+      /* Scene Back    */ ImageButton32( actions[ 0], ReverseScene  ),
+      /* Up            */ ImageButton32( actions[ 1], Up            ),
+      /* Scene Forward */ ImageButton32( actions[ 2], ForwardScene  ),
+      /* Pause         */ ImageButton32( actions[ 3], Pause         ),
 
-      /* Left          */ ImageButton<32>( actions[ 4], Left          ),
-      /* OK            */ ImageButton<32>( actions[ 5], Enter        ),
-      /* Right         */ ImageButton<32>( actions[ 6], Right         ),
-      /* Play          */ ImageButton<32>( actions[ 7], Play,         Colour::WHITE, Colour::BLUE ),
+      /* Left          */ ImageButton32( actions[ 4], Left          ),
+      /* OK            */ ImageButton32( actions[ 5], Enter        ),
+      /* Right         */ ImageButton32( actions[ 6], Right         ),
+      /* Play          */ ImageButton32( actions[ 7], Play,         Colour::WHITE, Colour::BLUE ),
 
-      /* Rewind        */ ImageButton<32>( actions[ 8], FastReverse   ),
-      /* Down          */ ImageButton<32>( actions[ 9], Down          ),
-      /* Fast Forward  */ ImageButton<32>( actions[10], FastForward   ),
-      /* Stop          */ ImageButton<32>( actions[11], Halt          ),
+      /* Rewind        */ ImageButton32( actions[ 8], FastReverse   ),
+      /* Down          */ ImageButton32( actions[ 9], Down          ),
+      /* Fast Forward  */ ImageButton32( actions[10], FastForward   ),
+      /* Stop          */ ImageButton32( actions[11], Halt          ),
 
       /* Vol +         */ sonyTvVolumeUpButton,
       /* Vol -         */ sonyTvVolumeDownButton,
       /* Mute          */ sonyTvMuteButton,
-      /* Eject         */ ImageButton<32>( actions[12], Eject         ),
+      /* Eject         */ ImageButton32( actions[12], Eject         ),
 
-      /* Menu          */ ImageButton<32>( actions[13], Menu          ),
+      /* Menu          */ ImageButton32( actions[13], Menu          ),
+      /* Info          */ ImageButton32( actions[14], Info          ),
       /* Main page     */ showMainPageButton,
+      /* Help page     */ helpPageButton,
+      /* Subtitle      */ ImageButton32( actions[15], Subtitle      ),
    };
 
 public:
@@ -1507,7 +1779,7 @@ public:
       for (unsigned index=0; index<(sizeof(buttons)/sizeof(buttons[0])); index++) {
          add(&buttons[index]);
       }
-      add(&helpPageButton);
+//      add(&helpPageButton);
 
       layout();
    }
@@ -1527,10 +1799,10 @@ public:
 //   }
 };
  
-class BlaupunktDvdPage : public  PageWithButtons<20> {
+class BlaupunktDvdPage : public  PageWithButtons<21> {
 
 protected:
-   static inline constexpr BlaupunktDvdAction actions[15] {
+   static inline constexpr BlaupunktDvdAction actions[16] {
       /*  0 */ BlaupunktDvdAction{IrBlaupunktDVD::Code::REVERSE_SCENE, "DVD Reverse Scene" },
       /*  1 */ BlaupunktDvdAction{IrBlaupunktDVD::Code::UP           , "DVD Up"            },
       /*  2 */ BlaupunktDvdAction{IrBlaupunktDVD::Code::FORWARD_SCENE, "DVD Forward Scene" },
@@ -1547,34 +1819,37 @@ protected:
       /* 11 */ BlaupunktDvdAction{IrBlaupunktDVD::Code::STOP         , "DVD Halt"          },
 
       /* 12 */ BlaupunktDvdAction{IrBlaupunktDVD::Code::EJECT        , "DVD Eject"         },
-      /* 13 */ BlaupunktDvdAction{IrBlaupunktDVD::Code::MENU         , "DVD Eject"         },
+      /* 13 */ BlaupunktDvdAction{IrBlaupunktDVD::Code::MENU         , "DVD Menu"          },
       /* 14 */ BlaupunktDvdAction{IrBlaupunktDVD::Code::OSD          , "DVD OSD"           },
+      /* 15 */ BlaupunktDvdAction{IrBlaupunktDVD::Code::SUBTITLE     , "DVD Subtitle"      },
    };
 
-   static inline constexpr ImageButton<32> buttons[19] {
-      /* Scene Back    */ ImageButton<32>( actions[ 0], ReverseScene  ),
-      /* Up            */ ImageButton<32>( actions[ 1], Up            ),
-      /* Scene Forward */ ImageButton<32>( actions[ 2], ForwardScene  ),
-      /* Pause         */ ImageButton<32>( actions[ 3], Pause         ),
+   static inline constexpr ImageButton32 buttons[21] {
+      /* Scene Back    */ ImageButton32( actions[ 0], ReverseScene  ),
+      /* Up            */ ImageButton32( actions[ 1], Up            ),
+      /* Scene Forward */ ImageButton32( actions[ 2], ForwardScene  ),
+      /* Pause         */ ImageButton32( actions[ 3], Pause         ),
 
-      /* Left          */ ImageButton<32>( actions[ 4], Left          ),
-      /* OK            */ ImageButton<32>( actions[ 5], Enter         ),
-      /* Right         */ ImageButton<32>( actions[ 6], Right         ),
-      /* Play          */ ImageButton<32>( actions[ 7], Play,         Colour::WHITE, Colour::BLUE ),
+      /* Left          */ ImageButton32( actions[ 4], Left          ),
+      /* OK            */ ImageButton32( actions[ 5], Enter         ),
+      /* Right         */ ImageButton32( actions[ 6], Right         ),
+      /* Play          */ ImageButton32( actions[ 7], Play,         Colour::WHITE, Colour::BLUE ),
 
-      /* Rewind        */ ImageButton<32>( actions[ 8], FastReverse   ),
-      /* Down          */ ImageButton<32>( actions[ 9], Down          ),
-      /* Fast Forward  */ ImageButton<32>( actions[10], FastForward   ),
-      /* Stop          */ ImageButton<32>( actions[11], Halt          ),
+      /* Rewind        */ ImageButton32( actions[ 8], FastReverse   ),
+      /* Down          */ ImageButton32( actions[ 9], Down          ),
+      /* Fast Forward  */ ImageButton32( actions[10], FastForward   ),
+      /* Stop          */ ImageButton32( actions[11], Halt          ),
 
       /* Vol +         */ sonyTvVolumeUpButton,
       /* Vol -         */ sonyTvVolumeDownButton,
       /* Mute          */ sonyTvMuteButton,
-      /* Eject         */ ImageButton<32>( actions[12], Eject         ),
+      /* Eject         */ ImageButton32( actions[12], Eject         ),
 
-      /* Menu          */ ImageButton<32>( actions[13], Menu          ),
-      /* Info          */ ImageButton<32>( actions[14], Info          ),
+      /* Menu          */ ImageButton32( actions[13], Menu          ),
+      /* Info          */ ImageButton32( actions[14], Info          ),
       /* Main page     */ showMainPageButton,
+      /* Help page     */ helpPageButton,
+      /* Subtitle      */ ImageButton32( actions[15], Subtitle      ),
    };
    
 public:
@@ -1584,8 +1859,6 @@ public:
       for (unsigned index=0; index<(sizeof(buttons)/sizeof(buttons[0])); index++) {
          add(&buttons[index]);
       }
-      add(&helpPageButton);
-
       layout();
    };
 
@@ -1607,7 +1880,7 @@ public:
 class TeacPvrEpgPage : public PageWithButtons<24> {
 
 protected:
-   static inline constexpr TeacPvrAction actions[21] {
+   static inline constexpr TeacPvrAction actions[22] {
       /*   0 */ TeacPvrAction{IrTeacPVR::Code::NUM1,  "Num 1"     },
       /*   1 */ TeacPvrAction{IrTeacPVR::Code::NUM2,  "Num 2"     },
       /*   2 */ TeacPvrAction{IrTeacPVR::Code::NUM3,  "Num 3"     },
@@ -1634,30 +1907,31 @@ protected:
       /*  19 */ TeacPvrAction{IrTeacPVR::Code::BLUE,  "PVR Blue"  }, // Colour
 
       /*  20 */ TeacPvrAction{IrTeacPVR::Code::INFO,  "PVR Info"  },
+      /*  21 */ TeacPvrAction{IrTeacPVR::Code::EPG,   "PVR EPG"   },
    };
 
-   static inline constexpr ImageButton<32> buttons[15] = {
-         /*  0 */ ImageButton<32>( actions[ 0],      One      ),
-         /*  1 */ ImageButton<32>( actions[ 1],      Two      ),
-         /*  2 */ ImageButton<32>( actions[ 2],      Three    ),
-         /*  3 */ ImageButton<32>( actions[ 3],      Up       ),
+   static inline constexpr ImageButton32 buttons[15] = {
+         /*  0 */ ImageButton32( actions[ 0],      One      ),
+         /*  1 */ ImageButton32( actions[ 1],      Two      ),
+         /*  2 */ ImageButton32( actions[ 2],      Three    ),
+         /*  3 */ ImageButton32( actions[ 3],      Up       ),
 
-         /*  4 */ ImageButton<32>( actions[ 4],      Four     ),
-         /*  5 */ ImageButton<32>( actions[ 5],      Five     ),
-         /*  6 */ ImageButton<32>( actions[ 6],      Six      ),
-         /*  7 */ ImageButton<32>( actions[ 7],      Down     ),
+         /*  4 */ ImageButton32( actions[ 4],      Four     ),
+         /*  5 */ ImageButton32( actions[ 5],      Five     ),
+         /*  6 */ ImageButton32( actions[ 6],      Six      ),
+         /*  7 */ ImageButton32( actions[ 7],      Down     ),
 
-         /*  8 */ ImageButton<32>( actions[ 8],      Seven    ),
-         /*  9 */ ImageButton<32>( actions[ 9],      Eight    ),
-         /* 10 */ ImageButton<32>( actions[10],      Nine     ),
-         /* 11 */ ImageButton<32>( actions[11],      Left     ),
+         /*  8 */ ImageButton32( actions[ 8],      Seven    ),
+         /*  9 */ ImageButton32( actions[ 9],      Eight    ),
+         /* 10 */ ImageButton32( actions[10],      Nine     ),
+         /* 11 */ ImageButton32( actions[11],      Left     ),
 
          /* OK */
-         /* 12 */ ImageButton<32>( actions[13],      Zero     ),
+         /* 12 */ ImageButton32( actions[13],      Zero     ),
          /* Exit */
-         /* 13 */ ImageButton<32>( actions[15],      Right    ),
+         /* 13 */ ImageButton32( actions[15],      Right    ),
          /* ... */
-         /* 14 */ ImageButton<32>( actions[20],      Info     ),
+         /* 14 */ ImageButton32( actions[20],      Info     ),
    };
 
 public:
@@ -1667,19 +1941,19 @@ public:
       for (unsigned index=0; index<12; index++) {
          add(&buttons[index]);
       }
-      add(new TextButton (     actions[12], "OK"           ));
+      add(new TextButton (     actions[12], "OK"   ));
       add(&buttons[12]);
-      add(new TextButton (     actions[14], "EXIT"         ));
+      add(new TextButton (     actions[14], "EXIT" ));
       add(&buttons[13]);
 
-      add(new ColourButton(    actions[16], 0,50, RED      ));
-      add(new ColourButton(    actions[17], 0,50, GREEN    ));
-      add(new ColourButton(    actions[18], 0,50, YELLOW   ));
-      add(new ColourButton(    actions[19], 0,50, BLUE     ));
+      add(new ImageButton32( actions[16], RED    ));
+      add(new ImageButton32( actions[17], GREEN  ));
+      add(new ImageButton32( actions[18], YELLOW ));
+      add(new ImageButton32( actions[19], BLUE   ));
 
-      add(new FillButton(0,0));
-      add(new FillButton(0,0));
+      add(new TextButton (     actions[21], "EPG"));
       add(&buttons[14]);
+      add(new ImageButton32());
       add(new TextButton (     displayTeacPvrPage, "Back", Colour::RED, Colour::WHITE ));
 
       layout();
@@ -1721,34 +1995,43 @@ protected:
       /* 10 */ TeacPvrAction{IrTeacPVR::Code::FORWARD      , "PVR Fast Forward"  },
       /* 11 */ TeacPvrAction{IrTeacPVR::Code::STOP         , "PVR Halt"          },
 
+      /* Vol+ */
+      /* Vol- */
+      /* Mute */
       /* 12 */ TeacPvrAction{IrTeacPVR::Code::MENU         , "PVR Menu"          },
-      /* 13 */
-      /* 14 */ TeacPvrAction{IrTeacPVR::Code::RED          , "PVR Red"           },
-      /* 15 */ TeacPvrAction{IrTeacPVR::Code::GREEN        , "PVR Green"         },
-      /* 16 */ TeacPvrAction{IrTeacPVR::Code::YELLOW       , "PVR Yellow"        },
-      /* 17 */ TeacPvrAction{IrTeacPVR::Code::BLUE         , "PVR Blue"          },
-      /* 18 */ TeacPvrAction{IrTeacPVR::Code::EXIT         , "PVR Exit"          },
+
+      /* 13 */ TeacPvrAction{IrTeacPVR::Code::RED          , "PVR Red"           },
+      /* 14 */ TeacPvrAction{IrTeacPVR::Code::GREEN        , "PVR Green"         },
+      /* 15 */ TeacPvrAction{IrTeacPVR::Code::YELLOW       , "PVR Yellow"        },
+      /* 16 */ TeacPvrAction{IrTeacPVR::Code::BLUE         , "PVR Blue"          },
+
+      /* 17 */ TeacPvrAction{IrTeacPVR::Code::EXIT         , "PVR Exit"          },
    };
-   static inline constexpr ImageButton<32> buttons[16] {
-      /* Scene Back    */  ImageButton<32>( actions[ 0],       ReverseScene ),
-      /* Up            */  ImageButton<32>( actions[ 1],       Up           ),
-      /* Scene Forward */  ImageButton<32>( actions[ 2],       ForwardScene ),
-      /* Pause         */  ImageButton<32>( actions[ 3],       Pause        ),
+   static inline constexpr ImageButton32 buttons[20] {
+      /* Scene Back    */  ImageButton32( actions[ 0],       ReverseScene ),
+      /* Up            */  ImageButton32( actions[ 1],       Up           ),
+      /* Scene Forward */  ImageButton32( actions[ 2],       ForwardScene ),
+      /* Pause         */  ImageButton32( actions[ 3],       Pause        ),
 
-      /* Left          */  ImageButton<32>( actions[ 4],       Left         ),
-      /* OK            */  ImageButton<32>( actions[ 5],       Enter       ),
-      /* Right         */  ImageButton<32>( actions[ 6],       Right        ),
-      /* Play          */  ImageButton<32>( actions[ 7],       Play,        Colour::WHITE, Colour::BLUE ),
+      /* Left          */  ImageButton32( actions[ 4],       Left         ),
+      /* OK            */  ImageButton32( actions[ 5],       Enter        ),
+      /* Right         */  ImageButton32( actions[ 6],       Right        ),
+      /* Play          */  ImageButton32( actions[ 7],       Play,        Colour::WHITE, Colour::BLUE ),
 
-      /* Rewind        */  ImageButton<32>( actions[ 8],       FastReverse  ),
-      /* Down          */  ImageButton<32>( actions[ 9],       Down         ),
-      /* Fast Forward  */  ImageButton<32>( actions[10],       FastForward  ),
-      /* Stop          */  ImageButton<32>( actions[11],       Halt         ),
+      /* Rewind        */  ImageButton32( actions[ 8],       FastReverse  ),
+      /* Down          */  ImageButton32( actions[ 9],       Down         ),
+      /* Fast Forward  */  ImageButton32( actions[10],       FastForward  ),
+      /* Stop          */  ImageButton32( actions[11],       Halt         ),
 
       /* Vol +         */  sonyTvVolumeUpButton,
       /* Vol -         */  sonyTvVolumeDownButton,
       /* Mute          */  sonyTvMuteButton,
-      /* Menu          */  ImageButton<32>( actions[12],       Menu         ),
+      /* Menu          */  ImageButton32( actions[12],       Menu         ),
+
+      /* Red           */  ImageButton32( actions[13],       Colour::RED    ),
+      /* Green         */  ImageButton32( actions[14],       Colour::GREEN  ),
+      /* Yellow        */  ImageButton32( actions[15],       Colour::YELLOW ),
+      /* Blue          */  ImageButton32( actions[16],       Colour::BLUE   ),
    };
 
 public:
@@ -1758,15 +2041,10 @@ public:
       for (unsigned index=0; index<(sizeof(buttons)/sizeof(buttons[0])); index++) {
          add(&buttons[index]);
       }
-      add(new ColourButton(    actions[13], 0,50,     RED    ));
-      add(new ColourButton(    actions[14], 0,50,     GREEN  ));
-      add(new ColourButton(    actions[15], 0,50,     YELLOW ));
-      add(new ColourButton(    actions[16], 0,50,     BLUE   ));
-
-      add(new TextButton(      teacPvrEpisodeGuide,   "EPG"  ));
-      add(new TextButton(      actions[17],           "EXIT" ));
-      add(&showMainPageButton);
+      add(new TextButton(      actions[17],           "EXIT"));
       add(&helpPageButton);
+      add(&showMainPageButton);
+      add(new TextButton(      teacPvrEpisodeGuide,   "NUM" , Colour::RED, Colour::WHITE  ));
 
       layout();
   }
@@ -1902,66 +2180,8 @@ void initialiseGuiAndActions() {
 
    displayTeacPvrPage.add(teacPvrPage);
 
-   teacPvrEpisodeGuide.add(*new TeacPvrAction(IrTeacPVR::Code::EPG, "PVR EPG" ));
    teacPvrEpisodeGuide.add(teacPvrEpgPage);
 }
-
-#if 0
-void getTouch(unsigned &touchX, unsigned &touchY) {
-
-   while (!touchInterface.checkRawTouch(touchX, touchY)) {
-      __asm__("nop");
-   }
-}
-
-void calibratePoint(unsigned x1, unsigned y1) {
-
-   static constexpr IntegerFormat intFormat(Width_10, Padding_LeadingSpaces);
-
-   if (x1>(tft.WIDTH-11)) {
-      x1 = tft.WIDTH-11;
-   }
-   if (y1>(tft.HEIGHT-11)) {
-      y1 = tft.HEIGHT-11;
-   }
-   unsigned touchX;
-   unsigned touchY;
-
-   tft.setColour(WHITE);
-
-   tft.drawRect(x1,y1,x1+10,y1+10);
-   getTouch(touchX, touchY);
-   tft.setColour(BACKGROUND_COLOUR);
-   tft.drawRect(x1,y1,x1+10,y1+10);
-   waitMS(300);
-
-   console.write(x1+5, intFormat, ", ", y1+5, intFormat, ", ");
-   console.writeln(touchX, intFormat, ", ", touchY, intFormat);
-}
-
-void calibrate() {
-
-   tft.setBackgroundColour(BACKGROUND_COLOUR);
-   tft.setColour(WHITE);
-   tft.clear();
-
-   unsigned width  = tft.WIDTH;
-   unsigned height = tft.HEIGHT;
-   unsigned xIncrement = (width/4)-1;
-   unsigned yIncrement = (height/5)-1;
-
-   //   calibratePoint(  width/4, height/5);
-   //   calibratePoint(3*width/4, height/5);
-   //   calibratePoint(3*width/4, 4*height/5);
-   //   calibratePoint(  width/4, 4*height/5);
-
-   for (unsigned y=0; y<height; y+=yIncrement) {
-      for (unsigned x=0; x<width; x+=xIncrement) {
-         calibratePoint(x, y);
-      }
-   }
-}
-#endif
 
 bool wakeUp = false;
 
@@ -1971,107 +2191,18 @@ bool wakeUp = false;
 //   wakeUp = true;
 //}
 
-/**
- * Return description of battery state
- *
- * @return Pointer to statically allocated string
- */
-const char *checkBatteryLevel() {
-
-   static const float Levels[] = {3.0, 3.7, 3.85, 3.95, 4.2};
-
-   float battery = 2*3.3*BatteryLevel::readAnalogue(AdcResolution_16bit_se)/Adc0::getSingleEndedMaximum(AdcResolution_16bit_se);
-   float first = 0.0;
-   float second;
-   int percent = 100;
-
-   static char buff[10];
-
-   const char *status = "unk";
-
-   switch (LipoChargerStatus::read()) {
-      case 0 : // No power - report battery level
-         if (battery<Levels[0]) {
-            percent = 0;
-         }
-         else if (battery>Levels[4]) {
-            percent = 100;
-         }
-         else {
-            for(unsigned index=0; index<(sizeof(Levels)/sizeof(Levels[0])); index++) {
-               second = Levels[index];
-               //         console.writeln("[", first, " - ", second, "]");
-               if (battery<second) {
-                  percent = round(25*((index-1) + (battery-first)/(second-first)));
-                  break;
-               }
-               first = second;
-            }
-         }
-         {
-            StringFormatter sf(buff);
-            sf.write(percent,"%");
-         }
-         status = buff;
-         break;
-      case 1 : // Charging - report charging
-         status = "Ch+";
-         break;
-      case 2 : // Charging Completed - report charging done
-         status = "OK ";
-         break;
-      case 3 : // Invalid ??
-         status = "Inv";
-         break;
-   }
-
-   static const char *lipoStatus[] = {
-        /* STDBY, CHRG */
-        /*   0      0  */ "No power",
-        /*   0      1  */ "Charging",
-        /*   1      0  */ "Charging Completed",
-        /*   1      1  */ "Invalid",
-   };
-   DebugLed::write(LipoChargerStatus::read() == 0b10);
-   console.writeln("Battery = ", battery, "V, ",percent, "%, ", lipoStatus[LipoChargerStatus::read()]);
-
-   return status;
-}
-
-// PCR with pull-ups
-static constexpr PcrInit gpioHighInit {
-
-   PinAction_None,
-   PinPull_Up,
-   PinDriveMode_PushPull,
-   PinDriveStrength_Low,
-   PinFilter_Passive,
-   PinSlewRate_Slow,
-};
-
-// PCR with pull-downs
-static constexpr PcrInit gpioLowInit {
-
-   PinAction_None,
-   PinPull_Down,
-   PinDriveMode_PushPull,
-   PinDriveStrength_Low,
-   PinFilter_Passive,
-   PinSlewRate_Slow,
-};
-
 class ButtonScanner {
 
 private:
 
-// Debounced button state
-static inline uint16_t buttonState = 0;
+// Button state as individually reported
+static inline uint16_t reportedButtons = 0;
 
-//
-static inline uint16_t currentButton = 0;
+// Debounced button state
+static inline std::atomic<uint16_t> stableButtonState = 0;
 
 // Current button polling state used to detect changes
-static inline uint16_t poll          = 0;
+static inline uint16_t pollingButtonState          = 0;
 
 // Count of how long buttons have been unchanged (stable)
 static inline uint8_t  stableCount   = 0;
@@ -2079,25 +2210,25 @@ static inline uint8_t  stableCount   = 0;
 // Current button row being scanned
 static inline uint8_t  row           = 0;
 
-public:
+static inline PitChannelNum pitChannelNum = PitChannelNum_None;
 
 static void buttonCallback() {
 
    const uint16_t current = SwitchCols::read()<<(row*4);
    const uint16_t mask    = 0b1111<<(row*4);
 
-   if (current != (poll&mask)) {
+   if (current != (pollingButtonState&mask)) {
       // Update snapshot
-      poll  = (poll&~mask) | current;
+      pollingButtonState  = (pollingButtonState&~mask) | current;
 
       // Restart debounce timeout
       stableCount = 1;
    }
 
-   if ((stableCount++ == 16) &&(currentButton != poll)) {
+   if ((stableCount++ == 16) &&(stableButtonState.load() != pollingButtonState)) {
       // 16 x 1.25 ms = 20 ms
       // Each row would be scanned 4 times
-      currentButton = poll;
+      stableButtonState.store(pollingButtonState);
    }
 
    // A row is driven high for 1 cycle before sampling columns
@@ -2122,6 +2253,13 @@ static void buttonCallback() {
    }
 }
 
+static ButtonCode makeRelease(ButtonCode code) {
+
+   return ButtonCode(code | Button_Release);
+}
+
+public:
+
 static void initialise() {
 
    // Columns as inputs with pull-downs
@@ -2133,21 +2271,16 @@ static void initialise() {
    SwitchRow3::setOutput(gpioHighInit);
    SwitchRow4::setOutput(gpioHighInit);
 
-   buttonState    = 0;
-   currentButton  = 0;
-   poll           = 0;
+   stableButtonState.store(0);
+
+   reportedButtons    = 0;
+   pollingButtonState           = 0;
    stableCount    = 0;
    row            = 0;
 
-   Pit::Init pitInit {
-      PitOperation_Enabled,
-      PitDebugMode_StopInDebug,
-   };
-   Pit::configure(pitInit);
+   Pit::defaultConfigureIfNeeded();
 
    static constexpr Pit::ChannelInit pitChannelInit {
-      ButtonTimerChannel::CHANNEL,
-
       PitChannelEnable_Enabled ,   // (pit_tctrl_ten[0])         Timer Channel Enable - Channel enabled
       PitChannelAction_Interrupt , // (pit_tctrl_tie[0])         Action on timer event - Interrupt
       59999_ticks,                 // (pit_ldval_tsv[0])         Reload value channel 0 - ~1.25 ms
@@ -2156,32 +2289,45 @@ static void initialise() {
       buttonCallback,              // (handlerName_Ch0)          User declared event handler
    };
 
-   Pit::configure(pitChannelInit);
+   if (pitChannelNum == PitChannelNum_None) {
+      pitChannelNum = Pit::allocateChannel();
+      checkError();
+   }
+   Pit::configure(pitChannelNum, pitChannelInit);
 }
 
-static void suspendPolling() {
-   ButtonTimerChannel::disableNvicInterrupts();
+static void suspend() {
+
+   Pit::disableNvicInterrupts(pitChannelNum);
 }
 
-static void resumePolling() {
-   ButtonTimerChannel::enableNvicInterrupts();
+/**
+ * Get currently pressed button
+ *
+ * @return Code indicating a currently pressed button (Button_1 .. Button_16)
+ */
+static ButtonCode getCurrentButton() {
+   if (stableButtonState.load() == 0) {
+      return Button_None;
+   }
+   return ButtonCode(__builtin_ffs(stableButtonState.load())-1);
 }
 
-static ButtonCode makeRelease(ButtonCode code) {
-
-   return ButtonCode(code | Button_Release);
-}
-
+/**
+ * Get unreported button change
+ *
+ * @return Code indicating an unreported changed button (Button_1 .. Button_16, Button_1_Release .. Button_16_Release)
+ */
 static ButtonCode getButton() {
 
-   if (buttonState == currentButton) {
+   if (reportedButtons == stableButtonState) {
       return Button_None;
    }
 
    CriticalSection cs;
 
    // Find changed buttons
-   uint16_t changed = (currentButton^buttonState);
+   uint16_t changed = (stableButtonState^reportedButtons);
 
    // Only process 1st changed button
    ButtonCode code =  ButtonCode(__builtin_ffs(changed)-1);
@@ -2189,9 +2335,9 @@ static ButtonCode getButton() {
    uint16_t buttonMask = 1<<code;
 
    // Update state
-   buttonState ^= buttonMask;
+   reportedButtons ^= buttonMask;
 
-   if ((buttonState&buttonMask) == 0) {
+   if ((reportedButtons&buttonMask) == 0) {
 
       // Button released
       code = makeRelease(code);
@@ -2208,28 +2354,11 @@ void initialiseMiscellaneous() {
    // SimInfo::setPortDPad(SimPortDPad_Double);
 
    ButtonScanner::initialise();
-
-   LipoChargerStatus::setInput(gpioHighInit);
+   BatteryMonitor::initialise();
 
    DebugLed::setOutput(gpioLowInit);
 
    PowerEnable::setOutput(gpioLowInit);
-
-   static constexpr Adc::Init adcInit {
-
-      AdcResolution_16bit_se ,         // (adc_cfg1_mode)            ADC Resolution - 16-bit unsigned (single-ended mode)
-      AdcClockSource_Asynch ,          // (adc_cfg1_adiclk)          ADC Input Clock - Asynchronous clock (ADACK)
-      AdcMuxsel_B ,                    // (adc_cfg2_muxsel)          A/B multiplexor selection - The multiplexor selects B channels
-      AdcAveraging_16 ,                // (adc_sc3_avg)              Hardware Average Select - 1 sample
-      AdcSample_4cycles,               // (adc_sample)               Sample Time Configuration - 4 ADCK total
-
-      // The following values must be in order
-      AdcPretrigger_0,            	   // sc1[0]/r[0] ,
-      BatteryLevel::CHANNEL ,        	// (adc_sc1[0]_adch)          ADC Channel number - ADC0_SE0 [-]
-      AdcAction_None,              	   // (adc_sc1[0]_aien)          Action on conversion completion - None
-   };
-   BatteryLevel::Owner::configure(adcInit);
-   BatteryLevel::setInput();
 
    static constexpr Smc::Init smcInitValue = {
       SmcAllowVeryLowPower_Enabled ,       // (smc_pmprot_avlp)          Allow Very Low Power modes - VLPR, VLPW and VLPS are allowed
@@ -2277,7 +2406,9 @@ void wakeUpHandler() {
 
 void sleep() {
 
-   ButtonScanner::suspendPolling();
+   ButtonScanner::suspend();
+   BatteryMonitor::suspend();
+
    touchInterface.disableTouchInterrupt();
    tft.sleep();
 
@@ -2359,7 +2490,62 @@ void sleep() {
 
 #if defined(DEBUG_BUILD) && 0
 
-void calibrate() {
+void getTouch(unsigned &touchX, unsigned &touchY) {
+
+   while (!touchInterface.checkRawTouch(touchX, touchY)) {
+      __asm__("nop");
+   }
+}
+
+void calibratePoint(unsigned x1, unsigned y1) {
+
+   static constexpr IntegerFormat intFormat(Width_10, Padding_LeadingSpaces);
+
+   if (x1>(tft.WIDTH-11)) {
+      x1 = tft.WIDTH-11;
+   }
+   if (y1>(tft.HEIGHT-11)) {
+      y1 = tft.HEIGHT-11;
+   }
+   unsigned touchX;
+   unsigned touchY;
+
+   tft.setColour(WHITE);
+
+   tft.drawRect(x1,y1,x1+10,y1+10);
+   getTouch(touchX, touchY);
+   tft.setColour(BACKGROUND_COLOUR);
+   tft.drawRect(x1,y1,x1+10,y1+10);
+   waitMS(300);
+
+   console.write(x1+5, intFormat, ", ", y1+5, intFormat, ", ");
+   console.writeln(touchX, intFormat, ", ", touchY, intFormat);
+}
+
+void calibrate1() {
+
+   tft.setBackgroundColour(BACKGROUND_COLOUR);
+   tft.setColour(WHITE);
+   tft.clear();
+
+   unsigned width  = tft.WIDTH;
+   unsigned height = tft.HEIGHT;
+   unsigned xIncrement = (width/4)-1;
+   unsigned yIncrement = (height/5)-1;
+
+   //   calibratePoint(  width/4, height/5);
+   //   calibratePoint(3*width/4, height/5);
+   //   calibratePoint(3*width/4, 4*height/5);
+   //   calibratePoint(  width/4, 4*height/5);
+
+   for (unsigned y=0; y<height; y+=yIncrement) {
+      for (unsigned x=0; x<width; x+=xIncrement) {
+         calibratePoint(x, y);
+      }
+   }
+}
+
+void calibrate2() {
 
    unsigned xs[] = {310, 235, 160, 85, 10};
    unsigned ys[] = {10, 125, 240, 355, 470};
@@ -2498,6 +2684,33 @@ void testTiming() {
       waitMS(10000);
    }
 }
+
+void findTouchBug() {
+
+   PowerEnable::on();
+
+   waitMS(100);
+
+   tft.initialise();
+
+   tft.setBackgroundColour(BACKGROUND_COLOUR);
+   tft.clear();
+
+   tft.backlightOn();
+
+   initialiseMiscellaneous();
+   for(;;) {
+      tft.drawBitmap(Busy.data, 0, 0, Busy.width, Busy.height, 1);
+
+      unsigned touchX, touchY;
+      bool touched;
+      touched = touchInterface.checkTouch(touchX, touchY);
+      touched = touchInterface.checkTouch(touchX, touchY);
+      if (touched) {
+         console.writeln("\nLooking for touch @(", touchX, ",", touchY, ") ");
+      }
+   }
+}
 #endif // DEBUG_BUILD
 
 int main() {
@@ -2507,6 +2720,7 @@ int main() {
    console.writeln("Executing from RESET, SRS=", Rcm::getResetSourceDescription());
 
 #ifdef DEBUG_BUILD
+//   findTouchBug();
 //   testTiming();
 //   testBattery();
 
@@ -2542,18 +2756,7 @@ int main() {
       Pmc::releaseIsolation();
    }
 
-   //Errata e4481 STOP mode recovery unstable
-//   static const Pmc::Init pmcInit {
-//      PmcBandgapBuffer_Enabled,
-//      PmcBandgapOperationInLowPower_Enabled,
-//   };
-//   Pmc::configure(pmcInit);
-
    Smc::enableAllPowerModes();
-
-//   RFSYS->REG[0] = 100;
-
-   unsigned touchX, touchY;
 
    initialiseMiscellaneous();
 
@@ -2565,19 +2768,15 @@ int main() {
    console.setEcho(EchoMode_Off);
    console.setBlocking(BlockingMode_Off);
 
-   ButtonCode buttonCode;
+   bool     reinitialise  = true;
 
-   unsigned idleCount = 0;
-   bool reinitialise  = true;
+   for(;;) {
 
-//   touchInterface.setInterruptHandler(wakeUpHandler);
-
-   for(unsigned count = 0; ;count++) {
-
-      if ((count % 1000) == 0) {
-         Screen::reportBattery();
-         checkBatteryLevel();
+      if (BatteryMonitor::getIdleTime()>60) {
+         sleep();
+         reinitialise = true;
       }
+
       if (reinitialise) {
 
          reinitialise = false;
@@ -2588,9 +2787,13 @@ int main() {
          console.writeln("Awake!...");
 
          ButtonScanner::initialise();
+         BatteryMonitor::initialise();
 
          spi.enable();
          Cmt::enable();
+
+         // Update battery status before power on (minimum-load)
+         BatteryMonitor::updateBatteryStatus();
 
          PowerEnable::on();
 
@@ -2601,53 +2804,46 @@ int main() {
          tft.setBackgroundColour(BACKGROUND_COLOUR);
          tft.clear();
 
-         idleCount = 0;
-
          Screen::refresh();
          tft.backlightOn();
-
-         waitMS(500);
-      }
-#ifndef DEBUG_BUILD
-      else if (touchInterface.checkTouch(touchX, touchY)) {
-//         tft.setColour(GREEN);
-//         tft.drawCircle(touchX,touchY, 10);
-         idleCount = 0;
-         //         console.writeln("\nLooking for touch @(", touchX, ",", touchY, ") ");
-         const auto *action = Screen::findTouchAction(touchX, touchY);
-         if (action != nullptr) {
-            Screen::setBusy(true);
-            action->action();
-            Screen::setBusy(false);
-            waitMS(100);
-         }
          continue;
       }
-#endif
-      else if ((buttonCode = ButtonScanner::getButton()) != Button_None) {
-         bool release = buttonCode&Button_Release;
-         buttonCode   = ButtonCode(buttonCode&~Button_Release);
-         console.writeln("Button_", unsigned(buttonCode), release?" Released":" Pressed");
 
-         if (!release) {
-            const auto *action = Screen::findButtonAction(buttonCode);
-            if (action != nullptr) {
-               Screen::setBusy(true);
-               action->action();
-               Screen::setBusy(false);
-               waitMS(100);
-            }
-            idleCount = 0;
-         }
+      const Action *action = nullptr;
+
+      ButtonCode buttonCode = ButtonScanner::getCurrentButton();
+      if (buttonCode != Button_None) {
+         //         console.writeln("Button_", unsigned(buttonCode), release?" Released":" Pressed");
+         BatteryMonitor::clearIdleTimer();
+         action = Screen::findButtonAction(buttonCode);
       }
       else {
-         idleCount++;
-         if (idleCount>500) {
-            sleep();
-            reinitialise = true;
+         unsigned touchX, touchY;
+         bool touched = touchInterface.checkTouch(touchX, touchY);
+         if (touched) {
+            console.writeln("\nLooking for touch @(", touchX, ",", touchY, ") ");
+#if defined(DEBUG_BUILD) && 0
+            tft.setColour(GREEN);
+            tft.drawCircle(touchX,touchY, 10);
+#endif
+            BatteryMonitor::clearIdleTimer();
+            action = Screen::findTouchAction(touchX, touchY);
          }
       }
-      waitMS(100);
+      if (action == nullptr) {
+         // No action found
+         continue;
+      }
+
+      Screen::setBusy(true);
+      action->action();
+
+      Ticks actionDelay = action->getDelay();
+      if (actionDelay < 500'000_ticks) {
+         actionDelay = 500'000_ticks; // Minimum 500 ms for repeat delay
+      }
+      waitUS(actionDelay);
+      Screen::setBusy(false);
    }
    return 0;
 }
