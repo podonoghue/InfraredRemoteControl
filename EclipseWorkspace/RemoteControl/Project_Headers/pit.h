@@ -52,16 +52,15 @@ namespace USBDM {
     * Selected PIT channel
     */
    enum PitChannelNum : uint8_t {
-      PitChannelNum_0                    = 0,           ///< Channel 0
-      PitChannelNum_ButtonTimerChannel   = 0,           ///< Channel 0
-      PitChannelNum_Pit_ch0              = 0,           ///< Pin PIT_CH0
-      PitChannelNum_1                    = 1,           ///< Channel 1
-      PitChannelNum_Pit_ch1              = 1,           ///< Pin PIT_CH1
-      PitChannelNum_2                    = 2,           ///< Channel 2
-      PitChannelNum_Pit_ch2              = 2,           ///< Pin PIT_CH2
-      PitChannelNum_3                    = 3,           ///< Channel 3
-      PitChannelNum_Pit_ch3              = 3,           ///< Pin PIT_CH3
-      PitChannelNum_None                 = 0b10000000,  ///< Channel Not Allocated
+      PitChannelNum_0         = 0,           ///< Channel 0
+      PitChannelNum_Pit_ch0   = 0,           ///< Pin PIT_CH0
+      PitChannelNum_1         = 1,           ///< Channel 1
+      PitChannelNum_Pit_ch1   = 1,           ///< Pin PIT_CH1
+      PitChannelNum_2         = 2,           ///< Channel 2
+      PitChannelNum_Pit_ch2   = 2,           ///< Pin PIT_CH2
+      PitChannelNum_3         = 3,           ///< Channel 3
+      PitChannelNum_Pit_ch3   = 3,           ///< Pin PIT_CH3
+      PitChannelNum_None      = 0b10000000,  ///< Channel Not Allocated
    };
 
    /**
@@ -120,9 +119,6 @@ public:
     * Type definition for Pit interrupt call back.
     */
    typedef void (*CallbackFunction)();
-   
-   /** Bit-mask of allocated channels */
-   static inline uint32_t allocatedChannels = 0;
    
    /**
     * Class used to do initialisation of the Pit
@@ -526,7 +522,10 @@ public:
    
    //! Number of PIT channels
    static constexpr uint32_t NumChannels  = 4;
-
+   
+   /** Bit-mask of allocated channels */
+   static inline uint32_t allocatedChannels = (1<<NumChannels)-1;
+   
    /**
     * Set Module Disable
     *
@@ -561,6 +560,35 @@ public:
     */
    static PitDebugMode getDebugMode() {
       return PitDebugMode(pit->MCR&PIT_MCR_FRZ_MASK);
+   }
+   
+   /**
+    * Enable interrupts in NVIC
+    *
+    * @param pitChannelNum Select amongst interrupts associated with the peripheral
+    */
+   static void enableNvicInterrupts(PitChannelNum pitChannelNum) {
+      NVIC_EnableIRQ(irqNums[pitChannelNum]);
+   }
+   
+   /**
+    * Enable and set priority of interrupts in NVIC
+    * Any pending NVIC interrupts are first cleared.
+    *
+    * @param pitChannelNum Select amongst interrupts associated with the peripheral
+    * @param nvicPriority  Interrupt priority
+    */
+   static void enableNvicInterrupts(PitChannelNum pitChannelNum, NvicPriority nvicPriority) {
+      enableNvicInterrupt(irqNums[pitChannelNum], nvicPriority);
+   }
+   
+   /**
+    * Disable interrupts in NVIC
+    *
+    * @param pitChannelNum Select amongst interrupts associated with the peripheral
+    */
+   static void disableNvicInterrupts(PitChannelNum pitChannelNum) {
+      NVIC_DisableIRQ(irqNums[pitChannelNum]);
    }
    
    /** Bitmask used to indicate a channel call-back is one-shot */
@@ -612,7 +640,7 @@ public:
       pit->MCR    = init.mcr;
    
       // Clear channel reservations
-      allocatedChannels = -1;
+      allocatedChannels = (1<<NumChannels)-1;
    }
    
    /**
@@ -637,7 +665,7 @@ public:
     */
    static void defaultConfigureIfNeeded() {
    
-       enable();
+      enable();
    
       // Check if disabled and configure if so
       if ((pit->MCR & PIT_MCR_MDIS_MASK) != 0) {
@@ -719,16 +747,6 @@ public:
     * This value is created from Configure.usbdmProject settings
     */
    static constexpr ChannelInit DefaultChannelInitValues[] = {
-      {
-      PitChannelNum_0,
-
-      PitChannelEnable_Enabled ,   // (pit_tctrl_ten[0])         Timer Channel Enable - Channel enabled
-      PitChannelAction_Interrupt , // (pit_tctrl_tie[0])         Action on timer event - Interrupt
-      59999_ticks,                 // (pit_ldval_tsv[0])         Reload value channel 0
-
-      NvicPriority_Normal ,        // (irqLevel_Ch0)             IRQ priority level for Ch0 - Normal
-      buttonCallback,              // (handlerName_Ch0)          User declared event handler
-      },
    }; // DefaultChannelInitValues
 
    /**

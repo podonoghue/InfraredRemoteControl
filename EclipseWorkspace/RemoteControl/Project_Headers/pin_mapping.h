@@ -2886,23 +2886,22 @@ public:
     * ADC Trigger source in STOP and VLPS modes, or when ADC Alternative Trigger is active
     */
    enum SimAdc0TriggerSrc {
-      SimAdc0TriggerSrc_External             = SIM_SOPT7_ADC0TRGSEL(0),   ///< External trigger pin input (PDB0_EXTRG)
-      SimAdc0TriggerSrc_Cmp0                 = SIM_SOPT7_ADC0TRGSEL(1),   ///< CMP 0 output
-      SimAdc0TriggerSrc_Cmp1                 = SIM_SOPT7_ADC0TRGSEL(2),   ///< CMP 1 output
-      SimAdc0TriggerSrc_PitCh0               = SIM_SOPT7_ADC0TRGSEL(4),   ///< PIT trigger 0
-      SimAdc0TriggerSrc_ButtonTimerChannel   = SIM_SOPT7_ADC0TRGSEL(4),   ///< PIT trigger 0
-      SimAdc0TriggerSrc_Pit_ch0              = SIM_SOPT7_ADC0TRGSEL(4),   ///< Pin PIT_CH0
-      SimAdc0TriggerSrc_PitCh1               = SIM_SOPT7_ADC0TRGSEL(5),   ///< PIT trigger 1
-      SimAdc0TriggerSrc_Pit_ch1              = SIM_SOPT7_ADC0TRGSEL(5),   ///< Pin PIT_CH1
-      SimAdc0TriggerSrc_PitCh2               = SIM_SOPT7_ADC0TRGSEL(6),   ///< PIT trigger 2
-      SimAdc0TriggerSrc_Pit_ch2              = SIM_SOPT7_ADC0TRGSEL(6),   ///< Pin PIT_CH2
-      SimAdc0TriggerSrc_PitCh3               = SIM_SOPT7_ADC0TRGSEL(7),   ///< PIT trigger 3
-      SimAdc0TriggerSrc_Pit_ch3              = SIM_SOPT7_ADC0TRGSEL(7),   ///< Pin PIT_CH3
-      SimAdc0TriggerSrc_Ftm0                 = SIM_SOPT7_ADC0TRGSEL(8),   ///< FTM0 trigger
-      SimAdc0TriggerSrc_Ftm1                 = SIM_SOPT7_ADC0TRGSEL(9),   ///< FTM1 trigger
-      SimAdc0TriggerSrc_RtcAlarm             = SIM_SOPT7_ADC0TRGSEL(12),  ///< RTC alarm
-      SimAdc0TriggerSrc_RtcSeconds           = SIM_SOPT7_ADC0TRGSEL(13),  ///< RTC seconds
-      SimAdc0TriggerSrc_Lptmr                = SIM_SOPT7_ADC0TRGSEL(14),  ///< LPTMR trigger
+      SimAdc0TriggerSrc_External     = SIM_SOPT7_ADC0TRGSEL(0),   ///< External trigger pin input (PDB0_EXTRG)
+      SimAdc0TriggerSrc_Cmp0         = SIM_SOPT7_ADC0TRGSEL(1),   ///< CMP 0 output
+      SimAdc0TriggerSrc_Cmp1         = SIM_SOPT7_ADC0TRGSEL(2),   ///< CMP 1 output
+      SimAdc0TriggerSrc_PitCh0       = SIM_SOPT7_ADC0TRGSEL(4),   ///< PIT trigger 0
+      SimAdc0TriggerSrc_Pit_ch0      = SIM_SOPT7_ADC0TRGSEL(4),   ///< Pin PIT_CH0
+      SimAdc0TriggerSrc_PitCh1       = SIM_SOPT7_ADC0TRGSEL(5),   ///< PIT trigger 1
+      SimAdc0TriggerSrc_Pit_ch1      = SIM_SOPT7_ADC0TRGSEL(5),   ///< Pin PIT_CH1
+      SimAdc0TriggerSrc_PitCh2       = SIM_SOPT7_ADC0TRGSEL(6),   ///< PIT trigger 2
+      SimAdc0TriggerSrc_Pit_ch2      = SIM_SOPT7_ADC0TRGSEL(6),   ///< Pin PIT_CH2
+      SimAdc0TriggerSrc_PitCh3       = SIM_SOPT7_ADC0TRGSEL(7),   ///< PIT trigger 3
+      SimAdc0TriggerSrc_Pit_ch3      = SIM_SOPT7_ADC0TRGSEL(7),   ///< Pin PIT_CH3
+      SimAdc0TriggerSrc_Ftm0         = SIM_SOPT7_ADC0TRGSEL(8),   ///< FTM0 trigger
+      SimAdc0TriggerSrc_Ftm1         = SIM_SOPT7_ADC0TRGSEL(9),   ///< FTM1 trigger
+      SimAdc0TriggerSrc_RtcAlarm     = SIM_SOPT7_ADC0TRGSEL(12),  ///< RTC alarm
+      SimAdc0TriggerSrc_RtcSeconds   = SIM_SOPT7_ADC0TRGSEL(13),  ///< RTC seconds
+      SimAdc0TriggerSrc_Lptmr        = SIM_SOPT7_ADC0TRGSEL(14),  ///< LPTMR trigger
    };
 
    /**

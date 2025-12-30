@@ -85,7 +85,6 @@
    <item key="$signal$LLWU_P6_descriptionSetting"          value="Wakeup from row 1 buttons" />
    <item key="$signal$LLWU_P8_codeIdentifier"              value="SwitchWakeupR3" />
    <item key="$signal$LLWU_P8_descriptionSetting"          value="Wakeup from row 3 buttons" />
-   <item key="$signal$PIT_CH0_codeIdentifier"              value="ButtonTimerChannel" />
    <item key="$signal$RESET_b_codeIdentifier"              value="Resetb" />
    <item key="$signal$RESET_b_descriptionSetting"          value="Reset*" />
    <item key="$signal$SPI0_PCS1_codeIdentifier"            value="TouchCs" />
@@ -170,6 +169,8 @@
    <item key="/LLWU/llwu_pe4_wupe15"                       value="LlwuPinMode_FallingEdge" />
    <item key="/LLWU/llwu_rst_rstfilt"                      value="true" />
    <item key="/LLWU/mapPinsOnEnable"                       value="false" />
+   <item key="/LPTMR0/lptmr_psr_pcs"                       value="3" />
+   <item key="/LPTMR0/lptmr_psr_prescaler"                 value="0,15" />
    <item key="/MCG/ClockConfig[0]"                         value="ClockConfig_RUN_PEE_48MHz" />
    <item key="/MCG/ClockConfig[1]"                         value="ClockConfig_VLPR_BLPE_4MHz" />
    <item key="/MCG/ClockConfig[2]"                         value="ClockConfig_RUN_FEE_40MHz" />
@@ -195,7 +196,7 @@
    <item key="/PIT/irqHandlerName_Ch0"                     value="buttonCallback" />
    <item key="/PIT/irqHandlingMethod"                      value="$ClassMethod" />
    <item key="/PIT/pit_ldval_tsv[0]"                       value="59999" />
-   <item key="/PIT/pit_tctrl_ten[0]"                       value="true" />
+   <item key="/PIT/pit_ldval_tsv[1]"                       value="47999999" />
    <item key="/PIT/pit_tctrl_tie[0]"                       value="true" />
    <item key="/PMC/enablePeripheralSupport"                value="true" />
    <item key="/RCM/enablePeripheralSupport"                value="true" />

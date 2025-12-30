@@ -26,7 +26,6 @@
 #include "../Project_Headers/control.h"
 #include "../Project_Headers/gpio.h"
 #include "../Project_Headers/llwu.h"
-#include "../Project_Headers/pit.h"
 #include "../Project_Headers/adc.h"
 #include "../Project_Headers/spi.h"
 
@@ -129,8 +128,6 @@ typedef Llwu::Pin<LlwuPin_Ptd4>                              TouchWakeup;       
 
 /// Wakeup from row 2 buttons
 typedef Llwu::Pin<LlwuPin_Ptd6>                              SwitchWakeupR2;                               // PTD6(p47)
-
-typedef Pit::Channel<0>                                      ButtonTimerChannel;                           // PIT_CH0
 
 /// SPI, Serial Peripheral Interface
 typedef Spi0                                                 MySPI;                                        
