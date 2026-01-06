@@ -39,7 +39,8 @@ namespace USBDM {
     * Allow Very Low Power modes
     * (smc_pmprot_avlp)
     *
-    * Allows the MCU to enter any very low power modes: VLPR, VLPW, and VLPS
+    * Allows the MCU to enter any very low power modes: VLPR, VLPW, and VLPS.
+    * This is a write-once selection
     */
    enum SmcAllowVeryLowPower : uint8_t {
       SmcAllowVeryLowPower_Disabled   = SMC_PMPROT_AVLP(0),  ///< VLPR, VLPW and VLPS are not allowed
@@ -50,7 +51,8 @@ namespace USBDM {
     * Allow Low Leakage Stop mode
     * (smc_pmprot_alls)
     *
-    * Allows the MCU to enter any low leakage stop mode: LLS
+    * Allows the MCU to enter any low leakage stop mode: LLS.
+    * This is a write-once selection
     */
    enum SmcAllowLowLeakageStop : uint8_t {
       SmcAllowLowLeakageStop_Disabled   = SMC_PMPROT_ALLS(0),  ///< LLS is not allowed
@@ -61,7 +63,8 @@ namespace USBDM {
     * Allow Very Low Leakage Stop mode
     * (smc_pmprot_avlls)
     *
-    * Allows the MCU to enter any low leakage stop mode: VLLSx
+    * Allows the MCU to enter any low leakage stop mode: VLLSx.
+    * This is a write-once selection
     */
    enum SmcAllowVeryLowLeakageStop : uint8_t {
       SmcAllowVeryLowLeakageStop_Disabled   = SMC_PMPROT_AVLLS(0),  ///< VLLSx is not allowed
@@ -183,7 +186,7 @@ namespace USBDM {
    constexpr inline uint8_t operator|(SmcPowerOnResetInVlls0 op1, SmcLowLeakageStopMode op2)  { return uint8_t(op1)|uint8_t(op2); };
    constexpr inline uint8_t operator|(SmcLowLeakageStopMode op1, SmcPowerOnResetInVlls0 op2)  { return uint8_t(op1)|uint8_t(op2); };
    
-   consteval uint32_t make16(uint8_t pmctrl, uint8_t stopctrl=0, uint8_t bias=0) {
+   constexpr uint32_t make16(uint8_t pmctrl, uint8_t stopctrl=0, uint8_t bias=0) {
       return pmctrl+(stopctrl<<8)+(bias<<16);
    }
 
@@ -255,9 +258,12 @@ public:
     *
     * @note This is a write-once operation after reset
     *
-    * @param smcAllowVeryLowPower       Allows the MCU to enter any very low power modes: VLPR, VLPW, and VLPS
-    * @param smcAllowLowLeakageStop     Allows the MCU to enter any low leakage stop mode: LLS
-    * @param smcAllowVeryLowLeakageStop Allows the MCU to enter any low leakage stop mode: VLLSx
+    * @param smcAllowVeryLowPower       Allows the MCU to enter any very low power modes: VLPR, VLPW, and VLPS.
+    *        This is a write-once selection
+    * @param smcAllowLowLeakageStop     Allows the MCU to enter any low leakage stop mode: LLS.
+    *        This is a write-once selection
+    * @param smcAllowVeryLowLeakageStop Allows the MCU to enter any low leakage stop mode: VLLSx.
+    *        This is a write-once selection
     */
    static void enablePowerModes(
          SmcAllowVeryLowPower       smcAllowVeryLowPower,
@@ -433,41 +439,49 @@ public:
        */
       constexpr Init() = default;
    
-   public:
+   
       /**
-       * Configure STOP mode options as specified in the constructor.
+       * Configure power mode options as specified in the constructor.
        * This does not include write-once registers.
+       * (smc_stopctrl_porpo,smc_stopctrl_vllsm,smc_pmctrl_lpwui,smc_pmctrl_stopm)
        */
       inline void setOptions() const {
          smc->STOPCTRL  = stopctrl;
-         smc->PMCTRL    = (smc->PMCTRL & ~(SMC_PMCTRL_STOPM_MASK))|pmctrl;
+         smc->PMCTRL    = pmctrl;
       }
    
       /**
-       * Configure all STOP mode options as specified in the constructor.
+       * Configure all power mode options as specified in the constructor.
        * This includes write-once registers
+       * (smc_pmprot_avlp,smc_pmprot_alls,smc_pmprot_avlls,smc_stopctrl_porpo,smc_stopctrl_vllsm,smc_pmctrl_lpwui,smc_pmctrl_stopm)
        */
       inline void initialise() const {
          smc->PMPROT    = pmprot;
-         setOptions();
+         smc->STOPCTRL  = stopctrl;
+         smc->PMCTRL    = pmctrl;
       }
    
       /**
-       * Read the current STOP mode options from hardware registers
+       * Read the current power mode options from hardware registers
+       * (smc_pmprot_avlp,smc_pmprot_alls,smc_pmprot_avlls,smc_stopctrl_porpo,smc_stopctrl_vllsm,smc_pmctrl_lpwui,smc_pmctrl_stopm)
        */
       void readConfig() {
          pmprot   = smc->PMPROT;
          stopctrl = smc->STOPCTRL;
-         pmctrl   = smc->PMCTRL & SMC_PMCTRL_STOPM_MASK;
+         pmctrl   = smc->PMCTRL & ~SMC_PMCTRL_RUNM_MASK;
       }
    
-      /// Power Mode Protection Register
+      // Allow Very Low Power modes (smc_pmprot_avlp)
+      // Allow Low Leakage Stop mode (smc_pmprot_alls)
+      // Allow Very Low Leakage Stop mode (smc_pmprot_avlls)
       uint8_t pmprot = 0;
 
-      /// Power Mode Control Register
+      // Exit low power on interrupt (smc_pmctrl_lpwui)
+      // Stop Mode Control (smc_pmctrl_stopm)
       uint8_t pmctrl = 0;
 
-      /// Stop Control Register
+      // Power-On_Reset Detection in VLLS0 mode (smc_stopctrl_porpo)
+      // Low Leakage Mode Control (smc_stopctrl_vllsm)
       uint8_t stopctrl = 0;
 
       /**
@@ -477,7 +491,8 @@ public:
        * @tparam   Types
        * @param    rest
        *
-       * @param smcAllowVeryLowPower Allows the MCU to enter any very low power modes: VLPR, VLPW, and VLPS
+       * @param smcAllowVeryLowPower Allows the MCU to enter any very low power modes: VLPR, VLPW, and VLPS.
+       *        This is a write-once selection
        */
       template <typename... Types>
       constexpr Init(SmcAllowVeryLowPower smcAllowVeryLowPower, Types... rest) : Init(rest...) {
@@ -492,7 +507,8 @@ public:
        * @tparam   Types
        * @param    rest
        *
-       * @param smcAllowLowLeakageStop Allows the MCU to enter any low leakage stop mode: LLS
+       * @param smcAllowLowLeakageStop Allows the MCU to enter any low leakage stop mode: LLS.
+       *        This is a write-once selection
        */
       template <typename... Types>
       constexpr Init(SmcAllowLowLeakageStop smcAllowLowLeakageStop, Types... rest) : Init(rest...) {
@@ -507,7 +523,8 @@ public:
        * @tparam   Types
        * @param    rest
        *
-       * @param smcAllowVeryLowLeakageStop Allows the MCU to enter any low leakage stop mode: VLLSx
+       * @param smcAllowVeryLowLeakageStop Allows the MCU to enter any low leakage stop mode: VLLSx.
+       *        This is a write-once selection
        */
       template <typename... Types>
       constexpr Init(SmcAllowVeryLowLeakageStop smcAllowVeryLowLeakageStop, Types... rest) : Init(rest...) {
@@ -918,11 +935,10 @@ public:
     * This value is created from Configure.usbdmProject settings
     */
    static constexpr Init DefaultInitValue = {
-      SmcAllowVeryLowPower_Enabled , // (smc_pmprot_avlp)          Allow Very Low Power modes - VLPR, VLPW and VLPS are allowed
-      SmcAllowLowLeakageStop_Enabled , // (smc_pmprot_alls)          Allow Low Leakage Stop mode - LLS is allowed
-      SmcAllowVeryLowLeakageStop_Enabled , // (smc_pmprot_avlls)         Allow Very Low Leakage Stop mode - VLLSx is allowed
-      SmcStopMode_VeryLowLeakageStop , // (smc_pmctrl_stopm)         Stop Mode Control - Very-Low-Leakage Stop (VLLSx)
-      SmcLowLeakageStopMode_VLLS3,  // (smc_stopctrl_vllsm)       Low Leakage Mode Control - Enter VLLS3 in VLLSx mode
+      SmcAllowVeryLowPower_Enabled ,         // (smc_pmprot_avlp)          Allow Very Low Power modes - VLPR, VLPW and VLPS are allowed
+      SmcAllowLowLeakageStop_Enabled ,       // (smc_pmprot_alls)          Allow Low Leakage Stop mode - LLS is allowed
+      SmcAllowVeryLowLeakageStop_Enabled ,   // (smc_pmprot_avlls)         Allow Very Low Leakage Stop mode - VLLSx is allowed
+      SmcStopMode_LowLeakageStop ,           // (smc_pmctrl_stopm)         Stop Mode Control - Low-Leakage Stop (LLSx)
    };
    
 

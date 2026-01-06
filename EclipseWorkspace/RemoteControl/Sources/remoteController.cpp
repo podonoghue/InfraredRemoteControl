@@ -70,7 +70,7 @@ using TFT=TFT_ILI9488<Orientation_Rotated_180>;
 
 using TouchInterface = Touch_XPT2046<TouchOrientation_Rotated_180, 330, 480>;
 
-static constexpr UartBaudRate baudRate = UartBaudRate_9600;
+static constexpr UartBaudRate baudRate = UartBaudRate_19200;
 
 static constexpr unsigned HARDWARE_VERSION = HW_IR_REMOTE;
 
@@ -353,9 +353,9 @@ static inline int   lipoPercentage = 0;
 
 // These limits are updated when the battery is checked
 static inline float lipo_0Percent            = 3.7;
-static inline float lipo_100Percent          = 4.3;
+static inline float lipo_100Percent          = 4.2;
 static inline float lipoCharging_0Percent    = 3.7;
-static inline float lipoCharging_100Percent  = 4.3;
+static inline float lipoCharging_100Percent  = 4.2;
 static inline float batteryVoltage           = 0.0;
 
 static inline PitChannelNum pitChannelNum = PitChannelNum_None;
@@ -392,16 +392,18 @@ static void initialise() {
 
    static constexpr Adc::Init adcInit {
 
-      AdcResolution_16bit_se ,         // (adc_cfg1_mode)            ADC Resolution - 16-bit unsigned (single-ended mode)
-      AdcClockSource_Asynch ,          // (adc_cfg1_adiclk)          ADC Input Clock - Asynchronous clock (ADACK)
-      AdcMuxsel_B ,                    // (adc_cfg2_muxsel)          A/B multiplexor selection - The multiplexor selects B channels
-      AdcAveraging_16 ,                // (adc_sc3_avg)              Hardware Average Select - 1 sample
-      AdcSample_4cycles,               // (adc_sample)               Sample Time Configuration - 4 ADCK total
-
-      // The following values must be in order
-      AdcPretrigger_0,                 // sc1[0]/r[0] ,
-      BatteryLevel::CHANNEL ,          // (adc_sc1[0]_adch)          ADC Channel number - ADC0_SE0 [-]
-      AdcAction_None,                  // (adc_sc1[0]_aien)          Action on conversion completion - None
+      AdcClockSource_BusClock ,         // (adc_cfg1_adiclk)          ADC Input Clock - Bus clock
+      AdcResolution_16bit_se ,          // (adc_cfg1_mode)            ADC Resolution - 8-bit unsigned (single-ended mode)
+      AdcPower_Normal ,                 // (adc_cfg1_adlpc)           Low-Power Configuration - Normal power configuration
+      AdcClockRange_Normal ,            // (adc_cfg2_adhsc)           High-Speed Configuration - Normal conversion sequence selected
+      AdcAsyncClock_Disabled ,          // (adc_cfg2_adacken)         Asynchronous Clock Output Enable - Asynchronous clock output disabled
+      AdcMuxsel_B ,                     // (adc_cfg2_muxsel)          A/B multiplexor selection - The multiplexor selects B channels
+      AdcReferenceSel_VrefhAndVrefl ,   // (adc_sc2_refsel)           Voltage Reference Selection - VRefH and VRefl
+      AdcDma_Disabled ,                 // (adc_sc2_dmaen)            DMA Enable - Disabled
+      AdcTrigger_Software ,             // (adc_sc2_adtrg)            Conversion Trigger Select - Software trigger (write to SC1[0])
+      AdcAveraging_32 ,                 // (adc_sc3_avg)              Hardware Average Select - 32 samples
+      AdcOperation_Single ,             // (adc_sc3_adco)             Single or continuous conversion - Single conversion on each trigger
+      AdcSample_24cycles,               // (adc_sample)               Sample Time Configuration - +20 ADCK cycles; 24 ADCK total
    };
    BatteryLevel::Owner::configure(adcInit);
    BatteryLevel::setInput();
@@ -443,7 +445,7 @@ static void updateBatteryStatus() {
    if (PowerEnable::isActive()) {
       return;
    }
-
+   BatteryLevel::readAnalogue(AdcResolution_16bit_se);
    batteryVoltage = 2*3.3*BatteryLevel::readAnalogue(AdcResolution_16bit_se)/Adc0::getSingleEndedMaximum(AdcResolution_16bit_se);
 
    switch (batteryStatus) {
@@ -542,11 +544,12 @@ static const char *getInfo() {
    static constexpr FloatFormat fmt {Precision_2};
 
    if (batteryStatus == BatteryStatus_Charging) {
-      sf.write(lipoCharging_0Percent, fmt, "<", batteryVoltage, fmt, "<", lipoCharging_100Percent, fmt, "(", lipoPercentage,"%)");
+      sf.write(lipoCharging_0Percent, fmt, "<", batteryVoltage, fmt, "<", lipoCharging_100Percent, fmt, "(", lipoPercentage,"%)C");
    }
    else {
       sf.write(lipo_0Percent, fmt, "<", batteryVoltage, fmt, "<", lipo_100Percent, fmt, "(", lipoPercentage,"%)");
    }
+   console.writeln("Battery Info = ", buff);
 
    return buff;
 }
@@ -1158,7 +1161,9 @@ public:
 
    void action() const override {
       Action::action();
+//      tft.backlightOff();
       Screen::show(this);
+//      tft.backlightOn();
    }
 
 };
@@ -1232,13 +1237,40 @@ const Action *Screen::findButtonAction(ButtonCode code) {
    return nullptr;
 }
 
+//class DisplayOffAction : public Action {
+//public:
+//   constexpr DisplayOffAction() : Action("Display Off") {
+//   }
+//   virtual ~DisplayOffAction() = default;
+//
+//   virtual void action() const {
+//      tft.backlightOff();
+//   }
+//};
+//
+//class DisplayOnAction : public Action {
+//public:
+//   constexpr DisplayOnAction() : Action("Display On") {
+//   }
+//   virtual ~DisplayOnAction() = default;
+//   virtual void action() const {
+//      tft.backlightOn();
+//   }
+//};
+
 /*
  * Shared Actions
  * ============================================================================================
  */
-constexpr SonyTvAction   sonyTvOnOff(                     IrSonyTV::ON_OFF,          "TV On/Off",        1000_ticks);
-constexpr SonyTvAction   sonyTvOn(                        IrSonyTV::ON,              "TV On",            2'000'000_ticks);
+//constexpr DisplayOffAction displayOffAction;
+//constexpr DisplayOnAction  displayOnAction;
+
+constexpr SonyTvAction   sonyTvOnOff(                     IrSonyTV::ON_OFF,          "TV On/Off",              100_ticks);
+constexpr SonyTvAction   sonyTvOn(                        IrSonyTV::ON,              "TV On",            8'000'000_ticks);
 constexpr SonyTvAction   sonyTvOff(                       IrSonyTV::OFF,             "TV Off"            );
+
+constexpr SonyTvAction   sonyTvHome(                      IrSonyTV::HOME,            "TV Home"        );
+constexpr SonyTvAction   sonyTvReturn(                    IrSonyTV::RETURN,          "TV Return"      );
 
 constexpr SonyTvAction   sonyTvSourceTv(                  IrSonyTV::SOURCE_TV,       "TV Source TV"      );
 constexpr SonyTvAction   sonyTvSourceHdmi1_Chrome(        IrSonyTV::SOURCE_HDMI_1,   "TV Source HDMI 1"  );
@@ -1286,13 +1318,13 @@ constexpr BlaupunktDVDStatusAction blaupunktDvdOff(     IrBlaupunktDVD::ON_OFF, 
  * Action sequences
  */
 SequenceAction< 8> allOff{"Seq: All Off"};
-SequenceAction<11> watchTv{"Seq: Watch TV"};
-SequenceAction<11> watchSamsungDvd{"Seq: Watch Samsung DVD"};
-SequenceAction<11> watchLaserDvd{"Seq: Watch Laser DVD"};
-SequenceAction<11> watchTeacPvr{"Seq: Watch PVR"};
-SequenceAction<11> watchPanasonicDVD{"Seq: Watch Panasonic DVD"};
-SequenceAction<11> watchBlauPunktDVD{"Seq: Watch Blaupunkt DVD"};
-SequenceAction<11> displayTeacPvrPage{"Seq: Display Teac DVD page"};
+SequenceAction<13> watchTv{"Seq: Watch TV"};
+SequenceAction<13> watchSamsungDvd{"Seq: Watch Samsung DVD"};
+SequenceAction<13> watchLaserDvd{"Seq: Watch Laser DVD"};
+SequenceAction<13> watchTeacPvr{"Seq: Watch PVR"};
+SequenceAction<13> watchPanasonicDVD{"Seq: Watch Panasonic DVD"};
+SequenceAction<13> watchBlauPunktDVD{"Seq: Watch Blaupunkt DVD"};
+SequenceAction<13> displayTeacPvrPage{"Seq: Display Teac DVD page"};
 SequenceAction< 2> teacPvrEpisodeGuide{"Seq: Display Teac DVD Numbers page"};
 SequenceAction< 1> showMainPage("Show Main Page");
 SequenceAction< 1> backAction("Show Main Page");
@@ -2096,7 +2128,8 @@ void initialiseGuiAndActions() {
 
    //==============================
    watchTv.add(sonyTvOn);
-   watchTv.add(sonyTvPage);
+   watchTv.add(sonyTvHome);
+   watchTv.add(sonyTvReturn);
 //   watchTv.add(sonyTvHome);
 //   watchTv.add(sonyTvReturn);
    watchTv.add(sonyTvSourceTv);
@@ -2106,11 +2139,11 @@ void initialiseGuiAndActions() {
    watchTv.add(samsungDvdOff);
    watchTv.add(panasonicDvdOff);
    watchTv.add(blaupunktDvdOff);
+   watchTv.add(sonyTvPage);
    watchTv.add(completeMessage);
 
    //==============================
    watchTeacPvr.add(sonyTvOn);
-   watchTeacPvr.add(teacPvrPage);
 //   watchTeacPvr.add(sonyTvHome);
 //   watchTeacPvr.add(sonyTvReturn);
    watchTeacPvr.add(sonyTvSourceHdmi2_PVR_Teac);
@@ -2120,11 +2153,11 @@ void initialiseGuiAndActions() {
    watchTeacPvr.add(samsungDvdOff);
    watchTeacPvr.add(panasonicDvdOff);
    watchTeacPvr.add(blaupunktDvdOff);
+   watchTeacPvr.add(teacPvrPage);
    watchTeacPvr.add(completeMessage);
 
    //==============================
    watchLaserDvd.add(sonyTvOn);
-   watchLaserDvd.add(laserDvdPage);
 //   watchLaserDvd.add(sonyTvHome);
 //   watchLaserDvd.add(sonyTvReturn);
    watchLaserDvd.add(sonyTvSourceHdmi4_DVD_Laser);
@@ -2134,11 +2167,11 @@ void initialiseGuiAndActions() {
    watchLaserDvd.add(samsungDvdOff);
    watchLaserDvd.add(panasonicDvdOff);
    watchLaserDvd.add(blaupunktDvdOff);
+   watchLaserDvd.add(laserDvdPage);
    watchLaserDvd.add(completeMessage);
 
    //==============================
    watchSamsungDvd.add(sonyTvOn);
-   watchSamsungDvd.add(samsungDvdPage);
 //   watchSamsungDvd.add(sonyTvHome);
 //   watchSamsungDvd.add(sonyTvReturn);
    watchSamsungDvd.add(sonyTvSourceHdmi3_DVD_Samsung);
@@ -2148,11 +2181,11 @@ void initialiseGuiAndActions() {
    watchSamsungDvd.add(samsungDvdOn);
    watchSamsungDvd.add(panasonicDvdOff);
    watchSamsungDvd.add(blaupunktDvdOff);
+   watchSamsungDvd.add(samsungDvdPage);
    watchSamsungDvd.add(completeMessage);
 
    //==============================
    watchPanasonicDVD.add(sonyTvOn);
-   watchPanasonicDVD.add(panasonicDvdPage);
 //   watchPanasonicDVD.add(sonyTvHome);
 //   watchPanasonicDVD.add(sonyTvReturn);
    watchPanasonicDVD.add(sonyTvSourceVideo1_DVD_Panasonic);
@@ -2162,11 +2195,11 @@ void initialiseGuiAndActions() {
    watchPanasonicDVD.add(samsungDvdOff);
    watchPanasonicDVD.add(panasonicDvdOn);
    watchPanasonicDVD.add(blaupunktDvdOff);
+   watchPanasonicDVD.add(panasonicDvdPage);
    watchPanasonicDVD.add(completeMessage);
 
    //==============================
    watchBlauPunktDVD.add(sonyTvOn);
-   watchBlauPunktDVD.add(blaupunktDvdPage);
 //   watchBlauPunktDVD.add(sonyTvHome);
 //   watchBlauPunktDVD.add(sonyTvReturn);
    watchBlauPunktDVD.add(sonyTvSourceHdmi2_PVR_Teac);
@@ -2176,6 +2209,7 @@ void initialiseGuiAndActions() {
    watchBlauPunktDVD.add(samsungDvdOff);
    watchBlauPunktDVD.add(panasonicDvdOff);
    watchBlauPunktDVD.add(blaupunktDvdOn);
+   watchBlauPunktDVD.add(blaupunktDvdPage);
    watchBlauPunktDVD.add(completeMessage);
 
    displayTeacPvrPage.add(teacPvrPage);
@@ -2361,13 +2395,12 @@ void initialiseMiscellaneous() {
    PowerEnable::setOutput(gpioLowInit);
 
    static constexpr Smc::Init smcInitValue = {
-      SmcAllowVeryLowPower_Enabled ,       // (smc_pmprot_avlp)          Allow Very Low Power modes - VLPR, VLPW and VLPS are allowed
-      SmcAllowLowLeakageStop_Enabled ,     // (smc_pmprot_alls)          Allow Low Leakage Stop mode - LLS is allowed
-      SmcAllowVeryLowLeakageStop_Enabled , // (smc_pmprot_avlls)         Allow Very Low Leakage Stop mode - VLLSx is allowed
-      SmcStopMode_VeryLowLeakageStop ,     // (smc_pmctrl_stopm)         Stop Mode Control - Very-Low-Leakage Stop (VLLSx)
-      SmcLowLeakageStopMode_VLLS3,         // (smc_stopctrl_vllsm)       Low Leakage Mode Control - Enter VLLS3 in VLLSx mode
-   };
-   smcInitValue.setOptions();
+         SmcAllowVeryLowPower_Enabled ,         // (smc_pmprot_avlp)          Allow Very Low Power modes - VLPR, VLPW and VLPS are allowed
+         SmcAllowLowLeakageStop_Enabled ,       // (smc_pmprot_alls)          Allow Low Leakage Stop mode - LLS is allowed
+         SmcAllowVeryLowLeakageStop_Enabled ,   // (smc_pmprot_avlls)         Allow Very Low Leakage Stop mode - VLLSx is allowed
+         SmcStopMode_LowLeakageStop ,           // (smc_pmctrl_stopm)         Stop Mode Control - Low-Leakage Stop (LLSx)
+      };
+   smcInitValue.initialise();
 
 }
 
@@ -2756,7 +2789,7 @@ int main() {
       Pmc::releaseIsolation();
    }
 
-   Smc::enableAllPowerModes();
+//   Smc::enableAllPowerModes();
 
    initialiseMiscellaneous();
 

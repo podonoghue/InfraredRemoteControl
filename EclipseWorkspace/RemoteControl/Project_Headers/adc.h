@@ -2098,10 +2098,18 @@ public:
     */
    static constexpr Init DefaultInitValue = {
    
-      AdcClockSource_Asynch ,           // (adc_cfg1_adiclk)          ADC Input Clock - Asynchronous clock (ADACK)
+      AdcClockSource_BusClock ,         // (adc_cfg1_adiclk)          ADC Input Clock - Bus clock
+      AdcResolution_16bit_se ,          // (adc_cfg1_mode)            ADC Resolution - 16-bit unsigned (single-ended mode)
+      AdcPower_Normal ,                 // (adc_cfg1_adlpc)           Low-Power Configuration - Normal power configuration
+      AdcClockRange_Normal ,            // (adc_cfg2_adhsc)           High-Speed Configuration - Normal conversion sequence selected
+      AdcAsyncClock_Disabled ,          // (adc_cfg2_adacken)         Asynchronous Clock Output Enable - Asynchronous clock output disabled
       AdcMuxsel_B ,                     // (adc_cfg2_muxsel)          A/B multiplexor selection - The multiplexor selects B channels
-      AdcAveraging_off ,                // (adc_sc3_avg)              Hardware Average Select - 1 sample
-      AdcSample_4cycles,                // (adc_sample)               Sample Time Configuration - 4 ADCK total
+      AdcReferenceSel_VrefhAndVrefl ,   // (adc_sc2_refsel)           Voltage Reference Selection - VRefH and VRefl
+      AdcDma_Disabled ,                 // (adc_sc2_dmaen)            DMA Enable - Disabled
+      AdcTrigger_Software ,             // (adc_sc2_adtrg)            Conversion Trigger Select - Software trigger (write to SC1[0])
+      AdcAveraging_32 ,                 // (adc_sc3_avg)              Hardware Average Select - 32 samples
+      AdcOperation_Single ,             // (adc_sc3_adco)             Single or continuous conversion - Single conversion on each trigger
+      AdcSample_24cycles,               // (adc_sample)               Sample Time Configuration - +20 ADCK cycles; 24 ADCK total
    
       // The following values must be in order
       AdcPretrigger_0,             // sc1[0]/r[0] ,
