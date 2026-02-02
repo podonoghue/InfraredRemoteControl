@@ -261,10 +261,10 @@ protected:
 
    static void constexpr scale(unsigned &x, unsigned &y) {
 
-      console.write("(",x,",",y,") -> ");
+      console.WRITE("(",x,",",y,") -> ");
       x = scaleX(x);
       y = scaleY(y);
-      console.writeln("(",x,",",y,")");
+      console.WRITELN("(",x,",",y,")");
 
       if constexpr (orientation & 0b001) {
          // Row-Col exchange
@@ -306,10 +306,10 @@ public:
       static const uint8_t txData2[] = { /* X, */ 0, X,0, X,0, X,0, Y,0, Y,0, Y,0, Y,0, Last, };
       uint8_t rxData2[sizeof(txData2)];
 
-//      console.write("Z1 = ", z1, ", Z2 = ", z2, ", Z = ", z);
+//      console.WRITE("Z1 = ", z1, ", Z2 = ", z2, ", Z = ", z);
 
       if (z>Z_THRESHOLD) {
-//         console.write(", Z = ", z, ", (> ", Z_THRESHOLD, ")");
+//         console.WRITE(", Z = ", z, ", (> ", Z_THRESHOLD, ")");
 
          spi.txRx(txData2, rxData2);
          spi.endTransaction();
@@ -331,19 +331,19 @@ public:
          spi.txRxFinal(Last);
          spi.endTransaction();
       }
-//      console.writeln();
+//      console.WRITELN();
       //   console.setFormat(decimalFormat);
-      //   console.writeln("                                 z1 = ", z1, ", z2=", z2, ", z=", z);
+      //   console.WRITELN("                                 z1 = ", z1, ", z2=", z2, ", z=", z);
 
       if (z>Z_THRESHOLD) {
          //      console.setFormat(hex2Format);
-         //      console.writeArray(rxData2, Radix_16).writeln();
+         //      console.writeArray(rxData2, Radix_16).WRITELN();
          //
          //      console.setFormat(hex4Format);
-         //      console.writeArray(xResults, Radix_16).writeln(" x=", xResult);
-         //      console.writeArray(yResults, Radix_16).writeln(" y=", yResult);
+         //      console.writeArray(xResults, Radix_16).WRITELN(" x=", xResult);
+         //      console.writeArray(yResults, Radix_16).WRITELN(" y=", yResult);
          //         console.setFormat(decimalFormat);
-         //         console.writeln("X = ", xResult, ", Y = ", yResult);
+         //         console.WRITELN("X = ", xResult, ", Y = ", yResult);
          return true;
       }
       return false;

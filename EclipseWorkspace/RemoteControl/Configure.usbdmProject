@@ -191,6 +191,8 @@
    <item key="/PIT/pit_tctrl_tie[0]"                       value="true" />
    <item key="/PMC/enablePeripheralSupport"                value="true" />
    <item key="/RCM/enablePeripheralSupport"                value="true" />
+   <item key="/RCM/rcm_rpfc_rstfltsrw"                     value="2" />
+   <item key="/RCM/rcm_rpfc_rstfltss"                      value="true" />
    <item key="/SIM/configurePeripheralInStartUp"           value="true" />
    <item key="/SIM/enablePeripheralSupport"                value="true" />
    <item key="/SIM/sim_clkdiv1_outdiv4[0]"                 value="3" />
@@ -219,4 +221,11 @@
    <item key="/SPI0/enablePeripheralSupport"               value="true" />
    <item key="/USB0/mapPinsOnEnable"                       value="false" />
    <item key="/USBDCD0/usbdcd_timer0_tunitcon"             value="0" />
+   <item key="/WDOG/fullCodeSupport"                       value="true" />
+   <item key="/WDOG/irqHandlerName"                        value="WatchdogHandler" />
+   <item key="/WDOG/irqHandlingMethod"                     value="$ClassMethod" />
+   <item key="/WDOG/wdog_stctrlh_allowupdate"              value="false" />
+   <item key="/WDOG/wdog_stctrlh_irqrsten"                 value="true" />
+   <item key="/WDOG/wdog_stctrlh_wdogen"                   value="true" />
+   <item key="/WDOG/wdog_timeoutPeriod"                    value="20.0" />
 </section>

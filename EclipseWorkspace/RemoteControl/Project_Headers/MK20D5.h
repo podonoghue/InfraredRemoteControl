@@ -5,7 +5,7 @@
  *           Equivalent: 
  *
  * @version  V1.6
- * @date     2025/12
+ * @date     2026/02
  *
  */
 
@@ -109,7 +109,6 @@ extern void DMA0_Error_IRQHandler(void);             /**< DMA error interrupt   
 extern void FTFL_Command_IRQHandler(void);           /**< Flash Memory Interface                                                           */
 extern void FTFL_ReadCollision_IRQHandler(void);     /**< Flash Memory Interface                                                           */
 extern void PMC_IRQHandler(void);                    /**< Power Management Controller                                                      */
-extern void WDOG_IRQHandler(void);                   /**< External Watchdog Monitor                                                        */
 extern void I2C0_IRQHandler(void);                   /**< Inter-Integrated Circuit                                                         */
 extern void SPI0_IRQHandler(void);                   /**< Serial Peripheral Interface                                                      */
 extern void I2S0_Tx_IRQHandler(void);                /**< Synchronous Serial Interface                                                     */
@@ -5849,7 +5848,11 @@ typedef struct RFSYS_Type {
  * @brief  C Struct allowing access to RFVBAT registers
  */
 typedef struct RFVBAT_Type {
-   __IO uint32_t  REG[8];                       /**< 0000: VBAT register file register                                  */
+   union {                                      /**< 0000: (size=0020)                                                  */
+      __IO uint32_t  REG[8];                    /**< 0000: VBAT register file as uint32_t                               */
+      __IO uint8_t   REG8[32];                  /**< 0000: VBAT register file as uint8_t                                */
+      __IO uint16_t  REG16[16];                 /**< 0000: VBAT register file as uint16_t                               */
+   };
 } RFVBAT_Type;
 
 
@@ -5862,7 +5865,7 @@ typedef struct RFVBAT_Type {
 /** @addtogroup RFVBAT_Register_Masks_GROUP RFVBAT Register Masks */
 /** @{ */
 
-/** @name REG - VBAT register file register */ /** @{ */
+/** @name REG - VBAT register file as uint32_t */ /** @{ */
 #define RFVBAT_REG_LL_MASK                       (0xFFU)                                             /**< RFVBAT_REG.LL Mask                      */
 #define RFVBAT_REG_LL_SHIFT                      (0U)                                                /**< RFVBAT_REG.LL Position                  */
 #define RFVBAT_REG_LL(x)                         (((uint32_t)(((uint32_t)(x))<<RFVBAT_REG_LL_SHIFT))&RFVBAT_REG_LL_MASK) /**< RFVBAT_REG.LL Field                     */

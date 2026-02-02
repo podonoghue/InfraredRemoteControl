@@ -57,6 +57,55 @@ namespace USBDM {
    };
 
    /**
+    * System Reset Status Registers
+    * (rcm_srs)
+    *
+    * This register includes read-only status flags to indicate the source
+    * of the most recent reset.
+    */
+   enum RcmSource : uint32_t {
+      RcmSource_Wakeup    = (1<<0),   ///< Low leakage wake-up reset
+      RcmSource_Lvd       = (1<<1),   ///< Low-voltage detect reset
+      RcmSource_Loc       = (1<<2),   ///< Loss-of-clock reset
+      RcmSource_Lol       = (1<<3),   ///< Loss-of-lock reset
+      RcmSource_Wdog      = (1<<5),   ///< Watchdog
+      RcmSource_Pin       = (1<<6),   ///< External reset pin
+      RcmSource_Por       = (1<<7),   ///< Power-on reset
+      RcmSource_Jtag      = (1<<8),   ///< JTAG generated reset
+      RcmSource_Lockup    = (1<<9),   ///< Core Lockup
+      RcmSource_Sw        = (1<<10),  ///< Software
+      RcmSource_Mdm_Ap    = (1<<11),  ///< MDM-AP system reset request
+      RcmSource_Ezpt      = (1<<12),  ///< EzPort Reset
+      RcmSource_Sackerr   = (1<<13),  ///< Stop Mode Acknowledge Error Reset
+   };
+
+   /**
+    * Combines two RcmSource values (by ORing)
+    * Used to create a combined RcmSource mask
+    * 
+    * @param left    Left operand
+    * @param right   Right operand
+    * 
+    * @return  Combined value
+    */
+   constexpr RcmSource operator|(RcmSource left, RcmSource right) {
+      return RcmSource(uint32_t(left)|uint32_t(right));
+   }
+   
+   /**
+    * Combines two RcmSource values (by ANDing) to produce a bool result
+    * Used to check a value against a RcmSource mask
+    * 
+    * @param left    Left operand
+    * @param right   Right operand
+    * 
+    * @return boolean value indicating if the result is non-zero
+    */
+   constexpr bool operator&(RcmSource left, RcmSource right) {
+      return bool(uint32_t(left)&uint32_t(right));
+   }
+   
+   /**
     * Reset pin filter bus clock select
     * (rcm_rpfw_rstfltsel)
     *
@@ -249,6 +298,8 @@ public:
     * This value is created from Configure.usbdmProject settings
     */
    static constexpr Init DefaultInitValue = {
+      RcmResetPinStopFilter_LowPowerOscillator , // (rcm_rpfc_rstfltss)        Reset pin filter select in low power modes - LPO clock based filter
+      RcmResetPinRunWaitFilter_LowPowerOscillator , // (rcm_rpfc_rstfltsrw)       Reset pin filter select in run and wait modes - LPO clock based filter
    };
    
 }; // class RcmInfo
@@ -256,27 +307,6 @@ public:
 
 
 #if true // /RCM/_BasicInfoGuard
-/**
- * Indicates reason for reset
- */
-enum RcmSource {
-   RcmSource_Wakeup  = (1<<0),   ///<  Low Leakage Wake-up Reset
-   RcmSource_lvd     = (1<<1),   ///<  Low-Voltage Detect Reset
-   RcmSource_Loc     = (1<<2),   ///<  Loss-of-Clock Reset
-   RcmSource_Lol     = (1<<3),   ///<  Loss-of-Lock Reset
-   RcmSource_4       = (1<<4),   ///<  Reserved
-   RcmSource_Wdog    = (1<<5),   ///<  Watchdog
-   RcmSource_Pin     = (1<<6),   ///<  External Reset Pin
-   RcmSource_Por     = (1<<7),   ///<  Power-On Reset
-   RcmSource_Jtag    = (1<<8),   ///<  JTAG Generated Reset
-   RcmSource_Lockup  = (1<<9),   ///<  Core Lockup
-   RcmSource_Sw      = (1<<10),  ///<  Software
-   RcmSource_Mdm_Ap  = (1<<11),  ///<  MDM-AP System Reset Request
-   RcmSource_Ezpt    = (1<<12),  ///<  EzPort Reset
-   RcmSource_Sackerr = (1<<13),  ///<  Stop Mode Acknowledge Error Reset
-   RcmSource_14      = (1<<14),  ///<  Reserved
-   RcmSource_15      = (1<<15),  ///<  Reserved
-};
 
 #ifdef RCM_FM_FORCEROM_MASK
 /**
@@ -351,8 +381,8 @@ public:
     *
     * @return Bit mask representing sources
     */
-   static uint32_t getResetSource() {
-      return (rcm->SRS1<<8)|rcm->SRS0;
+   static RcmSource getResetSource() {
+      return (RcmSource)((rcm->SRS1<<8)|rcm->SRS0);
    }
 
 #ifdef RCM_SSRS0_SWAKEUP_MASK

@@ -16,7 +16,7 @@
 #include "derivative.h"
 #include "pin_mapping.h"
 
-// No handler defined for WDOG
+extern void WatchdogHandler();
 
 
 namespace USBDM {
@@ -200,7 +200,12 @@ public:
 
    //! Common class based callback code has been generated for this class of peripheral
    // (_BasicInfoIrqGuard)
-   static constexpr bool irqHandlerInstalled = false;
+   static constexpr bool irqHandlerInstalled = true;
+   
+   /**
+    * Type definition for Wdog interrupt call back.
+    */
+   typedef void (*CallbackFunction)();
    
    /**
     * Calculate clock frequency settings
@@ -310,6 +315,9 @@ public:
        */
       constexpr Init() = default;
    
+      // Peripheral interrupt handling (irqHandlingMethod)
+      CallbackFunction callbackFunction = nullptr;
+
       // Test mode disable (wdog_stctrlh_distestwdog)
       // Enable watchdog in WAIT mode (wdog_stctrlh_waiten)
       // Enable watchdog in STOP mode (wdog_stctrlh_stopen)
@@ -327,6 +335,210 @@ public:
       // IRQ priority levels (nvic_irqLevel)
       NvicPriority irqlevel = NvicPriority_Normal;
 
+      ///  Watchdog Timeout in ticks or seconds
+      Seconds_Ticks timeout;
+
+      ///  Watchdog Window in ticks or seconds
+      Seconds_Ticks window;
+
+      /**
+       * Constructor for Peripheral interrupt handling
+       * (irqHandlingMethod)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param callbackFunction If enabled, the handler may be set using the setCallback() function or
+       *        by overriding the interrupt handler method in the peripheral class
+       *        If not enabled, then interrupt handlers may be installed by naming them 
+       *        (see weak names used in vector table).
+       */
+      template <typename... Types>
+      constexpr Init(CallbackFunction callbackFunction, Types... rest) : Init(rest...) {
+   
+         this->callbackFunction = callbackFunction;
+      }
+
+      /**
+       * Constructor for IRQ priority levels
+       * (nvic_irqLevel)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param nvicPriority Priority level used to configure the NVIC
+       *        Subset of available levels
+       */
+      template <typename... Types>
+      constexpr Init(NvicPriority nvicPriority, Types... rest) : Init(rest...) {
+   
+         irqlevel = nvicPriority;
+      }
+   
+      /**
+       * Constructor for Test mode disable
+       * (wdog_stctrlh_distestwdog)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param wdogTestMode Disables watchdog test mode until next reset
+       */
+      template <typename... Types>
+      constexpr Init(WdogTestMode wdogTestMode, Types... rest) : Init(rest...) {
+   
+         stctrlh = (stctrlh&~WDOG_STCTRLH_DISTESTWDOG_MASK) | uint32_t(wdogTestMode);
+      }
+   
+      /**
+       * Constructor for Enable watchdog in WAIT mode
+       * (wdog_stctrlh_waiten)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param wdogEnableInWait Control watchdog operation in WAIT mode
+       */
+      template <typename... Types>
+      constexpr Init(WdogEnableInWait wdogEnableInWait, Types... rest) : Init(rest...) {
+   
+         stctrlh = (stctrlh&~WDOG_STCTRLH_WAITEN_MASK) | uint32_t(wdogEnableInWait);
+      }
+   
+      /**
+       * Constructor for Enable watchdog in STOP mode
+       * (wdog_stctrlh_stopen)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param wdogEnableInStop Control watchdog operation in STOP mode
+       */
+      template <typename... Types>
+      constexpr Init(WdogEnableInStop wdogEnableInStop, Types... rest) : Init(rest...) {
+   
+         stctrlh = (stctrlh&~WDOG_STCTRLH_STOPEN_MASK) | uint32_t(wdogEnableInStop);
+      }
+   
+      /**
+       * Constructor for Enable watchdog in DEBUG mode
+       * (wdog_stctrlh_dbgen)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param wdogEnableInDebug Control watchdog operation in DEBUG mode
+       */
+      template <typename... Types>
+      constexpr Init(WdogEnableInDebug wdogEnableInDebug, Types... rest) : Init(rest...) {
+   
+         stctrlh = (stctrlh&~WDOG_STCTRLH_DBGEN_MASK) | uint32_t(wdogEnableInDebug);
+      }
+   
+      /**
+       * Constructor for Allow watchdog update
+       * (wdog_stctrlh_allowupdate)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param wdogAllowUpdate Enables updates to watchdog write-once registers, after 
+       *        the reset-triggered initial configuration window closes
+       *        This still requires the unlock sequence
+       */
+      template <typename... Types>
+      constexpr Init(WdogAllowUpdate wdogAllowUpdate, Types... rest) : Init(rest...) {
+   
+         stctrlh = (stctrlh&~WDOG_STCTRLH_ALLOWUPDATE_MASK) | uint32_t(wdogAllowUpdate);
+      }
+   
+      /**
+       * Constructor for Enable watchdog windowing mode
+       * (wdog_stctrlh_winen)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param wdogWindow Windowing mode only allows refresh during a restricted window
+       */
+      template <typename... Types>
+      constexpr Init(WdogWindow wdogWindow, Types... rest) : Init(rest...) {
+   
+         stctrlh = (stctrlh&~WDOG_STCTRLH_WINEN_MASK) | uint32_t(wdogWindow);
+      }
+   
+      /**
+       * Constructor for Action on watchdog event
+       * (wdog_stctrlh_irqrsten)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param wdogAction This write-once bit allows an interrupt handler to record state prior to forcing a reset.
+       *        The reset occurs after a delay of 128 bus clocks following the interrupt vector fetch.
+       */
+      template <typename... Types>
+      constexpr Init(WdogAction wdogAction, Types... rest) : Init(rest...) {
+   
+         stctrlh = (stctrlh&~WDOG_STCTRLH_IRQRSTEN_MASK) | uint32_t(wdogAction);
+      }
+   
+      /**
+       * Constructor for Watchdog clock source
+       * (wdog_stctrlh_clksrc)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param wdogClock Clock source for watchdog
+       */
+      template <typename... Types>
+      constexpr Init(WdogClock wdogClock, Types... rest) : Init(rest...) {
+   
+         stctrlh = (stctrlh&~WDOG_STCTRLH_CLKSRC_MASK) | uint32_t(wdogClock);
+      }
+   
+      /**
+       * Constructor for Watchdog enable
+       * (wdog_stctrlh_wdogen)
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param wdogEnable Main enable for WDOG
+       *        When disabled, the watchdog timer is kept in the reset state, but the other exception conditions can 
+       *        still trigger a reset/interrupt
+       */
+      template <typename... Types>
+      constexpr Init(WdogEnable wdogEnable, Types... rest) : Init(rest...) {
+   
+         stctrlh = (stctrlh&~WDOG_STCTRLH_WDOGEN_MASK) | uint32_t(wdogEnable);
+      }
+   
+      /**
+       * Constructor for Prescaler for the watchdog clock source, Watchdog Timeout in ticks & Watchdog Window in ticks
+       *
+       *
+       * @tparam   Types
+       * @param    rest
+       *
+       * @param wdogPrescale This prescaler divides the input clock for the watchdog counter
+       * @param timeout The watchdog must be refreshed before the counter reaches this value
+       * @param window  If windowed operation is enabled, then the watchdog can only be refreshed 
+       *        if the timer reaches a value greater than or equal to this window length value.
+       *        A refresh outside of this window resets the system
+       */
+      template <typename... Types>
+      constexpr Init(
+            WdogPrescale wdogPrescale,
+            const Ticks& timeout,
+            const Ticks& window  = 0_ticks, Types... rest) : Init(rest...) {
+   
+         this->timeout.fromTicks(timeout);
+         this->window.fromTicks(window);
+         this->presc = wdogPrescale;
+      }
+   
    }; // class WdogBasicInfo::Init
    
 }; // class WdogBasicInfo 
@@ -340,7 +552,7 @@ public:
     */
    //! Class based interrupt code has been generated for this class of peripheral
    // (_BasicInfoIrqGuard)
-   static constexpr bool irqHandlerInstalled = false;
+   static constexpr bool irqHandlerInstalled = true;
    
    //! IRQ numbers for hardware
    static constexpr IRQn_Type irqNums[]  = WDOG_IRQS;
@@ -370,6 +582,74 @@ public:
     */
    static void disableNvicInterrupts() {
       NVIC_DisableIRQ(irqNums[0]);
+   }
+   
+   template<typename T>
+   using CallbackWrapper = USBDM::CallbackWrapper<T, WdogInfo>;
+   
+   /**
+    * Function to wrap a member function as a static callback function
+    * Example:
+    * @code
+    * class AClass {
+    * public:
+    *    int y;
+    *
+    *    // Member function used as callback
+    *    // This function must match CallbackFunction
+    *    void callbackFuction() {
+    *       ...;
+    *    }
+    * };
+    * ...
+    *    AClass *tester = new AClass{};
+    *
+    *    auto cb = Wdog::wrapCallback(tester, &AClass::callbackFuction);
+    *    Wdog::setCallback(cb);
+    *   @endcode
+    *
+    * @tparam T               Type of class containing callback (inferred)
+    *
+    * @param classInstance    Pointer to instance of class
+    * @param memberFunction   Pointer to the member function
+    *
+    * @return  Wrapper
+    */
+   template<typename T>
+   static auto wrapCallback(T *classInstance, void (T::*memberFunction)()) {
+      static CallbackWrapper<T> sClass(classInstance, memberFunction);
+      return sClass.callback;
+   }
+   
+   /**
+    * WDOG interrupt handler -  Calls WDOG callback
+    */
+   static void irqHandler() {
+   
+      // Execute call-back
+      sCallback();
+   }
+   
+   /** Callback function for Wdog */
+   static inline CallbackFunction sCallback = unhandledCallback; // WDOG_IRQn;
+   
+   /**
+    * Set interrupt callback function.
+    *
+    * @param  wdogCallback Callback function to execute on interrupt
+    *                             Use nullptr to remove callback.
+    */
+   static void setCallback(CallbackFunction wdogCallback) {
+      if (wdogCallback == nullptr) {
+         wdogCallback = unhandledCallback;
+      }
+      // Allow either no handler set yet, setting same handler or removing handler
+      usbdm_assert(
+            (sCallback == unhandledCallback) ||
+            (sCallback == wdogCallback) ||
+            (wdogCallback == unhandledCallback),
+            "Handler already set");
+      sCallback = wdogCallback;
    }
    
    /**
@@ -501,23 +781,121 @@ public:
    }
    
    /**
-    * Disable WDOG
+    * Set Watchdog clock source
+    * (wdog_stctrlh_clksrc)
+    *
+    * @param wdogClock Clock source for watchdog
     */
-   static inline void disableWdog() {
+   static void setClockSource(WdogClock wdogClock) {
+      wdog->STCTRLH = (wdog->STCTRLH&~WDOG_STCTRLH_CLKSRC_MASK) | uint32_t(wdogClock);
+   }
+
+   /**
+    * Get Watchdog clock source
+    * (wdog_stctrlh_clksrc)
+    *
+    * @param wdogClock Clock source for watchdog
+    *
+    * @return Clock frequency in Hz
+    */
+   static inline uint32_t getInputClockFrequency(WdogClock wdogClock) {
    
-      if (wdog->STCTRLH&WdogEnable_Enabled) {
-   
-         // Unlock before changing settings
-         wdog->UNLOCK  = WdogUnlock_1;
-         wdog->UNLOCK  = WdogUnlock_2;
-   
-         // Read-back to delay until change effected
-         (void)(wdog->UNLOCK);
-   
-         // Disable watchdog
-         wdog->STCTRLH = WdogEnable_Disabled|WdogAllowUpdate_Disabled;
+      switch(wdogClock) {
+         default:
+         case WdogClock_LpoClk       : return SimInfo::getLpoClock(); ///< 1 kHz low-power oscillator (LPOCLK)
+         case WdogClock_SystemBusClk : return SystemBusClock;         ///< System bus clock
+
       }
    }
+   
+   /**
+    * Get Watchdog clock source
+    * (wdog_stctrlh_clksrc)
+    *
+    * @return Clock frequency in Hz
+    */
+   static uint32_t getInputClockFrequency() {
+   
+      return getInputClockFrequency((WdogClock)(wdog->STCTRLH&WDOG_STCTRLH_CLKSRC_MASK));
+   }
+
+   /**
+    * Configure with default settings.
+    * Configuration determined from Configure.usbdmProject
+    */
+   static inline void defaultConfigure() {
+   
+      // Update settings
+      configure(DefaultInitValue);
+   }
+   
+   /**
+    * Configure WDOG from values specified in init
+    *
+    * @param init Class containing initialisation values
+    */
+   static ErrorCode configure(const Init &init) {
+   
+      enable();
+   
+      Seconds_Ticks timeout = init.timeout;
+      Seconds_Ticks window  = init.window;
+      uint16_t presc        = init.presc;
+   
+      // Configure call-backs
+      setCallback(init.callbackFunction);
+      // Protect sequence from interrupts
+      CriticalSection cs;
+   
+      // Unlock before changing settings
+      wdog->UNLOCK = WdogUnlock_1;
+      wdog->UNLOCK = WdogUnlock_2;
+   
+      // Read-back to delay until change effected
+      (void)(wdog->UNLOCK);
+      
+      // Test mode disable (wdog_stctrlh_distestwdog)
+      // Enable watchdog in WAIT mode (wdog_stctrlh_waiten)
+      // Enable watchdog in STOP mode (wdog_stctrlh_stopen)
+      // Enable watchdog in DEBUG mode (wdog_stctrlh_dbgen)
+      // Allow watchdog update (wdog_stctrlh_allowupdate)
+      // Enable watchdog windowing mode (wdog_stctrlh_winen)
+      // Action on watchdog event (wdog_stctrlh_irqrsten)
+      // Watchdog clock source (wdog_stctrlh_clksrc)
+      // Watchdog enable (wdog_stctrlh_wdogen)
+      wdog->STCTRLH = init.stctrlh;
+   
+      // Prescaler for the watchdog clock source (wdog_presc_prescval)
+      wdog->PRESC    = presc;
+      wdog->WINH     = window.toTicks()>>16;
+      wdog->WINL     = window.toTicks();
+      wdog->TOVALH   = timeout.toTicks()>>16;
+      wdog->TOVALL   = timeout.toTicks();
+   
+      // For some reason this must be done after above
+      enableNvicInterrupts(init.irqlevel);
+   
+      return E_NO_ERROR;
+   }
+   
+   /**
+    * Default initialisation value for Wdog
+    * This value is created from Configure.usbdmProject settings
+    */
+   static constexpr Init DefaultInitValue = {
+      WdogEnable_Enabled ,         // (wdog_stctrlh_wdogen)      Watchdog enable - Watchdog enabled
+      WdogTestMode_Disabled ,      // (wdog_stctrlh_distestwdog) Test mode disable - Test mode disabled
+      WdogEnableInWait_Disabled ,  // (wdog_stctrlh_waiten)      Enable watchdog in WAIT mode - Disabled in WAIT mode
+      WdogEnableInStop_Disabled ,  // (wdog_stctrlh_stopen)      Enable watchdog in STOP mode - Disabled in STOP mode
+      WdogEnableInDebug_Disabled , // (wdog_stctrlh_dbgen)       Enable watchdog in DEBUG mode - Disabled in DEBUG mode
+      WdogAllowUpdate_Disabled ,   // (wdog_stctrlh_allowupdate) Allow watchdog update - Update Disabled
+      WdogWindow_Disabled ,        // (wdog_stctrlh_winen)       Enable watchdog windowing mode - Windowing mode disabled
+      WdogAction_ResetAfterInterrupt , // (wdog_stctrlh_irqrsten)    Action on watchdog event - Interrupt followed by reset
+      WdogClock_LpoClk ,           // (wdog_stctrlh_clksrc)      Watchdog clock source - 1 kHz low-power oscillator (LPOCLK)
+      WdogPrescale_Direct ,        // (wdog_presc_prescval)      Prescaler for the watchdog clock source - Prescaler = 1
+      20000_ticks ,                // (wdog_timeout)             Watchdog Timeout in ticks
+      65535_ticks,                 // (wdog_window)              Watchdog Window in ticks
+   };
    
 }; // class WdogInfo
 

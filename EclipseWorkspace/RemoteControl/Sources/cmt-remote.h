@@ -332,7 +332,6 @@ private:
             break;
 
          case c_DataLiteral:
-
             if (dataCount == 0) {
                dataCount   = extractDataLiteralLength(current);
                high     = Ticks(*sequence++);
@@ -473,7 +472,9 @@ private:
 
       // Process events until one generating a call-back
       for(;;) {
+#ifdef DEBUG_BUILD
          unsigned location = unsigned(sequence-startOfSequence)-1;
+#endif
          uint8_t loopIndex;
          Control action = Control(current&c_ControlMask);
          switch(action) {
@@ -487,7 +488,7 @@ private:
                   // Go back to Repeat
                   sequence = labels[loopIndex];
 
-                  console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Label(", loopIndex, ") -> Repeat @", unsigned(sequence-startOfSequence));
+                  console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Label(", loopIndex, ") -> Repeat @", unsigned(sequence-startOfSequence));
 
                   // Advance sequence
                   current  = *sequence++;
@@ -501,7 +502,7 @@ private:
                   // Save pointer to _next_ action (loop to after label!)
                   labels[loopIndex]     = sequence;
 
-                  console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Label(", loopIndex, ") @", unsigned(sequence-startOfSequence));
+                  console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Label(", loopIndex, ") @", unsigned(sequence-startOfSequence));
 
                   // Advance sequence
                   current  = *sequence++;
@@ -522,7 +523,7 @@ private:
                else {
                   labels[loopIndex] = nullptr;
                }
-               console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": LoopFixed:(", loopIndex, ',', loopCounts[loopIndex]+1, ") -> Repeat @", unsigned(sequence-startOfSequence));
+               console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": LoopFixed:(", loopIndex, ',', loopCounts[loopIndex]+1, ") -> Repeat @", unsigned(sequence-startOfSequence));
 
                // Advance sequence
                current  = *sequence++;
@@ -534,7 +535,7 @@ private:
                   // Loop sequence
                   sequence  = labels[loopIndex];
                }
-               console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Loop:(", loopIndex, ',', repeatCount+1, ") -> Repeat @", unsigned(sequence-startOfSequence));
+               console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Loop:(", loopIndex, ',', repeatCount+1, ") -> Repeat @", unsigned(sequence-startOfSequence));
 
                // Advance sequence
                current  = *sequence++;
@@ -554,13 +555,13 @@ private:
 
                   } while(current != Label(loopIndex));
 
-                  console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Repeat(", loopIndex, ',', 0, ") - exit -> ", unsigned(sequence-startOfSequence));
+                  console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Repeat(", loopIndex, ',', 0, ") - exit -> ", unsigned(sequence-startOfSequence));
                }
                else {
                   // Loop sequence
                   // Points at _this_ code
                   labels[loopIndex] = sequence-1;
-                  console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Repeat(", loopIndex, ',', repeatCount+1, ") - entry ");
+                  console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Repeat(", loopIndex, ',', repeatCount+1, ") - entry ");
                }
                // Advance sequence
                current  = *sequence++;
@@ -576,8 +577,9 @@ private:
       Ticks duration;
       bool bit;
 
+#ifdef DEBUG_BUILD
       unsigned location = unsigned(sequence-startOfSequence)-1;
-
+#endif
       Control action = Control(current&c_ControlMask);
       switch(action) {
 
@@ -588,7 +590,7 @@ private:
             // Advance sequence
             current = *sequence++;
 
-            console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": MarkSpace(", high, "|", low, ")");
+            console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": MarkSpace(", high, "|", low, ")");
             tickCount = tickCount + high + low;
             break;
 
@@ -600,8 +602,8 @@ private:
                low      = Ticks(*sequence++);
                txData   = (high<<16)+low;
                dataBitMask = 0b1;
-               console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ":--------------------------------------------");
-               console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": dataliteral-start(d=0x", txData, hexFormat, ":c=", dataCount, ')');
+               console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ":--------------------------------------------");
+               console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": dataliteral-start(d=0x", txData, hexFormat, ":c=", dataCount, ')');
             }
             bit = txData&dataBitMask;
             if (bit) {
@@ -612,8 +614,8 @@ private:
                high = Ticks(ZeroHigh);
                low  = Ticks(ZeroLow);
             }
-            console.write('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": data(c=", dataCount,  decimal2Format, ", m=0x", dataBitMask, hexFormat, ", b=", (bit?1:0), ") ");
-            console.writeln("Tx(", high, "|", low, ")");
+            console.WRITE('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": data(c=", dataCount,  decimal2Format, ", m=0x", dataBitMask, hexFormat, ", b=", (bit?1:0), ") ");
+            console.WRITELN("Tx(", high, "|", low, ")");
             tickCount = tickCount + high + low;
             if (--dataCount == 0) {
 
@@ -628,8 +630,8 @@ private:
                txData      = data[extractDataIndex(current)];
                dataCount   = extractDataLength(current, txData);
                dataBitMask = 0b1;
-               console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ":--------------------------------------------");
-               console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": data-start(d=0x", txData, hexFormat, "|c=", dataCount, ')');
+               console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ":--------------------------------------------");
+               console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": data-start(d=0x", txData, hexFormat, "|c=", dataCount, ')');
             }
             bit = txData&dataBitMask;
             if (bit) {
@@ -640,8 +642,8 @@ private:
                high = Ticks(ZeroHigh);
                low  = Ticks(ZeroLow);
             }
-            console.write('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": data(c=", dataCount,  decimal2Format, ", m=0x", dataBitMask, hexFormat, ", b=", (bit?1:0), ") ");
-            console.writeln("Tx(", high, "|", low, ")");
+            console.WRITE('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": data(c=", dataCount,  decimal2Format, ", m=0x", dataBitMask, hexFormat, ", b=", (bit?1:0), ") ");
+            console.WRITELN("Tx(", high, "|", low, ")");
             tickCount = tickCount + high + low;
             if (--dataCount == 0) {
 
@@ -656,7 +658,7 @@ private:
             low      = Ticks(*sequence++);
             duration = Ticks((high<<16)+low);
 
-            console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Delay(", duration, ")");
+            console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Delay(", duration, ")");
             tickCount = tickCount + duration;
 
             // Advance sequence
@@ -668,7 +670,7 @@ private:
             low      = Ticks(*sequence++);
             duration = Ticks((high<<16)+low) - tickCount;
 
-            console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Duration(", tickCount+duration, "(+", duration, "))");
+            console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Duration(", tickCount+duration, "(+", duration, "))");
 
             // Restart duration
             tickCount = 0_ticks;
@@ -679,7 +681,7 @@ private:
 
          case c_End:
             // Last cycle initiated
-            console.writeln('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Completed");
+            console.WRITELN('[', location, decimal2Format, "]:", tickCount, decimal8Format, ": Completed");
             complete   = true;
             return;
 
@@ -963,7 +965,7 @@ public:
     */
    static void send(Code code, unsigned delay, unsigned repeat=3) {
 
-      console.writeln("IrRemote: Laser-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Laser-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -979,7 +981,7 @@ public:
     */
    static void test(Code code, uint8_t repeat=0) {
 
-      console.writeln("IrRemote: Laser-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Laser-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1114,7 +1116,7 @@ public:
     */
    static void send(Code code, unsigned delay, unsigned repeat=3) {
 
-      console.writeln("IrRemote: Laser-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Laser-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1130,7 +1132,7 @@ public:
     */
    static void test(Code code, uint8_t repeat=0) {
 
-      console.writeln("IrRemote: Laser-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Laser-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1263,7 +1265,7 @@ public:
     */
    static void send(Code code, unsigned delay, unsigned repeat=3) {
 
-      console.writeln("IrRemote: Teac-PVR: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Teac-PVR: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1279,7 +1281,7 @@ public:
     */
    static void test(Code code, uint8_t repeat=0) {
 
-      console.writeln("IrRemote: Teac-PVR: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Teac-PVR: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1421,7 +1423,7 @@ public:
     */
    static void send(Code code, unsigned delay, unsigned repeat=3) {
 
-      console.writeln("IrRemote: Teac-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Teac-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1437,7 +1439,7 @@ public:
     */
    static void test(Code code, uint8_t repeat=0) {
 
-      console.writeln("IrRemote: Teac-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Teac-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1570,7 +1572,7 @@ public:
     */
    static void send(Code code, unsigned delay, unsigned repeat=3) {
 
-      console.writeln("IrRemote: Samsung-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Samsung-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1587,7 +1589,7 @@ public:
     */
    static void test(Code code, Device device=DVD, unsigned repeat=0) {
 
-      console.writeln("IrRemote: Laser-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Laser-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1728,7 +1730,7 @@ public:
     */
    static void send(Code code, unsigned delay, unsigned repeat=3) {
 
-      console.writeln("IrRemote: Panasonic-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Panasonic-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1744,7 +1746,7 @@ public:
     */
    static void test(Code code, uint8_t repeat=0) {
 
-      console.writeln("IrRemote: Laser-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Laser-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1911,7 +1913,7 @@ public:
     */
    static void send(Code code, unsigned delay, unsigned repeat=3) {
 
-      console.writeln("IrRemote: Sony-TV: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Sony-TV: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1927,7 +1929,7 @@ public:
     */
    static void test(Code code, uint8_t repeat=0) {
 
-      console.writeln("IrRemote: Laser-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Laser-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;

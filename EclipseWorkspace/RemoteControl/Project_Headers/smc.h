@@ -818,9 +818,9 @@ public:
    /**
     * Enter Run Mode.
     *
-    * This may be used to change between supported RUN modes (RUN, VLPR, HSRUN).
+    * This may be used to change between supported RUN modes (RUN, VLPR).
 
-    * Only the following transitions are allowed: VLPR <-> RUN <-> HSRUN.
+    * Only the following transitions are allowed: VLPR <-> RUN.
     *
     * @param[in] clockConfig Clock configuration (Includes run mode to enter)
     *
@@ -830,7 +830,8 @@ public:
     */
    static ErrorCode enterRunMode(ClockConfig clockConfig) {
    
-      SmcRunMode smcRunMode = Mcg::clockInfo[clockConfig].runMode;
+      const ClockInfo &newClockInfo = Mcg::clockInfo[clockConfig];
+      SmcRunMode smcRunMode = newClockInfo.runMode;
    
       ErrorCode rc = E_NO_ERROR;
    
@@ -842,29 +843,33 @@ public:
       switch(smcRunMode) {
    
          case SmcRunMode_Normal:
-            // Change power mode
-            SMC->PMCTRL = (SMC->PMCTRL&~SMC_PMCTRL_RUNM_MASK)|smcRunMode;
+            if (getStatus() != SmcStatus_RUN) {
+               // Change power mode as needed
+               SMC->PMCTRL = (SMC->PMCTRL&~SMC_PMCTRL_RUNM_MASK)|smcRunMode;
    
-            // Wait for power status to change
-            while (getStatus() != SmcStatus_RUN) {
-               __asm__("nop");
+               // Wait for power status to change
+               while (getStatus() != SmcStatus_RUN) {
+                  __asm__("nop");
+               }
             }
             // Change clock mode
-            rc = Mcg::clockTransition(Mcg::clockInfo[clockConfig]);
+            rc = Mcg::clockTransition(newClockInfo);
             break;
    
          case SmcRunMode_VeryLowPower:
             // Change clock mode
-            rc = Mcg::clockTransition(Mcg::clockInfo[clockConfig]);
+            rc = Mcg::clockTransition(newClockInfo);
             if (rc != E_NO_ERROR) {
                break;
             }
-            // Change power mode
-            SMC->PMCTRL = (SMC->PMCTRL&~SMC_PMCTRL_RUNM_MASK)|smcRunMode;
+            if (getStatus() != SmcStatus_VLPR) {
+               // Change power mode as needed
+               SMC->PMCTRL = (SMC->PMCTRL&~SMC_PMCTRL_RUNM_MASK)|smcRunMode;
    
-            // Wait for power status to change
-            while (getStatus() != SmcStatus_VLPR) {
-               __asm__("nop");
+               // Wait for power status to change
+               while (getStatus() != SmcStatus_VLPR) {
+                  __asm__("nop");
+               }
             }
             break;
          default:

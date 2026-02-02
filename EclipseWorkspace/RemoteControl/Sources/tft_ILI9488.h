@@ -639,7 +639,7 @@ public:
             // Power control 1, 2 args, no delay
             2, Command_PowerControl1,
             0x17,    // Vreg1out = 5.0000V
-            0x15,    // Verg2out = -4.8750V
+            0x15,    // Vreg2out = -4.8750V
 
             // Power control 2, 1 args, no delay
             1, Command_PowerControl2,
@@ -748,7 +748,7 @@ public:
     */
    void sendDataBlock(uint32_t *paddedData, unsigned numberOfElements, int numberOfpixels) {
 
-      DebugLed::on();
+//      DebugLed::on();
 
       // 3 entries => 2 pixels
       // size must be multiple of 3 but can be rounded up as window clips extra data sent
@@ -843,13 +843,13 @@ public:
                paddedData[numberOfElements-1] |= SPI_PUSHR_EOQ_MASK;
             }
 
-            DebugLed::on();
+//            DebugLed::on();
 
             // Enable hardware requests
             Dma0::enableRequest(txDmaChannel);
 
             // Wait while DMA busy
-            DebugLed::off();
+//            DebugLed::off();
             Dma0::waitUntilComplete(txDmaChannel);
 
             pixelsRemaining -= pixelsDonePerIteration;
@@ -868,7 +868,7 @@ public:
          Dma0::freeChannel(txDmaChannel);
       }
 
-      DebugLed::off();
+//      DebugLed::off();
    }
 
    /**
@@ -1289,13 +1289,9 @@ public:
          h = (HEIGHT - y)/scale;
       }
 
-//      console.writeln("drawBitmap(", x, ", ", y, ", ", w, ", ", h, ", ", scale, ")");
+//      console.WRITELN("drawBitmap(", x, ", ", y, ", ", w, ", ", h, ", ", scale, ")");
 
 #if 1
-      // Works but upsets Touch controller
-      // Needs work
-
-
       // Must be a multiple of 3 so pixels pack evenly
       // 2 pixels -> 3 entries, array represents 2*(3*8)/3 = 16 pixels
       constexpr unsigned BUF_SIZE = 3*8*4;
@@ -1329,15 +1325,15 @@ public:
             // Reset to start of row in image
             const uint8_t *currentByte = rowStart;
 
-//            console.writeln("row = ", row, ", l = ", l);
+//            console.WRITELN("row = ", row, ", l = ", l);
 
             // 1-line window
             setWindow(x, y+scale*row+l, x+w*scale-1, y+scale*row+l);
-//            console.writeln("setWindow(", x, ", ", y+scale*row+l, ", ", x+w*scale-1, ", ", y+scale*row+l, ")");
+//            console.WRITELN("setWindow(", x, ", ", y+scale*row+l, ", ", x+w*scale-1, ", ", y+scale*row+l, ")");
 
             // Start data write
             sendCommand(Command_MemoryWriteStart);
-//            console.writeln("Command_MemoryWriteStart()");
+//            console.WRITELN("Command_MemoryWriteStart()");
 
             // Odd/even packing of pixels
             bool odd = true;
@@ -1360,7 +1356,7 @@ public:
             // Flush data to SPI
             auto flush = [&]() {
 
-//               console.writeln("sendDataBlock(...,", elementCount, ", ", (2*elementCount)/3, ")");
+//               console.WRITELN("sendDataBlock(...,", elementCount, ", ", (2*elementCount)/3, ")");
                sendDataBlock(elementBuffer, elementCount, (2*elementCount)/3);
                elementCount = 0;
                odd = true;

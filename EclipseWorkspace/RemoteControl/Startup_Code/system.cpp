@@ -98,10 +98,11 @@ void SystemInitLowLevel(void) {
    RCM->MR = RCM_MR_BOOTROM(3);
 #endif
    /*
-    * Disable watchdog
+    * Initialise watchdog
     */
-   USBDM::Wdog::disableWdog();
+   USBDM::Wdog::defaultConfigure();
    
+
 #if defined(KINETIS_BOOTLOADER_CHECK)
    /**
     * Hook for ICP code
