@@ -15,6 +15,7 @@
 #include "crc.h"
 #include "BootInformation.h"
 #include "gpio.h"
+#include "rcm.h"
 
 using namespace USBDM;
 
@@ -23,8 +24,8 @@ using namespace USBDM;
  **********************************/
 
 /** ICP button - checked during boot */
-using IcpDrive  = GpioC<1>;  // Switch R1
-using IcpButton = GpioD<0>;  // Switch C1
+using Row1Drive    = GpioC<1>;  // Switch R1
+using Column1Sense = GpioD<0>;  // Switch C1
 
 /** Debug pin */
 //using DebugPin  = GpioD<4,  USBDM::ActiveLow>;
@@ -157,13 +158,11 @@ uint32_t calcFlashCrc() {
    using Crc = Crc0;
 
    // Set up CRC32
-   Crc::configure_Crc32();
-
    // Do first range
-   Crc::calculateCrc((uint32_t *)flashImageData.flash2Start, flashImageData.flash2Size);
+   Crc::calculateCrc(Crc::Crc32, (uint32_t *)flashImageData.flash2Start, flashImageData.flash2Size/4);
 
-   // Do second range
-   Crc::calculateCrc((uint32_t *)flashImageData.flash1Start, flashImageData.flash1Size-4);
+   // Do second range (excluding CRC)
+   Crc::calculateCrc((uint32_t *)flashImageData.flash1Start, (flashImageData.flash1Size-4)/4);
 
    return Crc::getCalculatedCrc();
 }
@@ -248,39 +247,56 @@ static void resetSystem() {
  */
 void checkICP() {
 
-#if 0
-   IcpDrive::setOutput();
+   do {
+      // Must be pin reset
+      bool pinReset = (Rcm::getResetSource() & RcmSource_Pin) != 0;
 
-   // Enable pull-up - will be pulled down by IcpDrive if S1 is pressed
-   IcpButton::setOutput();
+      // GPIO with pull-downs
+      static constexpr PcrInit gpioLowInit {
 
-   for(;;) {
-      // Drive Row low
+         PinAction_None,
+         PinPull_Down,
+         PinDriveMode_PushPull,
+         PinDriveStrength_Low,
+         PinFilter_Passive,
+         PinSlewRate_Slow,
+      };
 
-      IcpDrive::toggle();
+      if (pinReset) {
+         // Only check Bootloader button pressed when pin reset
 
-   }
-#endif
+         // Drive Row high
+         Row1Drive::setOutput(gpioLowInit);
+         Row1Drive::set();
 
-   // Drive Row high
-   IcpDrive::setOutput();
-   IcpDrive::set();
+         // Enable pull-down - will be driven high by Row1Drive if S1 is pressed
+         Column1Sense::setInput(gpioLowInit);
 
-   // Enable pull-up - will be pulled down by IcpDrive if S1 is pressed
-   IcpButton::setInput(PinPull_Down);
+         //  Wait a while
+         for(unsigned count=0; count++<1000; count++) {
+            __asm__("nop");
+         }
 
-   //  Wait a while
-   for(unsigned count=0; count++<1000; count++) {
-      __asm__("nop");
-   }
-
-   bool icpButtonReleased = IcpButton::isLow();
-   bool flashValid        = isFlashValid();
-   bool magicNumberValid  = isMagicNumberValid();
-
-   if (!magicNumberValid && icpButtonReleased && flashValid) {
+         bool icpButtonPressed = Column1Sense::isHigh();
+         if (icpButtonPressed) {
+            // Continue to bootloader
+            continue;
+         }
+      }
+      bool flashValid        = isFlashValid();
+      if (!flashValid) {
+         // Continue to bootloader
+         continue;
+      }
+      bool magicNumberValid  = isMagicNumberValid();
+      if (magicNumberValid) {
+         // Continue to bootloader
+         continue;
+      }
+      // Call loaded image
       callFlashImage();
-   }
+   } while(0);
+
 }
 
 /** Buffer for USB command */
@@ -462,7 +478,8 @@ int main() {
 
 #ifdef DEBUG_BUILD
    console.writeln();
-   console.writeln("icpButtonReleased = ", IcpButton::isHigh());
+   console.writeln("pinReset          = ", (Rcm::getResetSource() & RcmSource_Pin) != 0);
+   console.writeln("icpButtonPressed  = ", Column1Sense::isHigh());
    console.writeln("flashValid        = ", isFlashValid());
    console.writeln("magicNumberValid  = ", isMagicNumberValid());
 #endif

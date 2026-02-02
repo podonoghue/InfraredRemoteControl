@@ -1,9 +1,6 @@
 /**
  * @file     smc.h (180.ARM_Peripherals/Project_Headers/smc.h)
  * @brief    System Management Controller
- *
- * @version  V4.12.1.210
- * @date     13 April 2016
  */
 
 #ifndef HEADER_SMC_H
@@ -17,8 +14,12 @@
  * Any manual changes will be lost.
  */
 #include "string.h"
-#include "pin_mapping.h"
 #include "mcg.h"
+#include "pin_mapping.h"
+#include "fmc.h"
+
+
+// $/SMC/prototypes not found
 
 namespace USBDM {
 
@@ -27,8 +28,218 @@ namespace USBDM {
  * @brief Abstraction for System Mode Controller
  * @{
  */
+/**
+ * Peripheral information for SMC, System Mode Controller.
+ * 
+ * This may include pin information, constants, register addresses, and default register values,
+ * along with simple accessor functions.
+ */
 
-#if false // /SMC/enablePeripheralSupport
+   /**
+    * Allow Very Low Power modes
+    * (smc_pmprot_avlp)
+    *
+    * Allows the MCU to enter any very low power modes: VLPR, VLPW, and VLPS.
+    * This is a write-once selection
+    */
+   enum SmcAllowVeryLowPower : uint8_t {
+      SmcAllowVeryLowPower_Disabled   = SMC_PMPROT_AVLP(0),  ///< VLPR, VLPW and VLPS are not allowed
+      SmcAllowVeryLowPower_Enabled    = SMC_PMPROT_AVLP(1),  ///< VLPR, VLPW and VLPS are allowed
+   };
+
+   /**
+    * Allow Low Leakage Stop mode
+    * (smc_pmprot_alls)
+    *
+    * Allows the MCU to enter any low leakage stop mode: LLS.
+    * This is a write-once selection
+    */
+   enum SmcAllowLowLeakageStop : uint8_t {
+      SmcAllowLowLeakageStop_Disabled   = SMC_PMPROT_ALLS(0),  ///< LLS is not allowed
+      SmcAllowLowLeakageStop_Enabled    = SMC_PMPROT_ALLS(1),  ///< LLS is allowed
+   };
+
+   /**
+    * Allow Very Low Leakage Stop mode
+    * (smc_pmprot_avlls)
+    *
+    * Allows the MCU to enter any low leakage stop mode: VLLSx.
+    * This is a write-once selection
+    */
+   enum SmcAllowVeryLowLeakageStop : uint8_t {
+      SmcAllowVeryLowLeakageStop_Disabled   = SMC_PMPROT_AVLLS(0),  ///< VLLSx is not allowed
+      SmcAllowVeryLowLeakageStop_Enabled    = SMC_PMPROT_AVLLS(1),  ///< VLLSx is allowed
+   };
+
+   /**
+    * Run mode
+    * (smc_pmctrl_runm[0])
+    *
+    * Determines the clock speed restrictions that apply
+    */
+   enum SmcRunMode : uint8_t {
+      SmcRunMode_Normal         = SMC_PMCTRL_RUNM(0),  ///< Normal RUN
+      SmcRunMode_VeryLowPower   = SMC_PMCTRL_RUNM(2),  ///< Very Low Power RUN
+   };
+
+   /**
+    * Exit low power on interrupt
+    * (smc_pmctrl_lpwui)
+    *
+    * Causes the SMC to exit to normal RUN mode when any active interrupt
+    * occurs while in a VLP mode (VLPR, VLPW or VLPS)
+    */
+   enum SmcExitLowPowerOnInt : uint8_t {
+      SmcExitLowPowerOnInt_Disabled   = SMC_PMCTRL_LPWUI(0),  ///< Stay in VLPR on int
+      SmcExitLowPowerOnInt_Enabled    = SMC_PMCTRL_LPWUI(1),  ///< Exit VLPR on int
+   };
+
+   /**
+    * Stop Aborted
+    * (smc_pmctrl_stopa)
+    *
+    * This read-only status bit indicates an interrupt occured during the previous stop mode entry 
+    * sequence, preventing the system from entering that mode. 
+    * This field is cleared by reset or by hardware at the beginning of any stop mode
+    * entry sequence and is set if the sequence was aborted.
+    */
+   enum SmcStopOutcome {
+      SmcStopOutcome_Successful   = SMC_PMCTRL_STOPA(0),  ///< Entry Successful
+      SmcStopOutcome_Aborted      = SMC_PMCTRL_STOPA(1),  ///< Entry Aborted
+   };
+
+   /**
+    * Stop Mode Control
+    * (smc_pmctrl_stopm)
+    *
+    * Controls entry into the selected stop mode when Sleep-Now or Sleep-On-Exit 
+    * mode is entered with SLEEPDEEP=1
+    * This field is cleared by hardware on any successful write to the PMPROT register
+    */
+   enum SmcStopMode : uint8_t {
+      SmcStopMode_NormalStop           = SMC_PMCTRL_STOPM(0),  ///< Normal Stop (STOP)
+      SmcStopMode_VeryLowPowerStop     = SMC_PMCTRL_STOPM(2),  ///< Very-Low-Power Stop (VLPS)
+      SmcStopMode_LowLeakageStop       = SMC_PMCTRL_STOPM(3),  ///< Low-Leakage Stop (LLSx)
+      SmcStopMode_VeryLowLeakageStop   = SMC_PMCTRL_STOPM(4),  ///< Very-Low-Leakage Stop (VLLSx)
+   };
+
+   /**
+    * Power-On_Reset Detection in VLLS0 mode
+    * (smc_stopctrl_porpo)
+    *
+    * Controls whether the Power-On-Reset detect circuit is enabled in VLLS0 mode (Brown-out detection)
+    */
+   enum SmcPowerOnResetInVlls0 : uint8_t {
+      SmcPowerOnResetInVlls0_Enabled    = SMC_STOPCTRL_PORPO(0),  ///< POR detect circuit is enabled in VLLS0
+      SmcPowerOnResetInVlls0_Disabled   = SMC_STOPCTRL_PORPO(1),  ///< POR detect circuit is disabled in VLLS0
+   };
+
+   /**
+    * Low Leakage Mode Control
+    * (smc_stopctrl_vllsm)
+    *
+    * Controls which VLLS sub-mode to enter if STOPM = VLLSx
+    */
+   enum SmcLowLeakageStopMode : uint8_t {
+      SmcLowLeakageStopMode_VLLS0   = SMC_STOPCTRL_VLLSM(0),  ///< Enter VLLS0 in VLLSx mode
+      SmcLowLeakageStopMode_VLLS1   = SMC_STOPCTRL_VLLSM(1),  ///< Enter VLLS1 in VLLSx mode
+      SmcLowLeakageStopMode_VLLS2   = SMC_STOPCTRL_VLLSM(2),  ///< Enter VLLS2 in VLLSx mode
+      SmcLowLeakageStopMode_VLLS3   = SMC_STOPCTRL_VLLSM(3),  ///< Enter VLLS3 in VLLSx mode
+   };
+
+   /**
+    * Power Mode Status
+    * (smc_pmstat_pmstat)
+    *
+    * Shows the execution state of the processor
+    */
+   enum SmcStatus : uint8_t {
+      SmcStatus_RUN    = SMC_PMSTAT_PMSTAT(1<<0),  ///< Processor is in Normal Run mode
+      SmcStatus_VLPR   = SMC_PMSTAT_PMSTAT(1<<2),  ///< Processor is in Very Low Power Run mode
+      SmcStatus_VLPW   = SMC_PMSTAT_PMSTAT(1<<3),  ///< Processor is in Very Low Power Wait mode
+      SmcStatus_STOP   = SMC_PMSTAT_PMSTAT(1<<1),  ///< Processor is in Stop mode
+      SmcStatus_VLPS   = SMC_PMSTAT_PMSTAT(1<<4),  ///< Processor is in Very Low Power Stop mode
+      SmcStatus_LLS    = SMC_PMSTAT_PMSTAT(1<<5),  ///< Processor is in Low Leakage Stop mode
+      SmcStatus_VLLS   = SMC_PMSTAT_PMSTAT(1<<6),  ///< Processor is in Very Low Leakage Stop mode
+   };
+
+
+   // Bit operators for PMPROT register fields
+   constexpr inline uint8_t operator|(SmcAllowVeryLowPower op1, SmcAllowLowLeakageStop op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcAllowVeryLowPower op1, SmcAllowVeryLowLeakageStop op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcAllowLowLeakageStop op1, SmcAllowVeryLowPower op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcAllowLowLeakageStop op1, SmcAllowVeryLowLeakageStop op2)     { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcAllowVeryLowLeakageStop op1, SmcAllowVeryLowPower op2)       { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcAllowVeryLowLeakageStop op1, SmcAllowLowLeakageStop op2)     { return uint8_t(op1)|uint8_t(op2); };
+   
+
+   // Bit operators for PMCTRL register fields
+   constexpr inline uint8_t operator|(SmcRunMode op1, SmcExitLowPowerOnInt op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcRunMode op1, SmcStopMode op2)                    { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcExitLowPowerOnInt op1, SmcRunMode op2)           { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcExitLowPowerOnInt op1, SmcStopMode op2)          { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcStopMode op1, SmcRunMode op2)                    { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcStopMode op1, SmcExitLowPowerOnInt op2)          { return uint8_t(op1)|uint8_t(op2); };
+   
+
+   // Bit operators for STOPCTRL register fields
+   constexpr inline uint8_t operator|(SmcPowerOnResetInVlls0 op1, SmcLowLeakageStopMode op2)  { return uint8_t(op1)|uint8_t(op2); };
+   constexpr inline uint8_t operator|(SmcLowLeakageStopMode op1, SmcPowerOnResetInVlls0 op2)  { return uint8_t(op1)|uint8_t(op2); };
+   
+class SmcInfo {
+
+public:
+
+   /*
+    * Template:smc_mk10d5
+    */
+   //! Hardware base address as uint32_t
+   static constexpr uint32_t baseAddress = SMC_BasePtr;
+   
+   //! Hardware base pointer
+   static constexpr HardwarePtr<SMC_Type> smc = baseAddress;
+   
+   /**
+    * Set Stop Mode Control
+    * (smc_pmctrl_stopm)
+    *
+    * @param smcStopMode Controls entry into the selected stop mode when Sleep-Now or Sleep-On-Exit 
+    *        mode is entered with SLEEPDEEP=1
+    *        This field is cleared by hardware on any successful write to the PMPROT register
+    */
+   static void setStopMode(SmcStopMode smcStopMode) {
+      smc->PMCTRL = (smc->PMCTRL&~SMC_PMCTRL_STOPM_MASK) | uint32_t(smcStopMode);
+      // Make sure write has completed
+      (void)(smc->PMCTRL);
+   }
+   
+   /**
+    * Get Stop Mode Control
+    * (smc_pmctrl_stopm)
+    *
+    * @return Controls entry into the selected stop mode when Sleep-Now or Sleep-On-Exit 
+    *        mode is entered with SLEEPDEEP=1
+    *        This field is cleared by hardware on any successful write to the PMPROT register
+    */
+   static SmcStopMode getStopMode() {
+      return SmcStopMode(smc->PMCTRL&SMC_PMCTRL_STOPM_MASK);
+   }
+   
+   /**
+    * Get Power Mode Status
+    * (smc_pmstat_pmstat)
+    *
+    * @return Shows the execution state of the processor
+    */
+   static SmcStatus getStatus() {
+      return SmcStatus(smc->PMSTAT&SMC_PMSTAT_PMSTAT_MASK);
+   }
+   
+}; // class SmcInfo
+
+
+
+#if false // /SMC/_BasicInfoGuard
 /**
  *  Sleep on exit from Interrupt Service Routine (ISR)\n
  *  This option controls whether the processor re-enters sleep mode when exiting the\n
@@ -249,7 +460,7 @@ public:
 };
 
 
-#endif // /SMC/enablePeripheralSupport
+#endif // /SMC/_BasicInfoGuard
 /**
  * End SMC_Group
  * @}

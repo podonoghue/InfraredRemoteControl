@@ -19,6 +19,9 @@
 
 #include <stdint.h>
 
+#pragma GCC push_options
+#pragma GCC optimize("Os")
+
 /*
  * Under Windows 8, or 10 there is no need to install a driver for
  * the bulk end-points if the MS_COMPATIBLE_ID_FEATURE is enabled.
@@ -335,5 +338,7 @@ protected:
 using UsbImplementation = Usb0;
 
 } // End namespace USBDM
+
+#pragma GCC pop_options
 
 #endif /* PROJECT_HEADERS_USB_IMPLEMENTATION_BULK_H_ */

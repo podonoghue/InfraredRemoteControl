@@ -1,17 +1,10 @@
 /**
  * @file    dma.h  (180.ARM_Peripherals/Project_Headers/dma-MK.h)
  * @brief   Direct Memory Controller
- *
- * @version  V4.12.1.210
- * @date     30 September 2017
  */
 
 #ifndef INCLUDE_USBDM_DMA_H_
 #define INCLUDE_USBDM_DMA_H_
-
-#include "pin_mapping.h"
-#include "dmamux.h"
-#include "cstring"
 
 /*
  * *****************************
@@ -21,18 +14,508 @@
  * This file is generated automatically.
  * Any manual changes will be lost.
  */
+#include "pin_mapping.h"
+
+// No handler defined for DMA0 Ch0
+// No handler defined for DMA0 Ch1
+// No handler defined for DMA0 Ch2
+// No handler defined for DMA0 Ch3
+// No handler defined for DMA0 Error
+
+
 namespace USBDM {
 
-#if false // /DMA/enablePeripheralSupport
-
-typedef DmaBasicInfo::DmaTcdCsr DmaTcdCsr;
-typedef DmaBasicInfo::DmaConfig DmaConfig;
+#if false // /DMA/_BasicInfoGuard
 
 /**
  * @addtogroup DMA_Group DMA, Direct Memory Access (DMA)
  * @brief Support for DMA operations
  * @{
  */
+   /**
+    * Enable Channel Preemption
+    * (dma_dchpri_ecp)
+    *
+    * Allows suspension of this channel by a higher priority channel
+    */
+   enum DmaCanBePreempted {
+      DmaCanBePreempted_Disabled   = DMA_DCHPRI_ECP(0),  ///< Cannot be suspended
+      DmaCanBePreempted_Enabled    = DMA_DCHPRI_ECP(1),  ///< Can be suspended
+   };
+
+   /**
+    * Disable Preempt Ability
+    * (dma_dchpri_dpa)
+    *
+    * Disallows the channel to suspend lower priority channels
+    */
+   enum DmaCanPreemptLower {
+      DmaCanPreemptLower_Disabled   = DMA_DCHPRI_DPA(0),  ///< Can suspend
+      DmaCanPreemptLower_Enabled    = DMA_DCHPRI_DPA(1),  ///< Cannot suspend
+   };
+
+   /**
+    * Channel Arbitration Priority
+    * (dma_dchpri_chpri)
+    *
+    * Channel priority when fixed-priority arbitration is enabled
+    * Lower values are higher priority.
+    */
+   enum DmaPriority {
+      DmaPriority_0    = DMA_DCHPRI_CHPRI(0),   ///< Level 0
+      DmaPriority_1    = DMA_DCHPRI_CHPRI(1),   ///< Level 1
+      DmaPriority_2    = DMA_DCHPRI_CHPRI(2),   ///< Level 2
+      DmaPriority_3    = DMA_DCHPRI_CHPRI(3),   ///< Level 3
+      DmaPriority_4    = DMA_DCHPRI_CHPRI(4),   ///< Level 4
+      DmaPriority_5    = DMA_DCHPRI_CHPRI(5),   ///< Level 5
+      DmaPriority_6    = DMA_DCHPRI_CHPRI(6),   ///< Level 6
+      DmaPriority_7    = DMA_DCHPRI_CHPRI(7),   ///< Level 7
+      DmaPriority_8    = DMA_DCHPRI_CHPRI(8),   ///< Level 8
+      DmaPriority_9    = DMA_DCHPRI_CHPRI(9),   ///< Level 9
+      DmaPriority_10   = DMA_DCHPRI_CHPRI(10),  ///< Level 10
+      DmaPriority_11   = DMA_DCHPRI_CHPRI(11),  ///< Level 11
+      DmaPriority_12   = DMA_DCHPRI_CHPRI(12),  ///< Level 12
+      DmaPriority_13   = DMA_DCHPRI_CHPRI(13),  ///< Level 13
+      DmaPriority_14   = DMA_DCHPRI_CHPRI(14),  ///< Level 14
+      DmaPriority_15   = DMA_DCHPRI_CHPRI(15),  ///< Level 15
+   };
+
+
+   // Bit operators for DCHPRI register fields
+   constexpr inline uint32_t operator|(DmaCanBePreempted op1, DmaCanPreemptLower op2)  { return uint32_t(op1)|uint32_t(op2); };
+   constexpr inline uint32_t operator|(DmaCanBePreempted op1, DmaPriority op2)         { return uint32_t(op1)|uint32_t(op2); };
+   constexpr inline uint32_t operator|(DmaCanPreemptLower op1, DmaCanBePreempted op2)  { return uint32_t(op1)|uint32_t(op2); };
+   constexpr inline uint32_t operator|(DmaCanPreemptLower op1, DmaPriority op2)        { return uint32_t(op1)|uint32_t(op2); };
+   constexpr inline uint32_t operator|(DmaPriority op1, DmaCanBePreempted op2)         { return uint32_t(op1)|uint32_t(op2); };
+   constexpr inline uint32_t operator|(DmaPriority op1, DmaCanPreemptLower op2)        { return uint32_t(op1)|uint32_t(op2); };
+   
+
+/**
+ * Peripheral information for DMA, Direct Memory Access (DMA).
+ * 
+ * This may include pin information, constants, register addresses, and default register values,
+ * along with simple accessor functions.
+ */
+
+   /**
+    * DMA halt on error
+    * (dma_cr_hoe)
+    *
+    * Whether to halt transfer when a DMA error occurs
+    */
+   enum DmaActionOnError {
+      DmaActionOnError_Continue   = DMA_CR_HOE(0),  ///< Transfer continues on any error
+      DmaActionOnError_Halt       = DMA_CR_HOE(1),  ///< Transfer halts on any error
+   };
+
+   /**
+    * Continuous Link mode
+    * (dma_cr_clm)
+    *
+    * Whether to enable continuous link mode 
+    * If enabled, on minor loop completion, the channel activates again if that 
+    * channel has a minor loop channel link enabled and the link channel is itself. 
+    * This effectively applies the minor loop offsets and restarts the next minor loop
+    */
+   enum DmaContinuousLink {
+      DmaContinuousLink_Disabled   = DMA_CR_CLM(0),  ///< Continuous Link disabled
+      DmaContinuousLink_Enabled    = DMA_CR_CLM(1),  ///< Continuous Link enabled
+   };
+
+   /**
+    * Minor loop mapping
+    * (dma_cr_emlm)
+    *
+    * Whether to enable minor loop mapping
+    * When enabled, TCDn.word2 is redefined to include individual enable fields, an offset field 
+    * and the NBYTES field. The individual enable fields allow the minor loop offset to be 
+    * applied to the source address, the destination address, or both.  
+    * The NBYTES field is reduced when either offset is enabled.
+    */
+   enum DmaMinorLoopMapping {
+      DmaMinorLoopMapping_Disabled   = DMA_CR_EMLM(0),  ///< Mapping disabled
+      DmaMinorLoopMapping_Enabled    = DMA_CR_EMLM(1),  ///< Mapping enabled
+   };
+
+   /**
+    * Channel Arbitration
+    * (dma_cr_erca)
+    *
+    * How to arbitrate between requests from different channels
+    */
+   enum DmaArbitration {
+      DmaArbitration_Fixed        = DMA_CR_ERCA(0),  ///< Fixed (within group)
+      DmaArbitration_RoundRobin   = DMA_CR_ERCA(1),  ///< Round Robin (within group)
+   };
+
+   /**
+    * Operation in Debug mode
+    * (dma_cr_edbg)
+    *
+    * Control DMA operation in debug mode
+    */
+   enum DmaInDebug {
+      DmaInDebug_Continue   = DMA_CR_EDBG(0),  ///< Continue in debug
+      DmaInDebug_Halt       = DMA_CR_EDBG(1),  ///< Halt in debug
+   };
+
+   /**
+    * DMA channel numbers
+    * (dma_channel_num)
+    *
+    * Identifies DMA channel
+    */
+   enum DmaChannelNum : uint8_t {
+      DmaChannelNum_All    = (1<<6),  ///< All DMA channels
+      DmaChannelNum_None   = (1<<7),  ///< No DMA channel
+      DmaChannelNum_0      = 0,       ///< Channel 0
+      DmaChannelNum_1      = 1,       ///< Channel 1
+      DmaChannelNum_2      = 2,       ///< Channel 2
+      DmaChannelNum_3      = 3,       ///< Channel 3
+   };
+
+   /**
+    * Cancel Remaining Data Transfer
+    * (dma_cr_cx)
+    *
+    * Stop the executing channel and force the minor loop to finish.
+    * The cancel takes effect after the last write of the current read/write sequence.
+    * The CX bit clears itself after the cancel has been honoured.
+    * This cancel retires the channel normally as if the minor loop was completed
+    */
+   enum DmaCancelTransfer {
+      DmaCancelTransfer_NormalOperation             = DMA_CR_CX(0),  ///< Normal operation
+      DmaCancelTransfer_CancelRemainderOfTransfer   = DMA_CR_CX(1),  ///< Cancel remainder of transfer
+   };
+
+   /**
+    * Cancel Data Transfer and set Error
+    * (dma_cr_ecx)
+    *
+    * Stop the executing channel and force the minor loop to finish.
+    * The cancel takes effect after the last write of the current read/write sequence.
+    * The CX bit clears itself after the cancel has been honoured.
+    * This cancel retires the channel normally as if the minor loop was completed.
+    * The ES register is updated and may generate an optional error interrupt
+    */
+   enum DmaErrorCancelTransfer {
+      DmaErrorCancelTransfer_NormalOperation           = DMA_CR_ECX(0),  ///< Normal operation
+      DmaErrorCancelTransfer_CancelTransferWithError   = DMA_CR_ECX(1),  ///< Cancel transfer with error
+   };
+
+   /**
+    * Halt DMA Operations
+    * (dma_cr_halt)
+    *
+    * Halt DMA at the end of current channel operations
+    */
+   enum DmaHalt {
+      DmaHalt_NormalOperation    = DMA_CR_HALT(0),  ///< Normal operation
+      DmaHalt_StallNewChannels   = DMA_CR_HALT(1),  ///< Stall new channels
+   };
+
+   /**
+    * Bandwidth Control
+    * (dma_csr_bwc)
+    *
+    * Throttles the amount of bus bandwidth consumed by the eDMA. 
+    * Generally, as the eDMA processes the minor loop, it continuously generates 
+    * read/write sequences until the minor count is exhausted. This field 
+    * forces the eDMA to stall after the completion of each read/write access 
+    * to control the bus request bandwidth seen by the crossbar switch
+    */
+   enum DmaSpeed {
+      DmaSpeed_NoStalls   = DMA_CSR_BWC(0),  ///< No eDMA engine stalls
+      DmaSpeed_4_Stalls   = DMA_CSR_BWC(2),  ///< eDMA engine stalls for 4 cycles after each R/W
+      DmaSpeed_8_Stalls   = DMA_CSR_BWC(3),  ///< eDMA engine stalls for 8 cycles after each R/W
+   };
+
+   /**
+    * Channel linking on major loop complete
+    * (dma_csr_majorelink)
+    *
+    * As the channel completes the major loop, this option enables the linking to another channel. 
+    * The link target channel initiates a channel service request via an internal mechanism that sets the 
+    * TCDn_CSR[START] bit of the specified channel. 
+    * @note To support the dynamic linking coherency model, the DMA_CSR_MAJORELINK field is forced to zero when 
+    * written to while the TCDn_CSR[DONE] bit is set
+    */
+   enum DmaMajorLink {
+      DmaMajorLink_Disabled   = DMA_CSR_MAJORELINK(0)|DMA_CSR_MAJORLINKCH(0),  ///< Channel-to-channel linking is disabled
+      DmaMajorLink_Ch_0       = DMA_CSR_MAJORELINK(1)|DMA_CSR_MAJORLINKCH(0),  ///< Link to channel 0
+      DmaMajorLink_Ch_1       = DMA_CSR_MAJORELINK(1)|DMA_CSR_MAJORLINKCH(1),  ///< Link to channel 1
+      DmaMajorLink_Ch_2       = DMA_CSR_MAJORELINK(1)|DMA_CSR_MAJORLINKCH(2),  ///< Link to channel 2
+      DmaMajorLink_Ch_3       = DMA_CSR_MAJORELINK(1)|DMA_CSR_MAJORLINKCH(3),  ///< Link to channel 3
+   };
+
+   /**
+    * Scatter/Gather Processing
+    * (dma_csr_esg)
+    *
+    * If selected, scatter/gather processing occurs when the channel completes the major loop. 
+    * The eDMA engine uses DLASTSGA as a memory pointer to a 0-modulo-32 address containing a 32-byte 
+    * data structure loaded as the transfer control descriptor into the local memory. 
+    * @note To support the dynamic scatter/gather coherency model, this field is forced to zero when written 
+    * to while the TCDn_CSR[DONE] bit is set
+    */
+   enum DmaScatterGather {
+      DmaScatterGather_Disabled   = DMA_CSR_ESG(0),  ///< TCD is normal format
+      DmaScatterGather_Enabled    = DMA_CSR_ESG(1),  ///< TCD specifies a scatter gather format
+   };
+
+   /**
+    * Clear request on complete
+    * (dma_csr_dreq)
+    *
+    * If selected, the eDMA hardware automatically clears the ERQ bit when 
+    * the current major iteration count reaches zero
+    */
+   enum DmaStopOnComplete {
+      DmaStopOnComplete_Disabled   = DMA_CSR_DREQ(0),  ///< ERQ bit is not affected
+      DmaStopOnComplete_Enabled    = DMA_CSR_DREQ(1),  ///< ERQ bit is cleared on complete
+   };
+
+   /**
+    * Interrupt when major counter is half complete
+    * (dma_csr_inthalf)
+    *
+    * If selected, the channel generates an interrupt request by setting the appropriate bit in the INT 
+    * register when the current major iteration count reaches the halfway point. Specifically, the comparison 
+    * performed by the eDMA engine is (CITER == (BITER &amp;gt;&amp;gt; 1)). This halfway point interrupt request is 
+    * provided to support double-buffered, also known as ping-pong, schemes or other types of data movement 
+    * where the processor needs an early indication of the transfer?s progress. 
+    * @note If BITER = 1, do not use INTHALF. Use INTMAJOR instead
+    */
+   enum DmaIntHalf {
+      DmaIntHalf_Disabled   = DMA_CSR_INTHALF(0),  ///< The half-point interrupt is disabled
+      DmaIntHalf_Enabled    = DMA_CSR_INTHALF(1),  ///< The half-point interrupt is enabled
+   };
+
+   /**
+    * Interrupt when major counter completes
+    * (dma_csr_intmajor)
+    *
+    * If selected, the channel generates an interrupt request by setting the appropriate bit in 
+    * the INT when the current major iteration count reaches zero
+    */
+   enum DmaIntMajor {
+      DmaIntMajor_Disabled   = DMA_CSR_INTMAJOR(0),  ///< The end-of-major loop interrupt is disabled
+      DmaIntMajor_Enabled    = DMA_CSR_INTMAJOR(1),  ///< The end-of-major loop interrupt is enabled
+   };
+
+   /**
+    * Channel Start
+    * (dma_csr_start)
+    *
+    * The channel immediately requests service, 
+    * otherwise start is triggered later by a hardware request. 
+    * The eDMA hardware automatically clears this flag after the channel begins execution
+    */
+   enum DmaStart {
+      DmaStart_Hardware    = DMA_CSR_START(0),  ///< Channel started by hardware request
+      DmaStart_Immediate   = DMA_CSR_START(1),  ///< Channel is immediately started
+   };
+
+   /**
+    * Channel Done
+    * (dma_csr_done)
+    *
+    * This flag indicates the eDMA has completed the major loop.
+    * The eDMA engine sets it as the CITER count reaches zero.
+    * The software or hardware clears it when the channel is activated
+    */
+   enum DmaDone {
+      DmaDone_NotCompleted   = DMA_CSR_DONE(0),  ///< Not completed
+      DmaDone_Completed      = DMA_CSR_DONE(1),  ///< Completed
+   };
+
+   /**
+    * Channel Active
+    * (dma_csr_active)
+    *
+    * This flag signals the channel is currently in execution.
+    * It sets when service begins and clears when the minor loop completes or on any error
+    */
+   enum DmaChannelActive {
+      DmaChannelActive_Idle   = DMA_CSR_ACTIVE(0),  ///< Idle
+      DmaChannelActive_Busy   = DMA_CSR_ACTIVE(1),  ///< Busy
+   };
+
+   /**
+    * Source Minor Loop Offset Enable
+    * (dma_nbytes_mloffyes)
+    *
+    * Selects whether the minor loop offset is applied to
+    * the source and destination addresses upon minor loop completion.
+    */
+   enum DmaMinorLoopOffsetSelect {
+      DmaMinorLoopOffsetSelect_None          = DMA_NBYTES_MLOFFYES_SMLOE(0)|DMA_NBYTES_MLOFFYES_DMLOE(0),  ///< No offset
+      DmaMinorLoopOffsetSelect_Source        = DMA_NBYTES_MLOFFYES_SMLOE(1)|DMA_NBYTES_MLOFFYES_DMLOE(0),  ///< Offset Source
+      DmaMinorLoopOffsetSelect_Destination   = DMA_NBYTES_MLOFFYES_SMLOE(0)|DMA_NBYTES_MLOFFYES_DMLOE(1),  ///< Offset Destination
+      DmaMinorLoopOffsetSelect_Both          = DMA_NBYTES_MLOFFYES_SMLOE(1)|DMA_NBYTES_MLOFFYES_DMLOE(1),  ///< Offset Source and Destination
+   };
+
+class DmaBasicInfo {
+
+public:
+
+}; // class DmaBasicInfo 
+
+class Dma0Info : public DmaBasicInfo {
+
+public:
+
+   /*
+    * Template:dma0_4ch
+    */
+   //! IRQ numbers for hardware
+   static constexpr IRQn_Type irqNums[]  = DMA0_IRQS;
+   
+   //! Number of IRQs for hardware
+   static constexpr uint32_t irqCount  = sizeofArray(irqNums);
+   
+   /**
+    * IRQ entry
+    * (irq_enum)
+    *
+    * Select amongst interrupts associated with the peripheral
+    */
+   enum IrqNum {
+      IrqNum_Ch0     = 0,  ///< Maps to DMA0_Ch0_IRQn
+      IrqNum_Ch1     = 1,  ///< Maps to DMA0_Ch1_IRQn
+      IrqNum_Ch2     = 2,  ///< Maps to DMA0_Ch2_IRQn
+      IrqNum_Ch3     = 3,  ///< Maps to DMA0_Ch3_IRQn
+      IrqNum_Error   = 4,  ///< Maps to DMA0_Error_IRQn
+   };
+
+   /**
+    * Enable interrupts in NVIC
+    * @param irqNum Select amongst interrupts associated with the peripheral
+    */
+   static void enableNvicInterrupts(IrqNum irqNum) {
+      NVIC_EnableIRQ(irqNums[irqNum]);
+   }
+   
+   /**
+    * Enable and set priority of interrupts in NVIC
+    * Any pending NVIC interrupts are first cleared.
+    *
+    * @param[in]  nvicPriority  Interrupt priority
+    * @param irqNum Select amongst interrupts associated with the peripheral
+    */
+   static void enableNvicInterrupts(IrqNum irqNum, NvicPriority nvicPriority) {
+      enableNvicInterrupt(irqNums[irqNum], nvicPriority);
+   }
+   
+   /**
+    * Disable interrupts in NVIC
+    * @param irqNum Select amongst interrupts associated with the peripheral
+    */
+   static void disableNvicInterrupts(IrqNum irqNum) {
+      NVIC_DisableIRQ(irqNums[irqNum]);
+   }
+   
+   /**
+    *  Enable clock to Dma0
+    */
+   static void enableClock() {
+      SIM->SCGC7 = SIM->SCGC7 | SIM_SCGC7_DMA0_MASK;
+   }
+   
+   /**
+    *  Disable clock to Dma0
+    */
+   static void disableClock() {
+      SIM->SCGC7 = SIM->SCGC7 & ~SIM_SCGC7_DMA0_MASK;
+   }
+   
+   //! Hardware base address as uint32_t
+   static constexpr uint32_t baseAddress = DMA0_BasePtr;
+   
+   //! Hardware base pointer
+   static constexpr HardwarePtr<DMA_Type> dma = baseAddress;
+   
+   //! Peripheral instance number
+   static constexpr unsigned instance = 0;
+   
+   //! Number of DMA channels implemented
+   static constexpr unsigned NumChannels = 4;
+
+   //! Number of DMA vectors implemented
+   static constexpr unsigned NumVectors = 5;
+
+
+
+   //! Whether vectors are paired wrt channels i.e. Ch0_Ch16, Ch1_Ch17 etc
+   static constexpr bool VectorsPaired = 4>5;
+
+}; // class Dma0Info
+
+
+/**
+ * Peripheral information for DMAMUX, Direct Memory Access (DMA).
+ * 
+ * This may include pin information, constants, register addresses, and default register values,
+ * along with simple accessor functions.
+ */
+
+   /**
+    * DMA Channel Mode
+    * (dmamux_chcfg_mode[0])
+    *
+    * Controls the mode of operation of the channel
+    */
+   enum DmamuxMode {
+      DmamuxMode_Disabled     = DMAMUX_CHCFG_ENBL(0)|DMAMUX_CHCFG_TRIG(0),  ///< Disabled
+      DmamuxMode_Continuous   = DMAMUX_CHCFG_ENBL(1)|DMAMUX_CHCFG_TRIG(0),  ///< Request directly routed
+      DmamuxMode_Throttled    = DMAMUX_CHCFG_ENBL(1)|DMAMUX_CHCFG_TRIG(1),  ///< Periodic triggering enabled
+   };
+
+class DmamuxBasicInfo {
+
+public:
+
+}; // class DmamuxBasicInfo 
+
+class Dmamux0Info : public DmamuxBasicInfo {
+
+public:
+
+   /*
+    * Template:dmamux0_4ch_trig_mk20d5
+    */
+   /**
+    *  Enable clock to Dmamux0
+    */
+   static void enableClock() {
+      SIM->SCGC6 = SIM->SCGC6 | SIM_SCGC6_DMAMUX0_MASK;
+   }
+   
+   /**
+    *  Disable clock to Dmamux0
+    */
+   static void disableClock() {
+      SIM->SCGC6 = SIM->SCGC6 & ~SIM_SCGC6_DMAMUX0_MASK;
+   }
+   
+   //! Hardware base address as uint32_t
+   static constexpr uint32_t baseAddress = DMAMUX0_BasePtr;
+   
+   //! Hardware base pointer
+   static constexpr HardwarePtr<DMAMUX_Type> dmamux = baseAddress;
+   
+   //! Peripheral instance number
+   static constexpr unsigned instance = 0;
+   
+   // The number of DMA channels available
+   static constexpr unsigned NumChannels = 4;  // (NumChannels)              Number of DMA channels;
+   
+   // Each periodic channel may be controlled by the corresponding PIT channel
+   static constexpr unsigned NumPeriodicChannels = 4;  // (NumPeriodicChannels)      Number of DMA channels with periodic feature;
+   
+}; // class Dmamux0Info
+
+
 
 /**
  * DMA transfer sizes.
@@ -353,9 +836,9 @@ struct __attribute__((__packed__)) DmaTcd {
 
    DmaTcd &operator=(const DmaTcd &other) = default;
 
-   void operator=(const DmaTcd &other) volatile {
-         *(DmaTcd *)this = other;
-   };
+//   void operator=(const DmaTcd &other) volatile {
+//         *(DmaTcd *)this = other;
+//   };
 
    /**
     * Constructor.
@@ -529,11 +1012,6 @@ protected:
    /** Bit-mask of allocated channels */
    static uint32_t allocatedChannels;
 
-   /** Callback to catch unhandled interrupt */
-   static void noHandlerCallback(DmaChannelNum, uint32_t) {
-      setAndCheckErrorCode(E_NO_HANDLER);
-   }
-
 public:
    /**
     * Enable and configure shared DMA settings.
@@ -559,11 +1037,11 @@ public:
 
       // Clear call-backs
       for (unsigned channel=0; channel<Info::NumVectors; channel++) {
-         Info::sCallbacks[channel] = noHandlerCallback;
+         Info::sCallbacks[channel] = unhandledCallback;
       }
 #ifndef NDEBUG
       // Clear the TCDs
-      for (unsigned index=0; index<sizeof(dma->TCD_RAW);index++) {
+      for (unsigned index=0; index<(sizeof(dma->TCD_RAW)/sizeof(dma->TCD_RAW[0]));index++) {
          dma->TCD_RAW[index] = 0;
       }
 #endif
@@ -592,9 +1070,9 @@ public:
    /**
     * Set Continuous Link mode
     *
-    * @param dmaContinuousLink Whether to enable continuous link mode
-    *        If enabled, on minor loop completion, the channel activates again if that
-    *        channel has a minor loop channel link enabled and the link channel is itself.
+    * @param dmaContinuousLink Whether to enable continuous link mode 
+    *        If enabled, on minor loop completion, the channel activates again if that 
+    *        channel has a minor loop channel link enabled and the link channel is itself. 
     *        This effectively applies the minor loop offsets and restarts the next minor loop
     */
    void SetLinkMode(DmaContinuousLink dmaContinuousLink) {
@@ -606,9 +1084,9 @@ public:
     * Set Minor loop mapping
     *
     * @param dmaMinorLoopMapping Whether to enable minor loop mapping
-    *        When enabled, TCDn.word2 is redefined to include individual enable fields, an offset field
-    *        and the NBYTES field. The individual enable fields allow the minor loop offset to be
-    *        applied to the source address, the destination address, or both.
+    *        When enabled, TCDn.word2 is redefined to include individual enable fields, an offset field 
+    *        and the NBYTES field. The individual enable fields allow the minor loop offset to be 
+    *        applied to the source address, the destination address, or both.  
     *        The NBYTES field is reduced when either offset is enabled.
     */
    void SetMinorLoopMapping(DmaMinorLoopMapping dmaMinorLoopMapping) {
@@ -676,7 +1154,7 @@ public:
 
       unsigned channelNum;
 
-#if true
+#if false || true
       // Try non-PIT channel first
       channelNum = __builtin_ffs(allocatedChannels&~0xF);
       if (channelNum == 0) {
@@ -692,29 +1170,7 @@ public:
       return (DmaChannelNum) channelNum;
    }
 
-   /**
-    * Allocate Periodic DMA channel associated with given PIT channel.
-    * This is a channel that may be throttled by the associated PIT channel.
-    *
-    * @param pitChannelNum PIT channel being used.
-    * @return DmaChannelNum_None - No suitable channel available.  Error code set.
-    * @return Channel number     - Number of allocated channel
-    */
-   static DmaChannelNum allocatePitAssociatedChannel(PitChannelNum pitChannelNum) {
-      const uint32_t channelMask = (1<<pitChannelNum);
-      usbdm_assert(pitChannelNum<Info::NumChannels,        "No DMA channel associated with PIT channel");
-      usbdm_assert((allocatedChannels & channelMask) != 0, "DMA channel already allocated");
-
-      CriticalSection cs;
-      if ((allocatedChannels & channelMask) == 0) {
-         setErrorCode(E_NO_RESOURCE);
-         return DmaChannelNum_None;
-      }
-      allocatedChannels &= ~channelMask;
-      return (DmaChannelNum) pitChannelNum;
-   }
-
-#if false
+#if false || true
    /**
     * Allocate Periodic DMA channel.
     * This is a channel that may be throttled by an associated LPIT channel.
@@ -725,27 +1181,7 @@ public:
    static DmaChannelNum allocatePeriodicChannel() {
       CriticalSection cs;
       unsigned channelNum = __builtin_ffs(allocatedChannels);
-      if ((channelNum == 0)||(--channelNum>=Info::NumChannels)||(channelNum>=USBDM::Lpit0Info::NumChannels)) {
-         setErrorCode(E_NO_RESOURCE);
-         return DmaChannelNum_None;
-      }
-      allocatedChannels &= ~(1<<channelNum);
-      return (DmaChannelNum) channelNum;
-   }
-#endif
-
-#if true
-   /**
-    * Allocate Periodic DMA channel.
-    * This is a channel that may be throttled by an associated PIT channel.
-    *
-    * @return Error DmaChannelNum_None - No suitable channel available.  Error code set.
-    * @return Channel number           - Number of allocated channel
-    */
-   static DmaChannelNum allocatePeriodicChannel() {
-      CriticalSection cs;
-      unsigned channelNum = __builtin_ffs(allocatedChannels);
-      if ((channelNum == 0)||(--channelNum>=Info::NumChannels)||(channelNum>=USBDM::PitInfo::NumChannels)) {
+      if ((channelNum == 0)||(--channelNum>=Info::NumChannels)||(channelNum>=Info::NumPitChannels)) {
          setErrorCode(E_NO_RESOURCE);
          return DmaChannelNum_None;
       }
@@ -772,7 +1208,7 @@ public:
     * This is only used if DmaArbitration_Fixed is used.
     *
     * @param[in] dmaChannelNum      Channel to modify
-    * @param[in] priority           Priority for the channel
+    * @param[in] dmaPriority        Priority for the channel
     * @param[in] dmaCanBePreempted  Controls whether the channel can be suspended by a higher priority channel
     * @param[in] dmaCanPreemptLower Controls whether the channel can suspend a lower priority channel
     *
@@ -850,6 +1286,7 @@ public:
     *
     * @note There is no clear option as the flag is automatically cleared by the DMA controller when
     *        the transfer starts.
+    * @note May use DmaChannelNum_All to apply to all channels
     */
    static void __attribute__((always_inline)) startSoftwareRequest(DmaChannelNum dmaChannelNum) {
 
@@ -857,96 +1294,128 @@ public:
    }
 
    /**
-    * Enable/disable DMA hardware requests on multiple channels.
+    * Enable DMA hardware requests on multiple channels.
     * The channel should be configured beforehand using configureTransfer().
     *
     * @param[in]  dmaChannelMask Mask for channels being modified
-    * @param[in]  enable         True => enable, False => disable
     */
-   static void __attribute__((always_inline)) enableMultipleRequests(uint32_t dmaChannelMask, bool enable=true) {
+   static void __attribute__((always_inline)) enableMultipleRequests(uint32_t dmaChannelMask) {
 
       usbdm_assert((dmaChannelMask&~((1<<Info::NumChannels)-1)) != 0, "Illegal DMA channel");
 
-      if (enable) {
-         dma->ERQ = dma->ERQ | dmaChannelMask;
-      }
-      else {
-         dma->ERQ = dma->ERQ & ~dmaChannelMask;
-      }
+      dma->ERQ = dma->ERQ | dmaChannelMask;
    }
 
    /**
-    * Enable/disable DMA hardware requests on a channel.
+    * Disable DMA hardware requests on multiple channels.
+    * The channel should be configured beforehand using configureTransfer().
+    *
+    * @param[in]  dmaChannelMask Mask for channels being modified
+    */
+   static void __attribute__((always_inline)) disableMultipleRequests(uint32_t dmaChannelMask) {
+
+      usbdm_assert((dmaChannelMask&~((1<<Info::NumChannels)-1)) != 0, "Illegal DMA channel");
+
+      dma->ERQ = dma->ERQ & ~dmaChannelMask;
+   }
+
+   /**
+    * Enable DMA hardware requests on a channel.
     * The channel should be configured beforehand using configureTransfer().
     *
     * @param[in]  dmaChannelNum  Channel being modified
-    * @param[in]  enable         True => enable, False => disable
     *
     * @note May use DmaChannelNum_All to apply to all channels
     */
-   static void __attribute__((always_inline)) enableRequests(DmaChannelNum dmaChannelNum, bool enable=true) {
+   static void __attribute__((always_inline)) enableRequest(DmaChannelNum dmaChannelNum) {
 
-      if (enable) {
-         dma->SERQ = dmaChannelNum;
-      }
-      else {
-         dma->CERQ = dmaChannelNum;
-      }
+      dma->SERQ = dmaChannelNum;
+   }
+
+   /**
+    * Disable DMA hardware requests on a channel.
+    * The channel should be configured beforehand using configureTransfer().
+    *
+    * @param[in]  dmaChannelNum  Channel being modified
+    *
+    * @note May use DmaChannelNum_All to apply to all channels
+    */
+   static void __attribute__((always_inline)) disableRequest(DmaChannelNum dmaChannelNum) {
+
+      dma->CERQ = dmaChannelNum;
    }
 
 #ifdef DMA_EARS_EDREQ_0_MASK
    /**
-    * Enable/disable DMA asynchronous requests on a channel\n
+    * Enable DMA asynchronous requests on a channel\n
     * The channel should be configured beforehand using configureTransfer()
     *
     * @param[in]  dmaChannelNum Channel being modified
-    * @param[in]  enable        True => enable, False => disable
+    *
+    * @note May use DmaChannelNum_All to apply to all channels
     */
-   static void __attribute__((always_inline)) enableAsynchronousRequests(DmaChannelNum dmaChannelNum, bool enable=true) {
+   static void __attribute__((always_inline)) enableAsynchronousRequests(DmaChannelNum dmaChannelNum) {
 
-      if (enable) {
-         dma->EARS = dma->EARS | (1<<dmaChannelNum);
-      }
-      else {
-         dma->EARS = dma->EARS & ~(1<<dmaChannelNum);
-      }
+      dma->EARS = dma->EARS | (1<<dmaChannelNum);
+   }
+   /**
+    * Disable DMA asynchronous requests on a channel\n
+    * The channel should be configured beforehand using configureTransfer()
+    *
+    * @param[in]  dmaChannelNum Channel being modified
+    */
+   static void __attribute__((always_inline)) disableAsynchronousRequests(DmaChannelNum dmaChannelNum) {
+
+      dma->EARS = dma->EARS & ~(1<<dmaChannelNum);
    }
 #endif
 
    /**
-    * Enable/disable error interrupts on multiple channels.
+    * Enable error interrupts on multiple channels.
     *
     * @param[in]  dmaChannelMask Mask for channels being modified
-    * @param[in]  enable         True => enable, False => disable
     */
-   static void __attribute__((always_inline)) enableMultipleErrorInterrupts(uint32_t dmaChannelMask, bool enable=true) {
+   static void __attribute__((always_inline)) enableMultipleErrorInterrupts(uint32_t dmaChannelMask) {
 
       usbdm_assert((dmaChannelMask&~((1<<Info::NumChannels)-1)) == 0, "Illegal DMA channel");
 
-      if (enable) {
-         dma->EEI = dma->EEI | dmaChannelMask;
-      }
-      else {
-         dma->EEI = dma->EEI & ~dmaChannelMask;
-      }
+      dma->EEI = dma->EEI | dmaChannelMask;
+   }
+
+   /**
+    * Disable error interrupts on multiple channels.
+    *
+    * @param[in]  dmaChannelMask Mask for channels being modified
+    */
+   static void __attribute__((always_inline)) disableMultipleErrorInterrupts(uint32_t dmaChannelMask) {
+
+      usbdm_assert((dmaChannelMask&~((1<<Info::NumChannels)-1)) == 0, "Illegal DMA channel");
+
+      dma->EEI = dma->EEI & ~dmaChannelMask;
    }
 
    /**
     * Enable/disable error interrupts for a channel.
     *
     * @param[in]  dmaChannelNum Channel being modified
-    * @param[in]  enable        True => enable, False => disable
     *
     * @note May use DmaChannelNum_All to apply to all channels
     */
-   static void __attribute__((always_inline)) enableErrorInterrupts(DmaChannelNum dmaChannelNum, bool enable=true) {
+   static void __attribute__((always_inline)) enableErrorInterrupts(DmaChannelNum dmaChannelNum) {
 
-      if (enable) {
-         dma->SEEI = dmaChannelNum;
-      }
-      else {
-         dma->CEEI = dmaChannelNum;
-      }
+      dma->SEEI = dmaChannelNum;
+   }
+
+   /**
+    * Enable/disable error interrupts for a channel.
+    *
+    * @param[in]  dmaChannelNum Channel being modified
+    *
+    * @note May use DmaChannelNum_All to apply to all channels
+    */
+   static void __attribute__((always_inline)) disableErrorInterrupts(DmaChannelNum dmaChannelNum) {
+
+      dma->CEEI = dmaChannelNum;
    }
 
    /**
@@ -965,18 +1434,12 @@ public:
     * Clear interrupt request flags on multiple channels.
     *
     * @param[in]  dmaChannelMask Mask for channels being modified
-    * @param[in]  enable         True => enable, False => disable
     */
-   static void __attribute__((always_inline)) clearMultipleInterruptRequests(uint32_t dmaChannelMask, bool enable=true) {
+   static void __attribute__((always_inline)) clearMultipleInterruptRequests(uint32_t dmaChannelMask) {
 
       usbdm_assert((dmaChannelMask&~((1<<Info::NumChannels)-1)) != 0, "Illegal DMA channel");
 
-      if (enable) {
-         dma->INT = dma->INT | dmaChannelMask;
-      }
-      else {
-         dma->INT = dma->INT & ~dmaChannelMask;
-      }
+      dma->INT = dmaChannelMask;
    }
 
    /**
@@ -991,10 +1454,60 @@ public:
       dma->CINT = dmaChannelNum;
    }
 
+   /**
+    * Clear channel error flags on multiple channels.
+    *
+    * @param[in]  dmaChannelMask Mask for channels being modified
+    */
+   static void __attribute__((always_inline)) clearMultipleChannelErrorFlags(uint32_t dmaChannelMask) {
+
+      usbdm_assert((dmaChannelMask&~((1<<Info::NumChannels)-1)) != 0, "Illegal DMA channel");
+
+      dma->ERR = dmaChannelMask;
+   }
+
+   /**
+    * Clear channel error flag for a channel.
+    *
+    * @param[in]  dmaChannelNum  Channel being modified
+    *
+    * @note May use DmaChannelNum_All to apply to all channels
+    */
+   static void __attribute__((always_inline)) clearChannelErrorFlag(DmaChannelNum dmaChannelNum) {
+
+      dma->CERR = dmaChannelNum;
+   }
+
 };
+
+/**
+ * Calculate a DMA slot number using an offset from an existing number
+ *
+ * @param slot    Base slot to use
+ * @param offset  Offset from base slot
+ *
+ * @return  DMA slot number calculated from slot+offset
+ */
+constexpr DmaSlot inline operator+(DmaSlot slot, unsigned offset) {
+   return (DmaSlot)((unsigned)slot + offset);
+}
+
+/**
+ * Calculate a DMA slot number using an offset from an existing number
+ *
+ * @param slot    Base slot to use
+ * @param offset  Offset from base slot
+ *
+ * @return  DMA slot number calculated from slot+offset
+ */
+constexpr DmaSlot inline operator+(DmaSlot slot, int offset) {
+   return slot + (unsigned)offset;
+}
+
 
 /** Bit-mask of allocated channels */
 template<class Info> uint32_t DmaBase_T<Info>::allocatedChannels = (1<<Info::NumChannels)-1;
+
 
 
 
@@ -1002,7 +1515,7 @@ template<class Info> uint32_t DmaBase_T<Info>::allocatedChannels = (1<<Info::Num
  * End DMA_Group
  * @}
  */
-#endif
+#endif  // /DMA/_BasicInfoGuard
 } // End namespace USBDM
 
 #endif /* INCLUDE_USBDM_DMA_H_ */

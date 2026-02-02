@@ -3,9 +3,6 @@
  *
  * Main header file for USBDM library.
  * Generated code is included via this file.
- *
- * @version  V4.12.1.270
- * @date     1 December 2021
  */
 
 /*
@@ -20,15 +17,22 @@
 #ifndef INCLUDE_USBDM_HARDWARE_H_
 #define INCLUDE_USBDM_HARDWARE_H_
 
-#include "error.h"
-#include "pin_mapping.h"
-#include "delay.h"
-#include "console.h"
+#include "../Project_Headers/error.h"
+#include "../Project_Headers/pin_mapping.h"
+#include "../Project_Headers/delay.h"
+#include "../Project_Headers/console.h"
+#include "../Project_Headers/gpio.h"
 
-#include "gpio.h"
+#include "../Project_Headers/gpio.h"
 
+
+// User includes
+// None
 
 namespace USBDM {
+
+// User declarations
+// None
 
 /**
  * Map all configured pins to peripheral signals.
@@ -38,6 +42,8 @@ namespace USBDM {
  * @note Only the lower 16-bits of the PCR registers are initialised
  */
 extern void mapAllPins();
+
+// Hardware declarations
 
 typedef USBDM::GpioD<4,ActiveHigh>                           UsbLed;                                       // PTD4(p45)
 

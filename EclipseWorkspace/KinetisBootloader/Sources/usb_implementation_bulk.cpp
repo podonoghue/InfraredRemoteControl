@@ -20,6 +20,9 @@
 #include "usb_implementation_bulk.h"
 #include "hardware.h"
 
+#pragma GCC push_options
+#pragma GCC optimize("Os")
+
 namespace USBDM {
 
 /**
@@ -416,6 +419,7 @@ ErrorCode Usb0::receiveBulkData(uint16_t &size, uint8_t *buffer, int timeoutMS) 
    return rc;
 }
 
+#pragma GCC pop_options
 
 } // End namespace USBDM
 

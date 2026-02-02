@@ -34,8 +34,13 @@ extern "C" void __attribute__((constructor)) cpp_initialise() {
    }
 }
 
-#ifdef PORT_PCR_MUX
+// Hardware definitions
 // /HARDWARE_CPP/Definitions not found
+
+// User definitions
+// None
+
+#ifdef PORT_PCR_MUX
 
 /**
  * Map all configured pins to peripheral signals.
@@ -51,23 +56,24 @@ void mapAllPins() {
 #endif
 
    enablePortClocks(USBDM::PORTA_CLOCK_MASK|USBDM::PORTB_CLOCK_MASK|USBDM::PORTC_CLOCK_MASK|USBDM::PORTD_CLOCK_MASK|USBDM::PORTE_CLOCK_MASK);
-   PORTA->GPCHR = ForceLockedPins|0x0000UL|PORT_GPCHR_GPWE(0x000CUL);
-   PORTA->GPCLR = ForceLockedPins|0x0100UL|PORT_GPCLR_GPWE(0x0010UL);
-   PORTA->GPCLR = ForceLockedPins|0x0200UL|PORT_GPCLR_GPWE(0x0006UL);
-   PORTA->GPCLR = ForceLockedPins|0x0700UL|PORT_GPCLR_GPWE(0x0009UL);
-   PORTD->GPCLR = ForceLockedPins|0x0100UL|PORT_GPCLR_GPWE(0x0010UL);
+   PORTA->GPCHR = uint32_t(ForceLockedPins)|(0x0000UL|PORT_GPCHR_GPWE(0x000CUL));
+   PORTA->GPCLR = uint32_t(ForceLockedPins)|(0x0100UL|PORT_GPCLR_GPWE(0x0010UL));
+   PORTA->GPCLR = uint32_t(ForceLockedPins)|(0x0200UL|PORT_GPCLR_GPWE(0x0006UL));
+   PORTA->GPCLR = uint32_t(ForceLockedPins)|(0x0700UL|PORT_GPCLR_GPWE(0x0009UL));
+   PORTC->GPCLR = uint32_t(ForceLockedPins)|(0x0100UL|PORT_GPCLR_GPWE(0x0002UL));
+   PORTD->GPCLR = uint32_t(ForceLockedPins)|(0x0100UL|PORT_GPCLR_GPWE(0x0011UL));
 
    if constexpr (ForceLockoutUnbondedPins) {
-      PORTA->GPCLR = PinLock_Locked |0x0000UL|PORT_GPCLR_GPWE(0xFFE0UL); // Lockout unavailable pins
-      PORTA->GPCHR = PinLock_Locked |0x0000UL|PORT_GPCHR_GPWE(0xFFF3UL); // Lockout unavailable pins
-      PORTB->GPCLR = PinLock_Locked |0x0000UL|PORT_GPCLR_GPWE(0xFFF0UL); // Lockout unavailable pins
-      PORTB->GPCHR = PinLock_Locked |0x0000UL|PORT_GPCHR_GPWE(0xFFFCUL); // Lockout unavailable pins
-      PORTC->GPCLR = PinLock_Locked |0x0000UL|PORT_GPCLR_GPWE(0xFF00UL); // Lockout unavailable pins
-      PORTC->GPCHR = PinLock_Locked |0x0000UL|PORT_GPCHR_GPWE(0xFFFFUL); // Lockout unavailable pins
-      PORTD->GPCLR = PinLock_Locked |0x0000UL|PORT_GPCLR_GPWE(0xFF00UL); // Lockout unavailable pins
-      PORTD->GPCHR = PinLock_Locked |0x0000UL|PORT_GPCHR_GPWE(0xFFFFUL); // Lockout unavailable pins
-      PORTE->GPCLR = PinLock_Locked |0x0000UL|PORT_GPCLR_GPWE(0xFFFFUL); // Lockout unavailable pins
-      PORTE->GPCHR = PinLock_Locked |0x0000UL|PORT_GPCHR_GPWE(0xFFFFUL); // Lockout unavailable pins
+      PORTA->GPCLR = uint32_t(PinLock_Locked)|(0x0000UL|PORT_GPCLR_GPWE(0xFFE0UL)); // Lockout unavailable pins
+      PORTA->GPCHR = uint32_t(PinLock_Locked)|(0x0000UL|PORT_GPCHR_GPWE(0xFFF3UL)); // Lockout unavailable pins
+      PORTB->GPCLR = uint32_t(PinLock_Locked)|(0x0000UL|PORT_GPCLR_GPWE(0xFFF0UL)); // Lockout unavailable pins
+      PORTB->GPCHR = uint32_t(PinLock_Locked)|(0x0000UL|PORT_GPCHR_GPWE(0xFFFCUL)); // Lockout unavailable pins
+      PORTC->GPCLR = uint32_t(PinLock_Locked)|(0x0000UL|PORT_GPCLR_GPWE(0xFF00UL)); // Lockout unavailable pins
+      PORTC->GPCHR = uint32_t(PinLock_Locked)|(0x0000UL|PORT_GPCHR_GPWE(0xFFFFUL)); // Lockout unavailable pins
+      PORTD->GPCLR = uint32_t(PinLock_Locked)|(0x0000UL|PORT_GPCLR_GPWE(0xFF00UL)); // Lockout unavailable pins
+      PORTD->GPCHR = uint32_t(PinLock_Locked)|(0x0000UL|PORT_GPCHR_GPWE(0xFFFFUL)); // Lockout unavailable pins
+      PORTE->GPCLR = uint32_t(PinLock_Locked)|(0x0000UL|PORT_GPCLR_GPWE(0xFFFFUL)); // Lockout unavailable pins
+      PORTE->GPCHR = uint32_t(PinLock_Locked)|(0x0000UL|PORT_GPCHR_GPWE(0xFFFFUL)); // Lockout unavailable pins
    }
 
 }
@@ -79,6 +85,14 @@ void mapAllPins() {
 /*
  *  Static objects
  */
+   /**
+    * Shared callback to catch unhandled interrupt
+    * Only used for callbacks with no parameters
+    */
+   void unhandledCallback() {
+      setAndCheckErrorCode(E_NO_HANDLER);
+   }
+   
 
 
 } // End namespace USBDM

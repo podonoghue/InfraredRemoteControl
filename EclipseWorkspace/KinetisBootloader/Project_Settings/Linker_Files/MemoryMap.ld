@@ -79,7 +79,7 @@ MEMORY
     <o>  FLASH  address <constant>
     <o1> FLASH  size    <constant>
  */
-  flash          (rx)  : ORIGIN = 0x00000000 + BOOT_LOADER_SIZE, LENGTH = 0x00008000 - BOOT_LOADER_SIZE
+  flash          (rx)  : ORIGIN = 0x00000000 + BOOT_LOADER_SIZE, LENGTH = 0x00004000 - BOOT_LOADER_SIZE
 /*
     <o>  ram_high address <constant>
     <o1> ram_high size    <constant>

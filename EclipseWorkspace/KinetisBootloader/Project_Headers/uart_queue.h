@@ -8,6 +8,7 @@
 #ifndef INCLUDE_USBDM_UART_QUEUE_H_
 #define INCLUDE_USBDM_UART_QUEUE_H_
 
+#include "pin_mapping.h"
 #include "system.h"
 
 namespace USBDM {
@@ -20,9 +21,10 @@ namespace USBDM {
  */
 template<class T, int QUEUE_SIZE>
 class UartQueue {
-   volatile T        fBuff[QUEUE_SIZE];
-   volatile T        *fHead, *fTail;
-   volatile int      fNumberOfElements;
+   T  fBuff[QUEUE_SIZE];
+   T  *volatile fHead;
+   T  *volatile fTail;
+   int volatile fNumberOfElements;
 
 public:
 
@@ -70,7 +72,7 @@ public:
     *
     * @param[in]  element Element to add
     */
-   void enQueue(T element) {
+   void enQueue(const T &element) {
       bool success = enQueueDiscardOnFull(element);
       (void)success;
       usbdm_assert(success, "Queue full");
@@ -83,7 +85,7 @@ public:
     * @return true  => Element enqueued
     * @return false => Queue full, element not added
     */
-   bool enQueueDiscardOnFull(T element) {
+   bool enQueueDiscardOnFull(const T &element) {
       USBDM::CriticalSection cs;
       bool hasSpace = !isFull();
       if (hasSpace) {
