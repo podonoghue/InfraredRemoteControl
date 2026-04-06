@@ -223,7 +223,6 @@
    <item key="/USBDCD0/usbdcd_timer0_tunitcon"             value="0" />
    <item key="/WDOG/fullCodeSupport"                       value="true" />
    <item key="/WDOG/irqHandlerName"                        value="WatchdogHandler" />
-   <item key="/WDOG/irqHandlingMethod"                     value="$ClassMethod" />
    <item key="/WDOG/wdog_stctrlh_allowupdate"              value="false" />
    <item key="/WDOG/wdog_stctrlh_irqrsten"                 value="true" />
    <item key="/WDOG/wdog_stctrlh_wdogen"                   value="true" />

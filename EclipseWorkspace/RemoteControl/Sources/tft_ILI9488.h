@@ -561,7 +561,7 @@ protected:
    }
 
    /**
-    * Send a pixel colour as 2 bytes
+    * Send a pixel colour as 3 bytes
     *
     * @param colour Colour to send
     */
@@ -728,18 +728,22 @@ public:
     * Send block of data to display using DMA
     *
     * @param paddedData       Data to send
-    * @param numberOfElements Number of elements in paddedData
-    * @param numberOfpixels   Number of pixels to write
+    * @param numberOfElements Number of elements in paddedData (multiple of 3)
+    * @param numberOfpixels   Number of pixels to write (multiple of 2)
+    *
+    * @note Each pixel requires 3 bytes of data (R,G,B) packed 2 bytes per element
+    *       2 pixels = 3 elements of data (only low 16-bits of each element is RGB data, upper 16-bits is SPI control)
     *
     * @note If number of pixels requires more data that array provides, then the data sent wraps
-    *       around within array. This allows clearing an screen area with a small colour array
-    * @note paddedData is modified!
+    *       around within array. This allows clearing a screen area with a small colour array
     *
-    * Example:
+    * @note Assumes SPI queue is disabled.
+    *
+    * Examples:
     * @code
     *    // Size of paddedData array matches number of pixels
     *    uint32_t paddedData[3*16/2]; // Holds colours for 16 pixels
-    *    sendDataBlock(paddedData, sizeofArray(paddedData), 2*sizeofArray(paddedData)/3)
+    *    sendDataBlock(paddedData, sizeofArray(paddedData), 2*(sizeofArray(paddedData)/3)
     *
     *    // paddedData array is reused for multiple pixels
     *    uint32_t paddedData[3];     // Holds single colour used for all 16 pixels
@@ -749,10 +753,6 @@ public:
    void sendDataBlock(uint32_t *paddedData, unsigned numberOfElements, int numberOfpixels) {
 
 //      DebugLed::on();
-
-      // 3 entries => 2 pixels
-      // size must be multiple of 3 but can be rounded up as window clips extra data sent
-      const int pixelsDonePerIteration = 2*((numberOfElements+2)/3);
 
       static const DmaTcd tcdSkeleton = {
             DmaInfo {                                                              // * = dynamic
@@ -772,7 +772,7 @@ public:
             },
 
             /* Minor loop byte count             */ dmaNBytes(sizeof(uint32_t)),   //   Total transfer in one minor-loop
-            /* Major loop count                  */ 0,                             // * Transfer size - dynamic
+            /* Major loop count                  */ 0,                             // * Transfer size
 
             DmaTcdCsr {
                /* Start channel                  */ DmaStart_Hardware,             // Not started (triggered by hardware)
@@ -785,6 +785,7 @@ public:
             },
       };
 
+
       // Set up TCD from skeleton and modify dynamic values
       DmaTcd tcd{tcdSkeleton};
 
@@ -794,13 +795,17 @@ public:
       // Source address is padded array
       tcd.SADDR = uint32_t(paddedData);
 
-      // Reset source address after each transfer
+      // Reset source address after each transfer (last t/f will be incorrect but not used)
       tcd.SLAST = -(numberOfElements*sizeof(uint32_t));
 
       // Major loop count = # of entries to send on each transfer
       tcd.CITER = dmaCiter(numberOfElements);
 
       DmaChannelNum txDmaChannel;
+
+//      console.writeln("tcd.DADDR = ", tcd.DADDR);
+//      console.writeln("tcd.SLAST = ", tcd.SLAST);
+//      console.writeln("tcd.CITER = ", tcd.CITER);
 
       do {
 
@@ -812,9 +817,13 @@ public:
          // Configure the transfer
          Dma0::configureTransfer(txDmaChannel, tcd);
 
+         // Wait for SPI  to be idle
+         while(spi.getStatusFlags()&SpiStatusFlag_TxAndRxStatus) {
+            __asm__("nop");
+         }
          spi.setFifoAction(SpiTxFifoAction_None, SpiRxFifoAction_None);
 
-         spi.clearFifos(SpiClearFifo_Both);
+//         spi.clearFifos(SpiClearFifo_Both);
 
          const Dmamux0::Init dmamux0Init {
             txDmaChannel,
@@ -832,32 +841,54 @@ public:
 
          spi.setFifoAction(SpiTxFifoAction_Dma, SpiRxFifoAction_Dma);
 
-         // Number of pixels to write
-         int pixelsRemaining = numberOfpixels;
+         // Number of elements to write (determined from number of pixels)
+         // 2 pixels => 3 elements
+         // Must be multiple of 3 but can be rounded up as window clips extra data sent
+         unsigned remainingElements = 3*((numberOfpixels+1)/2);
 
-         while(pixelsRemaining>0) {
+//         console.writeln();
+//         console.write("numberOfpixels = ", numberOfpixels);
+//         console.writeln(", remainingElements = ", remainingElements);
 
-            if (pixelsRemaining <= pixelsDonePerIteration) {
-               // Last iteration
-               // Tell SPI to halt at last entry
-               paddedData[numberOfElements-1] |= SPI_PUSHR_EOQ_MASK;
+         while(remainingElements>0) {
+
+            if (remainingElements <= numberOfElements) {
+
+               // Number of elements in last transfer
+               numberOfElements = remainingElements;
+
+               // Major loop count = # of entries in final transfer
+               tcd.CITER = dmaCiter(numberOfElements);
+
+//               paddedData[numberOfElements-1] |= SPI_PUSHR_EOQ_MASK;
+
+               // Reconfigure for the last transfer
+               Dma0::configureTransfer(txDmaChannel, tcd);
             }
-
-//            DebugLed::on();
+//            if (remainingElements<40) {
+//               console.write("numberOfElements = ", numberOfElements);
+//               console.writeln(", remainingElements  = ", remainingElements);
+//            }
+            Dma0::clearDoneFlag(txDmaChannel);
+            Dma0::clearChannelErrorFlag(txDmaChannel);
 
             // Enable hardware requests
             Dma0::enableRequest(txDmaChannel);
 
             // Wait while DMA busy
-//            DebugLed::off();
             Dma0::waitUntilComplete(txDmaChannel);
 
-            pixelsRemaining -= pixelsDonePerIteration;
+//            uint32_t status = Dma0::getLastError();
+//            if (status != 0) {
+//               console.writeln("ES = ", status, Radix_16);
+//            }
+
+            remainingElements -= numberOfElements;
          }
 
          // Wait for SPI to finish last Tx
-         while(!(spi.getStatusFlags()&SpiStatusFlag_EndOfQueueFlag)) {
-         }
+//         while(!(spi.getStatusFlags()&SpiStatusFlag_EndOfQueueFlag)) {
+//         }
       } while (false);
 
       // Cleanup
@@ -889,17 +920,18 @@ public:
       const uint8_t G = uint8_t(colour>>(5-2)&0b1111'1100);
       const uint8_t B = uint8_t(colour<<(8-5)&0b1111'1000);
 
+      // Make alterable copy
       Spi::SpiCalculatedConfiguration dataConfiguration {
          this->dataConfiguration,
       };
       dataConfiguration.setFrameSize(SpiFrameSize_16_bits);
 
-      // 3 entries = 2 pixels of colour
+      // 3 array entries = 2 pixels of colour, so array represents 4 pixels
       static uint32_t paddedData[6];
-      paddedData[0] = dataConfiguration.firstValue((R<<8)|G);
+      paddedData[0] = dataConfiguration.middleValue((R<<8)|G);
       paddedData[1] = dataConfiguration.middleValue((B<<8)|R);
       paddedData[2] = dataConfiguration.middleValue((G<<8)|B);
-      paddedData[3] = dataConfiguration.firstValue((R<<8)|G);
+      paddedData[3] = dataConfiguration.middleValue((R<<8)|G);
       paddedData[4] = dataConfiguration.middleValue((B<<8)|R);
       paddedData[5] = dataConfiguration.middleValue((G<<8)|B);
 
@@ -987,12 +1019,6 @@ public:
          return;
       }
       fill(colour, x0, y0, x1-x0, 1);
-//      setWindow(x0, y0, x1, y0);
-//
-//      sendCommand(Command_MemoryWriteStart);
-//      while (x0++<=x1) {
-//         sendColour(colour);
-//      }
    }
 
 
@@ -1013,12 +1039,6 @@ public:
          return;
       }
       fill(colour, x0, y0, 1, y1-y0);
-//      setWindow(x0, y0, x0, y1);
-//
-//      sendCommand(Command_MemoryWriteStart);
-//      while (y0++<=y1) {
-//         sendColour(colour);
-//      }
    }
 
    /**
@@ -1082,9 +1102,6 @@ public:
          return;
       }
       fill(colour, x0, y0, x1-x0, y1-y0);
-//      for (unsigned y=y0; y<=y1; y++) {
-//         drawHorizontalLine(x0, y, x1);
-//      }
    }
 
    /**
@@ -1186,81 +1203,87 @@ public:
       }
    }
 
-//   /**
-//    * Draw an image to display
-//    *
-//    * @param img  Image with 16-bit colours
-//    * @param x    Top-left X
-//    * @param y    Top-left Y
-//    * @param w    Width
-//    * @param h    Height
-//    */
-//   void drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
-//
-//      // rudimentary clipping (drawChar w/big text requires this)
-//      if((x >= WIDTH) || (y >= HEIGHT)) {
-//         // Clipped
-//         return;
-//      }
-//      if((x + w - 1) >= (int)WIDTH)  {
-//         // Clip on edge
-//         w = WIDTH  - x;
-//      }
-//      if((y + h - 1) >= (int)HEIGHT) {
-//         // Clip on edge
-//         h = HEIGHT - y;
-//      }
-//
-//      uint32_t buffer[3*w];
-//
-//#if 1
-//      setWindow(x, y, x+w-1, y+h-1);
-//
-//      unsigned count = 0;
-//      for (unsigned row=0; row<h; row++) {
-//
-//         // Process each row to buffer and send
-//         unsigned pixelCount = 0;
-//
-//         for (unsigned col=0; col<w; col++) {
-//
-//            // 2 bytes of image -> 3 byte colour on display
-//            uint8_t b1 = img[count++];
-//            uint8_t b2 = img[count++];
-//            uint16_t colour = b1 << 8 | b2;
-//            linebuff[pixelCount++] = (colour & 0xF800) >> (11-3);
-//            linebuff[pixelCount++] = (colour & 0x07E0) >> (5-2);
-//            linebuff[pixelCount++] = (colour & 0x001F) << (8-3);
-//         }
-//         sendData(3*w, linebuff);
-//      }
-//#else
-//      setWindow(x, y, x+w-1, y+h-1);
-//      sendCommand(Command_MemoryWriteStart);
-//
-//      uint8_t linebuff[w*3+1];
-//      unsigned count = 0;
-//
-//      for (unsigned row=0; row<h; row++) {
-//
-//         // Process each row to buffer and send
-//         unsigned pixelCount = 0;
-//
-//         for (unsigned col=0; col<w; col++) {
-//
-//            // 2 bytes of image -> 3 byte colour on display
-//            uint8_t b1 = img[count++];
-//            uint8_t b2 = img[count++];
-//            uint16_t colour = b1 << 8 | b2;
-//            linebuff[pixelCount++] = (colour & 0xF800) >> (11-3);
-//            linebuff[pixelCount++] = (colour & 0x07E0) >> (5-2);
-//            linebuff[pixelCount++] = (colour & 0x001F) << (8-3);
-//         }
-//         sendData(3*w, linebuff);
-//      }
-//#endif
-//   }
-//
+#if 0
+   /**
+    * Draw an image to display
+    *
+    * @param img  Image with 16-bit colours
+    * @param x    Top-left X
+    * @param y    Top-left Y
+    * @param w    Width
+    * @param h    Height
+    */
+   void drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+
+      // rudimentary clipping (drawChar w/big text requires this)
+      if((x >= WIDTH) || (y >= HEIGHT)) {
+         // Clipped
+         return;
+      }
+      if((x + w - 1) >= (int)WIDTH)  {
+         // Clip on edge
+         w = WIDTH  - x;
+      }
+      if((y + h - 1) >= (int)HEIGHT) {
+         // Clip on edge
+         h = HEIGHT - y;
+      }
+
+      uint32_t buffer[3*w];
+
+#if 1
+      setWindow(x, y, x+w-1, y+h-1);
+
+      unsigned count = 0;
+      for (unsigned row=0; row<h; row++) {
+
+         // Process each row to buffer and send
+         unsigned pixelCount = 0;
+
+         for (unsigned col=0; col<w; col++) {
+
+            // 2 bytes of image -> 3 byte colour on display
+            uint8_t b1 = img[count++];
+            uint8_t b2 = img[count++];
+            uint16_t colour = b1 << 8 | b2;
+            linebuff[pixelCount++] = (colour & 0xF800) >> (11-3);
+            linebuff[pixelCount++] = (colour & 0x07E0) >> (5-2);
+            linebuff[pixelCount++] = (colour & 0x001F) << (8-3);
+         }
+         sendData(3*w, linebuff);
+      }
+#else
+      setWindow(x, y, x+w-1, y+h-1);
+      sendCommand(Command_MemoryWriteStart);
+
+      uint8_t linebuff[w*3+1];
+      unsigned count = 0;
+
+      for (unsigned row=0; row<h; row++) {
+
+         // Process each row to buffer and send
+         unsigned pixelCount = 0;
+
+         for (unsigned col=0; col<w; col++) {
+
+            // 2 bytes of image -> 3 byte colour on display
+            uint8_t b1 = img[count++];
+            uint8_t b2 = img[count++];
+            uint16_t colour = b1 << 8 | b2;
+            linebuff[pixelCount++] = (colour & 0xF800) >> (11-3);
+            linebuff[pixelCount++] = (colour & 0x07E0) >> (5-2);
+            linebuff[pixelCount++] = (colour & 0x001F) << (8-3);
+         }
+         sendData(3*w, linebuff);
+      }
+#endif
+   }
+#endif
+
+   class PaddedData {
+
+   };
+
    /**
     * Draw an image to display
     *
@@ -1291,7 +1314,6 @@ public:
 
 //      console.WRITELN("drawBitmap(", x, ", ", y, ", ", w, ", ", h, ", ", scale, ")");
 
-#if 1
       // Must be a multiple of 3 so pixels pack evenly
       // 2 pixels -> 3 entries, array represents 2*(3*8)/3 = 16 pixels
       constexpr unsigned BUF_SIZE = 3*8*4;
@@ -1398,61 +1420,6 @@ public:
             }
          }
       }
-#else
-      setWindow(x, y, x+w*scale-1, y+h*scale-1);
-      sendCommand(Command_MemoryWriteStart);
-
-      // Must be a multiple of 3 so pixels pack evenly
-      // 2 pixels -> 3 entries, array represents 16 pixels
-      constexpr unsigned BUF_SIZE = 3*8;
-      uint8_t  elementBuffer[BUF_SIZE];
-
-      unsigned elementCount = 0;
-
-      uint8_t  bitMask  = 0;
-
-      for (unsigned row=0; row<h; row++) {
-
-         // Process each row to buffer and send
-         uint8_t  byte;
-         const uint8_t *rowStart = img+row*((width+7)/8);
-
-         // Send entire line 'scale' times
-         for (unsigned l=0; l<scale; l++) {
-
-            // Reset to start of row in image
-            const uint8_t *currentByte = rowStart;
-
-            for (unsigned col=0; col<w; col++) {
-               if (bitMask==0) {
-                  bitMask = 0b1000'0000;
-                  byte    = *currentByte++;
-               }
-               // 1 bit of image -> 3 byte colour on display
-               Colour c = (byte&bitMask)?colour:backgroundColour;
-               uint8_t c1 = uint8_t(c>>(6+5-3)&0b1111'1000);
-               uint8_t c2 = uint8_t(c>>(5-2)&0b1111'1100);
-               uint8_t c3 = uint8_t(c<<(8-5)&0b1111'1000);
-
-               // Send colour 'scale' times
-               for (unsigned s=0; s<scale; s++) {
-                  elementBuffer[elementCount++] = c1;
-                  elementBuffer[elementCount++] = c2;
-                  elementBuffer[elementCount++] = c3;
-                  if (elementCount>=BUF_SIZE) {
-                     sendData(elementCount, elementBuffer);
-                     elementCount = 0;
-                  }
-               }
-               bitMask >>= 1;
-            }
-         }
-      }
-      if (elementCount>0) {
-         // Flush remainder
-         sendData(elementCount, elementBuffer);
-      }
-#endif
    }
 
    /**

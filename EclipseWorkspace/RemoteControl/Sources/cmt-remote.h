@@ -777,24 +777,27 @@ protected:
 
       waitUntilComplete();
 
-      static Control delaySequence[3];
+      if (delay>0) {
 
-      delaySequence[0] = DelayHigh(Ticks(delay));  // delay us
-      delaySequence[1] = DelayLow(Ticks(delay));   //
-      delaySequence[2] = c_End;
+         static Control delaySequence[3];
 
-      sequence   = delaySequence;
-      complete   = false;
-      tickCount  = 0_ticks;
+         delaySequence[0] = DelayHigh(Ticks(delay));  // delay us
+         delaySequence[1] = DelayLow(Ticks(delay));   //
+         delaySequence[2] = c_End;
 
-      // Configure CMT
-      Cmt::configure(cmtInitValue);
+         sequence   = delaySequence;
+         complete   = false;
+         tickCount  = 0_ticks;
 
-      // Prime 1st call-back
-      current = *sequence++;
-      cmtCallback();
+         // Configure CMT
+         Cmt::configure(cmtInitValue);
 
-      Cmt::start();
+         // Prime 1st call-back
+         current = *sequence++;
+         cmtCallback();
+
+         Cmt::start();
+      }
    }
 
 public:
@@ -1116,7 +1119,7 @@ public:
     */
    static void send(Code code, unsigned delay, unsigned repeat=3) {
 
-      console.WRITELN("IrRemote: Laser-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Blaupunkt-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;
@@ -1132,7 +1135,7 @@ public:
     */
    static void test(Code code, uint8_t repeat=0) {
 
-      console.WRITELN("IrRemote: Laser-DVD: 0x", code, Radix_16);
+      console.WRITELN("IrRemote: Blaupunkt-DVD: 0x", code, Radix_16);
 
       if (repeat == 0) {
          repeat = 3;

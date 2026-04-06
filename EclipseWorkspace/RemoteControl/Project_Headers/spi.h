@@ -55,7 +55,7 @@ namespace USBDM {
     * Transfer Complete Flag
     * (spi_sr_tcf)
     *
-    * 
+    * Indicates that all bits in a frame have been shifted out
     */
    enum SpiTransferFlag : uint32_t {
       SpiTransferFlag_NotComplete   = SPI_SR_TCF(0),  ///< Transfer not complete
@@ -955,12 +955,39 @@ public:
          ctar(ctar) {
       }
    
+     /**
+      * May be used to create the first data value in a padded array for SPI DMA.
+      * Generated value has Clear Transmit Count flag set so that the Tx count
+      * (in TCNT register) will be cleared before this data value is transmitted.
+      *
+      * @param data Data value (<= 16 bits)
+      *
+      * @return  Padded 32-bit value (PUSHR value combined with data)
+      */
       uint32_t firstValue(uint16_t data) const {
          return (pushrCommand.value<<16)|data|SpiCountAction_Clear;
       }
+   
+     /**
+      * May be used to create a middle data value in a padded array for SPI DMA.
+      *
+      * @param data Data value (<= 16 bits)
+      *
+      * @return  Padded 32-bit value (PUSHR value combined with data)
+      */
       uint32_t middleValue(uint16_t data) const {
          return (pushrCommand.value<<16)|data;
       }
+   
+     /**
+      * May be used to create the last data value in a padded array for SPI DMA.
+      * Generated value has End Of Queue flag set so that the EOF flag in SPI Status
+      * register will be set when this data value completes transmission.
+      *
+      * @param data Data value (<= 16 bits)
+      *
+      * @return  Padded 32-bit value (PUSHR value combined with data)
+      */
       uint32_t lastValue(uint16_t data) const {
          return (pushrFinalCommand.value<<16)|data|SpiEndOfQueue_Assert;
       }
@@ -1455,9 +1482,11 @@ protected:
       // Polarity for PCS signals (spi_mcr_pcsis)
       // Enables Doze mode (when processor is waiting?) (spi_mcr_doze)
       // Module Disable (spi_mcr_mdis)
+      // Halt (spi_mcr_halt)
+      spi->MCR = init.mcr.value;
+   
       // Enable selected FIFOs (spi_mcr_dis_fifox)
       // Clear selected FIFOs (spi_mcr_clr_fifox)
-      // Halt (spi_mcr_halt)
       spi->MCR = init.mcr.value|SpiClearFifo_Both;
    
       // Transfer Complete Flag (spi_sr_tcf)

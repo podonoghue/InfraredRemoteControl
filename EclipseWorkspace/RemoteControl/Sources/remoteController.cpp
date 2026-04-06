@@ -72,8 +72,8 @@ using TFT=TFT_ILI9488<Orientation_Rotated_180>;
 using TouchInterface = Touch_XPT2046<TouchOrientation_Rotated_180, 330, 480>;
 
 // How long to idle before sleeping
-static constexpr int SLEEP_DELAY = 120;
-//static constexpr int SLEEP_DELAY = 20;
+static constexpr int DISPLAYOFF_DELAY = 120; // 120;
+static constexpr int SLEEP_DELAY      = 240; // 240;
 
 static constexpr UartBaudRate baudRate = UartBaudRate_19200;
 
@@ -103,7 +103,8 @@ static const Spi0::Init spiConfig {
    SpiRxOverflowHandling_Overwrite ,            // Handling of Rx Overflow Data - Overwrite existing
    SpiContinuousClock_Disable,                  // Continuous SCK Enable - Clock during transfers only
    SpiPcsActiveLow_None,                        // Polarity for PCS signals
-   SpiPeripheralSelectMode_Transaction          // Negate PCS between Transactions
+   SpiPeripheralSelectMode_Transaction,         // Negate PCS between Transactions
+   SpiEnableFifo_None,
 };
 
 // Shared SPI to use
@@ -356,7 +357,7 @@ private:
    static inline int   lipoPercentage = 0;
 
    // Some of these limits are updated when the battery is checked
-   static constexpr float lipo_0Percent         = 3.8;
+   static constexpr float lipo_0Percent         = 3.7;
    static inline float lipo_100Percent          = 4.2;
    static inline float lipoCharging_0Percent    = 3.7;
    static inline float lipoCharging_100Percent  = 4.2;
@@ -489,7 +490,7 @@ public:
             break;
       }
 
-#ifdef DEBUG_BUILD
+#if defined(DEBUG_BUILD) && 0
       static const char *lipoStatus[] = {
             /* STDBY, CHRG */
             /*   0      0  */ "No power",
@@ -774,7 +775,7 @@ public:
 
 using SonyTvAction       = IrAction<IrSonyTV>;
 using LaserDvdAction     = IrAction<IrLaserDVD>;
-using SamsungDvdAction   = IrAction<IrSamsungDVD>;
+//using SamsungDvdAction   = IrAction<IrSamsungDVD>;
 using TeacPvrAction      = IrAction<IrTeacPVR>;
 using BlaupunktDvdAction = IrAction<IrBlaupunktDVD>;
 using PanasonicDvdAction = IrAction<IrPanasonicDVD>;
@@ -827,10 +828,10 @@ public:
 };
 
 // Each of these use 1 byte of RFVBAT non-volatile storage
-using SonyTvStatusAction       = IrStatusAction<IrSonyTV, RFVBAT_BasePtr+5>;
-using LaserDvdStatusAction     = IrStatusAction<IrLaserDVD, RFVBAT_BasePtr+6>;
-using SamsungDvdStatusAction   = IrStatusAction<IrSamsungDVD, RFVBAT_BasePtr+7>;
-using TeacPvrStatusAction      = IrStatusAction<IrTeacPVR, RFVBAT_BasePtr+8>;
+using SonyTvStatusAction       = IrStatusAction<IrSonyTV,       RFVBAT_BasePtr+5>;
+using LaserDvdStatusAction     = IrStatusAction<IrLaserDVD,     RFVBAT_BasePtr+6>;
+//using SamsungDvdStatusAction   = IrStatusAction<IrSamsungDVD,   RFVBAT_BasePtr+7>;
+using TeacPvrStatusAction      = IrStatusAction<IrTeacPVR,      RFVBAT_BasePtr+8>;
 using BlaupunktDVDStatusAction = IrStatusAction<IrBlaupunktDVD, RFVBAT_BasePtr+9>;
 using PanasonicDVDStatusAction = IrStatusAction<IrPanasonicDVD, RFVBAT_BasePtr+10>;
 
@@ -847,9 +848,9 @@ protected:
    const Action  &action;
    const Colour   buttonColour;
 
-   virtual ~Button() = default;
 
 public:
+   virtual ~Button() = default;
    static constexpr uint16_t H_BORDER_WIDTH = 7;
    static constexpr uint16_t V_BORDER_WIDTH = 6;
    const uint16_t width;
@@ -995,9 +996,9 @@ class Screen {
 
 protected:
 
-   // Non-volatile storage
+   // 5 bytes of non-volatile storage
    static constexpr HardwarePtr<Page const *> currentPage = RFVBAT_BasePtr;
-   static constexpr HardwarePtr<uint8_t>      checksum    = RFVBAT_BasePtr+4;
+   static constexpr HardwarePtr<uint8_t>      checksum    = RFVBAT_BasePtr+sizeof(Page const *);
 
    Screen() = delete;
 
@@ -1221,7 +1222,7 @@ public:
 
    void drawAll() const override {
 
-      console.WRITELN("Show screen '", title, "'");
+      console.WRITELN("Show page '", title, "'");
 
       tft.setBackgroundColour(BACKGROUND_COLOUR);
       tft.fill(BACKGROUND_COLOUR, 0, font.height, tft.WIDTH, tft.HEIGHT-font.height);
@@ -1233,7 +1234,9 @@ public:
    }
 
    void action() const override {
-      Action::action();
+      console.WRITELN("Action: Show Page ", title);
+
+//      Action::action();
       //      tft.backlightOff();
       Screen::show(this);
       //      tft.backlightOn();
@@ -1346,7 +1349,7 @@ constexpr SonyTvAction   sonyTvReturn(                    IrSonyTV::RETURN,     
 constexpr SonyTvAction   sonyTvSourceTv(                  IrSonyTV::SOURCE_TV,       "TV Source TV"      );
 constexpr SonyTvAction   sonyTvSourceHdmi1_Chrome(        IrSonyTV::SOURCE_HDMI_1,   "TV Source HDMI 1"  );
 constexpr SonyTvAction   sonyTvSourceHdmi2_PVR_Teac(      IrSonyTV::SOURCE_HDMI_2,   "TV Source HDMI 2"  );
-constexpr SonyTvAction   sonyTvSourceHdmi3_DVD_Samsung(   IrSonyTV::SOURCE_HDMI_3,   "TV Source HDMI 3"  );
+constexpr SonyTvAction   sonyTvSourceHdmi3_DVD_Blaupunkt( IrSonyTV::SOURCE_HDMI_3,   "TV Source HDMI 3"  );
 constexpr SonyTvAction   sonyTvSourceHdmi4_DVD_Laser(     IrSonyTV::SOURCE_HDMI_4,   "TV Source HDMI 4"  );
 constexpr SonyTvAction   sonyTvSourceVideo1_DVD_Panasonic(IrSonyTV::SOURCE_Video_1,  "TV Source Video 1" );
 
@@ -1363,9 +1366,9 @@ constexpr LaserDvdAction       laserDvdOnOff(    IrLaserDVD::ON_OFF,  "Laser DVD
 constexpr LaserDvdStatusAction laserDvdOn(       IrLaserDVD::ON_OFF,  "Laser DVD On",      100_ticks,   true);
 constexpr LaserDvdStatusAction laserDvdOff(      IrLaserDVD::ON_OFF,  "Laser DVD Off",     100_ticks,   false);
 
-constexpr SamsungDvdAction       samsungDvdOnOff(   IrSamsungDVD::ON_OFF,   "Samsung DVD On/Off",  100_ticks);
-constexpr SamsungDvdStatusAction samsungDvdOn(      IrSamsungDVD::ON_OFF,   "Samsung DVD On",      100_ticks,   true);
-constexpr SamsungDvdStatusAction samsungDvdOff(     IrSamsungDVD::ON_OFF,   "Samsung DVD Off",     100_ticks,   false);
+//constexpr SamsungDvdAction       samsungDvdOnOff(   IrSamsungDVD::ON_OFF,   "Samsung DVD On/Off",  100_ticks);
+//constexpr SamsungDvdStatusAction samsungDvdOn(      IrSamsungDVD::ON_OFF,   "Samsung DVD On",      100_ticks,   true);
+//constexpr SamsungDvdStatusAction samsungDvdOff(     IrSamsungDVD::ON_OFF,   "Samsung DVD Off",     100_ticks,   false);
 
 constexpr PanasonicDvdAction       panasonicDvdOnOff(   IrPanasonicDVD::ON_OFF,   "Panasonic DVD On/Off",  100_ticks);
 constexpr PanasonicDVDStatusAction panasonicDvdOn(      IrPanasonicDVD::ON_OFF,   "Panasonic DVD On",      100_ticks,   true);
@@ -1438,12 +1441,12 @@ protected:
 
    static inline constexpr TextButton buttons[6] {
       TextButton(sonyTvOnOff,        "1. Sony TV",       Colour::BLACK, Colour::CYAN),
-            TextButton(teacPvrOnOff,       "2. Teac PVR",      Colour::BLACK, Colour::CYAN),
-            TextButton(laserDvdOnOff,      "3. Laser DVD",     Colour::BLACK, Colour::CYAN),
-            TextButton(panasonicDvdOnOff,  "4. Panasonic DVD", Colour::BLACK, Colour::CYAN),
-            //      TextButton(samsungDvdOnOff,    "4. Samsung DVD",   Colour::RED, Colour::CYAN    ),
-            TextButton(blaupunktDvdOnOff,  "5. Blaupunkt DVD", Colour::BLACK, Colour::CYAN),
-            TextButton(backFromHelpAction, "6. Back",          Colour::RED, Colour::WHITE),
+      TextButton(teacPvrOnOff,       "2. Teac PVR",      Colour::BLACK, Colour::CYAN),
+      TextButton(laserDvdOnOff,      "3. Laser DVD",     Colour::BLACK, Colour::CYAN),
+      TextButton(panasonicDvdOnOff,  "4. Panasonic DVD", Colour::BLACK, Colour::CYAN),
+      //      TextButton(samsungDvdOnOff,    "4. Samsung DVD",   Colour::RED, Colour::CYAN    ),
+      TextButton(blaupunktDvdOnOff,  "5. Blaupunkt DVD", Colour::BLACK, Colour::CYAN),
+      TextButton(backFromHelpAction, "6. Back",          Colour::RED, Colour::WHITE),
    };
 
 public:
@@ -1567,7 +1570,7 @@ public:
 };
 #endif // DEBUG_BUILD
 
-class SonyTvPage : public PageWithButtons<22> {
+class SonyTvPage : public PageWithButtons<21> {
 
 protected:
 
@@ -1600,7 +1603,7 @@ protected:
          /* 15   */ SonyTvAction{IrSonyTV::Code::SOURCE, "TV Source"  },
    };
 
-   static inline constexpr ImageButton32 buttons[20] = {
+   static inline constexpr ImageButton32 buttons[21] = {
          ImageButton32( actions[ 0],        One      ),
          ImageButton32( actions[ 1],        Two      ),
          ImageButton32( actions[ 2],        Three    ),
@@ -1625,6 +1628,8 @@ protected:
          ImageButton32( actions[12],        Down     ),
          ImageButton32( actions[13],        Left     ),
          ImageButton32( actions[14],        Right    ),
+
+         ImageButton32( actions[15],        Source   ),
    };
    //   static inline TestAction testAction;
    //   static inline constexpr TextButton sourceButton {actions[15], "Src"  };
@@ -1659,83 +1664,83 @@ public:
    }
 };
 
-class SamsungDvdPage : public  PageWithButtons<21> {
-
-protected:
-   static inline constexpr SamsungDvdAction actions[16] = {
-         /*  0 */ SamsungDvdAction{IrSamsungDVD::Code::REVERSE_SCENE, "DVD Reverse Scene" },
-         /*  1 */ SamsungDvdAction{IrSamsungDVD::Code::UP           , "DVD Up"            },
-         /*  2 */ SamsungDvdAction{IrSamsungDVD::Code::FORWARD_SCENE, "DVD Forward Scene" },
-         /*  3 */ SamsungDvdAction{IrSamsungDVD::Code::PAUSE        , "DVD Pause"         },
-
-         /*  4 */ SamsungDvdAction{IrSamsungDVD::Code::LEFT         , "DVD Left"          },
-         /*  5 */ SamsungDvdAction{IrSamsungDVD::Code::OK           , "DVD OK"            },
-         /*  6 */ SamsungDvdAction{IrSamsungDVD::Code::RIGHT        , "DVD Right"         },
-         /*  7 */ SamsungDvdAction{IrSamsungDVD::Code::PLAY         , "DVD Play"          },
-
-         /*  8 */ SamsungDvdAction{IrSamsungDVD::Code::REVERSE      , "DVD Fast Reverse"  },
-         /*  9 */ SamsungDvdAction{IrSamsungDVD::Code::DOWN         , "DVD Down"          },
-         /* 10 */ SamsungDvdAction{IrSamsungDVD::Code::FORWARD      , "DVD Fast Forward"  },
-         /* 11 */ SamsungDvdAction{IrSamsungDVD::Code::STOP         , "DVD Halt"          },
-
-         /* 12 */ SamsungDvdAction{IrSamsungDVD::Code::EJECT        , "DVD Eject"         },
-         /* 13 */ SamsungDvdAction{IrSamsungDVD::Code::MENU         , "DVD Menu"          },
-         /* 14 */ SamsungDvdAction{IrSamsungDVD::Code::INFO         , "DVD Info"          },
-         /* 15 */ SamsungDvdAction{IrSamsungDVD::Code::SUBTITLE     , "DVD Subtitle"      },
-   };
-
-   static inline constexpr ImageButton32 buttons[21] {
-      /* Scene Back    */ ImageButton32( actions[ 0], ReverseScene ),
-            /* Up            */ ImageButton32( actions[ 1], Up           ),
-            /* Scene Forward */ ImageButton32( actions[ 2], ForwardScene ),
-            /* Pause         */ ImageButton32( actions[ 3], Pause        ),
-
-            /* Left          */ ImageButton32( actions[ 4], Left         ),
-            /* OK            */ ImageButton32( actions[ 5], Enter        ),
-            /* Right         */ ImageButton32( actions[ 6], Right        ),
-            /* Play          */ ImageButton32( actions[ 7], Play,        Colour::WHITE, Colour::BLUE ),
-
-            /* Rewind        */ ImageButton32( actions[ 8], FastReverse  ),
-            /* Down          */ ImageButton32( actions[ 9], Down         ),
-            /* Fast Forward  */ ImageButton32( actions[10], FastForward  ),
-            /* Stop          */ ImageButton32( actions[11], Halt         ),
-
-            /* Vol +         */ sonyTvVolumeUpButton,
-            /* Vol -         */ sonyTvVolumeDownButton,
-            /* Mute          */ sonyTvMuteButton,
-            /* Eject         */ ImageButton32( actions[12], Eject        ),
-
-            /* Menu          */ ImageButton32( actions[13], Menu         ),
-            /* Info          */ ImageButton32( actions[14], Info         ),
-            /* Main page     */ showMainPageButton,
-            /* Help page     */ helpPageButton,
-            /* Subtitle      */ ImageButton32( actions[15], Subtitle      ),
-   };
-
-public:
-
-   SamsungDvdPage() : PageWithButtons("Samsung DVD") {
-
-      for (unsigned index=0; index<(sizeof(buttons)/sizeof(buttons[0])); index++) {
-         add(&buttons[index]);
-      }
-      layout();
-   }
-
-   ~SamsungDvdPage() = default;
-
-   virtual const Action *findButtonAction(ButtonCode code) const override {
-      if (code > mButtons.size()) {
-         return nullptr;
-      }
-      return getButtonAt((unsigned)code)->getAction();
-   }
-
-   //   void drawAll() const override {
-   //      PageWithButtons::drawAll();
-   ////      Screen::setStatusLine("Main|Mute|Vol-|Vol+");
-   //   }
-};
+//class SamsungDvdPage : public  PageWithButtons<21> {
+//
+//protected:
+//   static inline constexpr SamsungDvdAction actions[16] = {
+//         /*  0 */ SamsungDvdAction{IrSamsungDVD::Code::REVERSE_SCENE, "DVD Reverse Scene" },
+//         /*  1 */ SamsungDvdAction{IrSamsungDVD::Code::UP           , "DVD Up"            },
+//         /*  2 */ SamsungDvdAction{IrSamsungDVD::Code::FORWARD_SCENE, "DVD Forward Scene" },
+//         /*  3 */ SamsungDvdAction{IrSamsungDVD::Code::PAUSE        , "DVD Pause"         },
+//
+//         /*  4 */ SamsungDvdAction{IrSamsungDVD::Code::LEFT         , "DVD Left"          },
+//         /*  5 */ SamsungDvdAction{IrSamsungDVD::Code::OK           , "DVD OK"            },
+//         /*  6 */ SamsungDvdAction{IrSamsungDVD::Code::RIGHT        , "DVD Right"         },
+//         /*  7 */ SamsungDvdAction{IrSamsungDVD::Code::PLAY         , "DVD Play"          },
+//
+//         /*  8 */ SamsungDvdAction{IrSamsungDVD::Code::REVERSE      , "DVD Fast Reverse"  },
+//         /*  9 */ SamsungDvdAction{IrSamsungDVD::Code::DOWN         , "DVD Down"          },
+//         /* 10 */ SamsungDvdAction{IrSamsungDVD::Code::FORWARD      , "DVD Fast Forward"  },
+//         /* 11 */ SamsungDvdAction{IrSamsungDVD::Code::STOP         , "DVD Halt"          },
+//
+//         /* 12 */ SamsungDvdAction{IrSamsungDVD::Code::EJECT        , "DVD Eject"         },
+//         /* 13 */ SamsungDvdAction{IrSamsungDVD::Code::MENU         , "DVD Menu"          },
+//         /* 14 */ SamsungDvdAction{IrSamsungDVD::Code::INFO         , "DVD Info"          },
+//         /* 15 */ SamsungDvdAction{IrSamsungDVD::Code::SUBTITLE     , "DVD Subtitle"      },
+//   };
+//
+//   static inline constexpr ImageButton32 buttons[21] {
+//      /* Scene Back    */ ImageButton32( actions[ 0], ReverseScene ),
+//            /* Up            */ ImageButton32( actions[ 1], Up           ),
+//            /* Scene Forward */ ImageButton32( actions[ 2], ForwardScene ),
+//            /* Pause         */ ImageButton32( actions[ 3], Pause        ),
+//
+//            /* Left          */ ImageButton32( actions[ 4], Left         ),
+//            /* OK            */ ImageButton32( actions[ 5], Enter        ),
+//            /* Right         */ ImageButton32( actions[ 6], Right        ),
+//            /* Play          */ ImageButton32( actions[ 7], Play,        Colour::WHITE, Colour::BLUE ),
+//
+//            /* Rewind        */ ImageButton32( actions[ 8], FastReverse  ),
+//            /* Down          */ ImageButton32( actions[ 9], Down         ),
+//            /* Fast Forward  */ ImageButton32( actions[10], FastForward  ),
+//            /* Stop          */ ImageButton32( actions[11], Halt         ),
+//
+//            /* Vol +         */ sonyTvVolumeUpButton,
+//            /* Vol -         */ sonyTvVolumeDownButton,
+//            /* Mute          */ sonyTvMuteButton,
+//            /* Eject         */ ImageButton32( actions[12], Eject        ),
+//
+//            /* Menu          */ ImageButton32( actions[13], Menu         ),
+//            /* Info          */ ImageButton32( actions[14], Info         ),
+//            /* Main page     */ showMainPageButton,
+//            /* Help page     */ helpPageButton,
+//            /* Subtitle      */ ImageButton32( actions[15], Subtitle      ),
+//   };
+//
+//public:
+//
+//   SamsungDvdPage() : PageWithButtons("Samsung DVD") {
+//
+//      for (unsigned index=0; index<(sizeof(buttons)/sizeof(buttons[0])); index++) {
+//         add(&buttons[index]);
+//      }
+//      layout();
+//   }
+//
+//   ~SamsungDvdPage() = default;
+//
+//   virtual const Action *findButtonAction(ButtonCode code) const override {
+//      if (code > mButtons.size()) {
+//         return nullptr;
+//      }
+//      return getButtonAt((unsigned)code)->getAction();
+//   }
+//
+//   //   void drawAll() const override {
+//   //      PageWithButtons::drawAll();
+//   ////      Screen::setStatusLine("Main|Mute|Vol-|Vol+");
+//   //   }
+//};
 
 class LaserDvdPage : public  PageWithButtons<21> {
 
@@ -2160,6 +2165,28 @@ public:
    //   }
 };
 
+
+class SetFlagAction : public Action {
+
+   bool &flag;
+
+public:
+
+   constexpr SetFlagAction(bool &flag) : Action("A: SetFlag"), flag(flag) {
+   }
+
+   virtual ~SetFlagAction() = default;
+
+   virtual void action() const {
+
+      flag = true;
+      Action::action();
+   }
+};
+
+static bool suspendImmediately = false;
+static SetFlagAction suspendImmediatelyAction(suspendImmediately);
+
 /*
  * Page definitions
  * ============================================================================================
@@ -2169,7 +2196,7 @@ MainPage          mainPage;
 SonyTvPage        sonyTvPage;
 TeacPvrPage       teacPvrPage;
 LaserDvdPage      laserDvdPage;
-SamsungDvdPage    samsungDvdPage;
+//SamsungDvdPage    samsungDvdPage;
 PanasonicDvdPage  panasonicDvdPage;
 BlaupunktDvdPage  blaupunktDvdPage;
 
@@ -2179,16 +2206,19 @@ void initialiseGuiAndActions() {
 
    showMainPage.add(mainPage);
 
+   // All Off
    //==============================
    allOff.add(laserDvdOff);
    allOff.add(teacPvrOff);
-   allOff.add(samsungDvdOff);
+//   allOff.add(samsungDvdOff);
    allOff.add(panasonicDvdOff);
    allOff.add(blaupunktDvdOff);
    allOff.add(sonyTvOff);
    allOff.add(mainPage);
    allOff.add(completeMessage);
+   allOff.add(suspendImmediatelyAction);
 
+   // Watch TV
    //==============================
    watchTv.add(sonyTvOn);
    watchTv.add(sonyTvHome);
@@ -2199,12 +2229,13 @@ void initialiseGuiAndActions() {
 
    watchTv.add(laserDvdOff);
    watchTv.add(teacPvrOff);
-   watchTv.add(samsungDvdOff);
+//   watchTv.add(samsungDvdOff);
    watchTv.add(panasonicDvdOff);
    watchTv.add(blaupunktDvdOff);
    watchTv.add(sonyTvPage);
    watchTv.add(completeMessage);
 
+   // Watch Teac PVR
    //==============================
    watchTeacPvr.add(sonyTvOn);
    //   watchTeacPvr.add(sonyTvHome);
@@ -2213,12 +2244,13 @@ void initialiseGuiAndActions() {
 
    watchTeacPvr.add(teacPvrOn);
    watchTeacPvr.add(laserDvdOff);
-   watchTeacPvr.add(samsungDvdOff);
+//   watchTeacPvr.add(samsungDvdOff);
    watchTeacPvr.add(panasonicDvdOff);
    watchTeacPvr.add(blaupunktDvdOff);
    watchTeacPvr.add(teacPvrPage);
    watchTeacPvr.add(completeMessage);
 
+   // Watch Laser DVD
    //==============================
    watchLaserDvd.add(sonyTvOn);
    //   watchLaserDvd.add(sonyTvHome);
@@ -2227,26 +2259,28 @@ void initialiseGuiAndActions() {
 
    watchLaserDvd.add(laserDvdOn);
    watchLaserDvd.add(teacPvrOff);
-   watchLaserDvd.add(samsungDvdOff);
+//   watchLaserDvd.add(samsungDvdOff);
    watchLaserDvd.add(panasonicDvdOff);
    watchLaserDvd.add(blaupunktDvdOff);
    watchLaserDvd.add(laserDvdPage);
    watchLaserDvd.add(completeMessage);
 
-   //==============================
-   watchSamsungDvd.add(sonyTvOn);
-   //   watchSamsungDvd.add(sonyTvHome);
-   //   watchSamsungDvd.add(sonyTvReturn);
-   watchSamsungDvd.add(sonyTvSourceHdmi3_DVD_Samsung);
+//   // Watch Samsung DVD
+//   //==============================
+//   watchSamsungDvd.add(sonyTvOn);
+//   //   watchSamsungDvd.add(sonyTvHome);
+//   //   watchSamsungDvd.add(sonyTvReturn);
+//   watchSamsungDvd.add(sonyTvSourceHdmi3_DVD_Samsung);
+//
+//   watchSamsungDvd.add(laserDvdOff);
+//   watchSamsungDvd.add(teacPvrOff);
+//   watchSamsungDvd.add(samsungDvdOn);
+//   watchSamsungDvd.add(panasonicDvdOff);
+//   watchSamsungDvd.add(blaupunktDvdOff);
+//   watchSamsungDvd.add(samsungDvdPage);
+//   watchSamsungDvd.add(completeMessage);
 
-   watchSamsungDvd.add(laserDvdOff);
-   watchSamsungDvd.add(teacPvrOff);
-   watchSamsungDvd.add(samsungDvdOn);
-   watchSamsungDvd.add(panasonicDvdOff);
-   watchSamsungDvd.add(blaupunktDvdOff);
-   watchSamsungDvd.add(samsungDvdPage);
-   watchSamsungDvd.add(completeMessage);
-
+   // Watch Panasonic DVD
    //==============================
    watchPanasonicDVD.add(sonyTvOn);
    //   watchPanasonicDVD.add(sonyTvHome);
@@ -2255,21 +2289,22 @@ void initialiseGuiAndActions() {
 
    watchPanasonicDVD.add(laserDvdOff);
    watchPanasonicDVD.add(teacPvrOff);
-   watchPanasonicDVD.add(samsungDvdOff);
+//   watchPanasonicDVD.add(samsungDvdOff);
    watchPanasonicDVD.add(panasonicDvdOn);
    watchPanasonicDVD.add(blaupunktDvdOff);
    watchPanasonicDVD.add(panasonicDvdPage);
    watchPanasonicDVD.add(completeMessage);
 
+   // Watch Blaupunkt DVD
    //==============================
    watchBlaupunktDVD.add(sonyTvOn);
    //   watchBlaupunktDVD.add(sonyTvHome);
    //   watchBlaupunktDVD.add(sonyTvReturn);
-   watchBlaupunktDVD.add(sonyTvSourceHdmi2_PVR_Teac);
+   watchBlaupunktDVD.add(sonyTvSourceHdmi3_DVD_Blaupunkt);
 
    watchBlaupunktDVD.add(laserDvdOff);
    watchBlaupunktDVD.add(teacPvrOff);
-   watchBlaupunktDVD.add(samsungDvdOff);
+//   watchBlaupunktDVD.add(samsungDvdOff);
    watchBlaupunktDVD.add(panasonicDvdOff);
    watchBlaupunktDVD.add(blaupunktDvdOn);
    watchBlaupunktDVD.add(blaupunktDvdPage);
@@ -2813,20 +2848,41 @@ void findTouchBug() {
       }
    }
 }
+
+void testButton() {
+//   initialiseMiscellaneous();
+//
+//   initialiseGuiAndActions();
+
+   initialiseMiscellaneous();
+   console.WRITELN("Reinitialise!...");
+
+   spi.enable();
+
+   PowerEnable::on();
+   tft.initialise();
+   tft.setBackgroundColour(BACKGROUND_COLOUR);
+   tft.clear();
+   tft.backlightOn();
+
+   static Button b(40, 40, Action::nullAction, Colour::RED);
+   b.draw(10, 10);
+   tft.setBackgroundColour(Colour::RED);
+   tft.setColour(Colour::WHITE);
+   b.drawMyBitmap(ForwardScene, 30, 30, 2);
+   for(;;) {
+   }
+}
 #endif // DEBUG_BUILD
 
 int main() {
 
+//   testButton();
+
+#ifdef DEBUG_BUILD
    console.setBaudRate(baudRate);
    console.WRITELN("\n**************************************");
    console.WRITELN("Executing from RESET, SRS=", Rcm::getResetSourceDescription());
-
-   // Only reset non-volatile storage on Pin or Power-on reset
-   bool clearState = (Rcm::getResetSource() & (RcmSource_Pin|RcmSource_Por|RcmSource_Mdm_Ap));
-
-   if (clearState) {
-      memset(RFVBAT, 0, sizeof(RFVBAT_Type));
-   }
 
    static constexpr IntegerFormat fmt32 {
       Radix_16,
@@ -2840,7 +2896,6 @@ int main() {
    }
    console.WRITELN();
 
-#ifdef DEBUG_BUILD
    //   findTouchBug();
    //   testTiming();
    //   testBattery();
@@ -2855,11 +2910,8 @@ int main() {
    //   for(;;) {
    //      calibrate();
    //   }
-#endif // DEBUG_BUILD
 
-#ifdef DEBUG_BUILD
-
-   if ((Rcm::getResetSource() & RcmSource_Wakeup) != 0) {
+   if (Rcm::getResetSource() & RcmSource_Wakeup) {
 
       console.WRITELN("========================================");
       console.WRITELN("Reset due to LLWU");
@@ -2880,41 +2932,58 @@ int main() {
    }
 #endif // DEBUG_BUILD
 
-   //   Smc::enableAllPowerModes();
-
    initialiseMiscellaneous();
 
    initialiseGuiAndActions();
 
    DebugLed::on();
 
+   // Only reset non-volatile storage on Pin, Power-on or Debug interface reset
+   bool clearState = (Rcm::getResetSource() & (RcmSource_Pin|RcmSource_Por|RcmSource_Mdm_Ap));
+
    if (clearState) {
+
+      memset(RFVBAT, 0, sizeof(RFVBAT_Type));
       allOff.action();
    }
+
    if (!Screen::isCurrentPageValid()) {
       // Should be impossible
       Screen::show(&mainPage);
    }
    Screen::setBusy(false);
 
-   console.setEcho(EchoMode_Off);
-   console.setBlocking(BlockingMode_Off);
-
    bool     reinitialise  = true;
+   bool     displayOff    = false;
+//   unsigned lastIdleTime  = 0;
 
    for(;;) {
       Wdog::refresh(WdogRefresh_1, WdogRefresh_2);
 
-      if (BatteryMonitor::getIdleTime()>SLEEP_DELAY) {
+      unsigned idleTime = BatteryMonitor::getIdleTime();
+//      if (idleTime != lastIdleTime) {
+//         console.writeln("idleTime = ", idleTime);
+//         lastIdleTime = idleTime;
+//      }
+      if (suspendImmediately || (idleTime>SLEEP_DELAY)) {
          sleep();
          reinitialise = true;
+      }
+      else if ((idleTime>DISPLAYOFF_DELAY) && !displayOff) {
+         touchInterface.disableTouchInterrupt();
+         tft.backlightOff();
+         PowerEnable::off();
+         console.writeln("Turning Off Display");
+         displayOff = true;
       }
 
       if (reinitialise) {
 
          reinitialise = false;
 
-         Smc::enterRunMode(ClockConfig_RUN_PEE_48MHz);
+         suspendImmediately = false;
+
+//         Smc::enterRunMode(ClockConfig_RUN_PEE_48MHz);
          console.setBaudRate(baudRate);
 
          console.WRITELN("Reinitialise!...");
@@ -2930,7 +2999,7 @@ int main() {
 
          PowerEnable::on();
 
-         waitMS(100);
+//         waitMS(100);
 
          tft.initialise();
 
@@ -2949,9 +3018,20 @@ int main() {
       if (buttonCode != Button_None) {
          //         console.WRITELN("Button_", unsigned(buttonCode), release?" Released":" Pressed");
          BatteryMonitor::clearIdleTimer();
+         if (displayOff) {
+            displayOff = false;
+            console.writeln("Exiting low power");
+            PowerEnable::on();
+            tft.initialise();
+            Screen::refresh();
+            Screen::setBusy(false);
+            tft.backlightOn();
+            // Discard wake-up event
+            continue;
+         }
          action = Screen::findButtonAction(buttonCode);
       }
-      else {
+      else if (!displayOff){
          unsigned touchX, touchY;
          bool touched = touchInterface.checkTouch(touchX, touchY);
          if (touched) {
@@ -2964,7 +3044,6 @@ int main() {
             action = Screen::findTouchAction(touchX, touchY);
          }
       }
-      //Wdog::refresh(WdogRefresh_1, WdogRefresh_2);
 
       if (action == nullptr) {
          // No action found
@@ -2977,7 +3056,7 @@ int main() {
 
       Ticks actionDelay = action->getDelay();
       if (actionDelay < 500'000_ticks) {
-         actionDelay = 500'000_ticks; // Minimum 500 ms for repeat delay
+         actionDelay = 200'000_ticks; // Minimum 200 ms for repeat delay
       }
       waitUS(actionDelay);
       Screen::setBusy(false);

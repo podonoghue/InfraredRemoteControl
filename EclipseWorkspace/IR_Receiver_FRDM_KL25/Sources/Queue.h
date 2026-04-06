@@ -1,12 +1,14 @@
-/**
- * @file uart_queue.h (180.ARM_Peripherals/Project_Headers/uart_queue.h)
+/*
+ * Queue.h
  *
- *  Created on: 12Nov.,2016
- *      Author: podonoghue
+ * Simple Queue
+ *
+ *  Created on: 6 Jan 2026
+ *      Author: peter
  */
 
-#ifndef INCLUDE_USBDM_UART_QUEUE_H_
-#define INCLUDE_USBDM_UART_QUEUE_H_
+#ifndef INCLUDE_USBDM_QUEUE_H_
+#define INCLUDE_USBDM_QUEUE_H_
 
 #include "pin_mapping.h"
 #include "system.h"
@@ -20,7 +22,7 @@ namespace USBDM {
  * @tparam QUEUE_SIZE Size of queue
  */
 template<class T, int QUEUE_SIZE>
-class UartQueue {
+class Queue {
    T  fBuff[QUEUE_SIZE];
    T  *volatile fHead;
    T  *volatile fTail;
@@ -33,7 +35,7 @@ public:
    /**
     * Create empty Queue
     */
-   constexpr UartQueue() : fHead(fBuff), fTail(fBuff), fNumberOfElements(0) {
+   constexpr Queue() : fHead(fBuff), fTail(fBuff), fNumberOfElements(0) {
    }
 
    /**
@@ -119,4 +121,4 @@ public:
 
 } // End namespace USBDM
 
-#endif /* INCLUDE_USBDM_UART_QUEUE_H_ */
+#endif /* INCLUDE_USBDM_QUEUE_H_ */

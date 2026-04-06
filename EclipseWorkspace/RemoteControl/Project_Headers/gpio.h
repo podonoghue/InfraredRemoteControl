@@ -527,25 +527,25 @@ public:
     * @param pinDriveStrength Pin drive strength of digital outputs
     * @param pinDriveMode     Pin drive mode (push-pull/open-drain) of digital outputs
     * @param pinAction        DMA and/or interrupt actions to happen on pin change or level
-    * @param pinStatusFlag    w1c flag indicating pin event detected
     * @param pinFilter        Pin filtering on digital inputs
     * @param pinSlewRate      Pin slew rate of digital outputs
+    * @param pinStatusFlag    w1c flag indicating pin event detected
     */
    static void setInOut(
          PinPull          pinPull,
          PinDriveStrength pinDriveStrength,
          PinDriveMode     pinDriveMode,
          PinAction        pinAction,
-         PinStatusFlag    pinStatusFlag,
          PinFilter        pinFilter,
-         PinSlewRate      pinSlewRate)  {
+         PinSlewRate      pinSlewRate,
+         PinStatusFlag    pinStatusFlag    = PinStatusFlag_ClearEvent)  {
    
       // Make input initially
       setIn();
       // Set inactive pin state (if later made output)
       setInactive();
       // Configure PCR
-      Pcr::setPCR(pinPull|pinDriveStrength|pinDriveMode|pinAction|pinStatusFlag|pinFilter|pinSlewRate);
+      Pcr::setPCR(pinPull|pinDriveStrength|pinDriveMode|pinAction|pinFilter|pinSlewRate|pinStatusFlag);
    }
    
    /**
@@ -603,8 +603,8 @@ public:
     * @brief
     * Enable pin as digital output with initial inactive level
     * Configures <b>all</b> Pin Control Register (PCR) values
-
     * Unreferenced fields are cleared.
+    * (port_pcr_dse,port_pcr_ode,port_pcr_sre)
     *
     * @note Resets the Pin Control Register value (PCR value).
     * @note Resets the pin value to the inactive state
@@ -677,25 +677,26 @@ public:
     * Enable pin as digital input.
     * Configures <b>all</b> Pin Control Register (PCR) values
     * Unreferenced fields are cleared.
+    * (port_pcr_pd,port_pcr_irqc,port_pcr_pfe,port_pcr_isf)
     *
     * @note Resets the Pin Control Register value (PCR value).
     * @note Use setIn() for a lightweight change of direction without affecting other pin settings.
     *
     * @param pinPull       Pin pull device (up/down/none) on digital inputs
     * @param pinAction     DMA and/or interrupt actions to happen on pin change or level
-    * @param pinStatusFlag w1c flag indicating pin event detected
     * @param pinFilter     Pin filtering on digital inputs
+    * @param pinStatusFlag w1c flag indicating pin event detected
     */
    static void setInput(
          PinPull       pinPull,
          PinAction     pinAction,
-         PinStatusFlag pinStatusFlag,
-         PinFilter     pinFilter)  {
+         PinFilter     pinFilter,
+         PinStatusFlag pinStatusFlag = PinStatusFlag_ClearEvent)  {
    
       // Make input
       setIn();
       // Configure PCR
-      Pcr::setPCR(pinPull|pinAction|pinStatusFlag|pinFilter);
+      Pcr::setPCR(pinPull|pinAction|pinFilter|pinStatusFlag);
    }
    
    /**
@@ -1313,6 +1314,7 @@ public:
     * Pins are initially set as inputs.
     * Use setIn(), setOut() and setDirection() to change pin directions.
     * If open-drain then input function may meaningfully be used while set as output
+    * (port_pcr_pd,port_pcr_dse,port_pcr_ode,port_pcr_irqc,port_pcr_isf,port_pcr_pfe,port_pcr_sre)
     *
     * @note Resets the Pin Control Register value (PCR value).
     * @note Resets the pin output value to the inactive state
@@ -1378,6 +1380,7 @@ public:
     * Configures <b>all</b> Pin Control Register (PCR) values
 
     * Unreferenced PCR fields are cleared.
+    * (port_pcr_dse,port_pcr_ode,port_pcr_sre)
     *
     * @note Resets the Pin Control Register value (PCR value).
     * @note Resets the pin value to the inactive state
@@ -1433,22 +1436,23 @@ public:
     * Set all pins as digital inputs
     * Configures <b>all</b> Pin Control Register (PCR) values
     * Unreferenced fields are cleared.
+    * (port_pcr_pd,port_pcr_irqc,port_pcr_pfe,port_pcr_isf)
     *
     * @note Resets the Pin Control Register value (PCR value).
     * @note Use setIn() for a lightweight change of direction without affecting other pin settings.
     *
     * @param pinPull       Pin pull device (up/down/none) on digital inputs
     * @param pinAction     DMA and/or interrupt actions to happen on pin change or level
-    * @param pinStatusFlag w1c flag indicating pin event detected
     * @param pinFilter     Pin filtering on digital inputs
+    * @param pinStatusFlag w1c flag indicating pin event detected
     */
    static void setInput(
          PinPull       pinPull,
          PinAction     pinAction,
-         PinStatusFlag pinStatusFlag,
-         PinFilter     pinFilter)  {
+         PinFilter     pinFilter,
+         PinStatusFlag pinStatusFlag = PinStatusFlag_ClearEvent)  {
    
-      setInOut(pinPull|pinAction|pinStatusFlag|pinFilter);
+      setInOut(pinPull|pinAction|pinFilter|pinStatusFlag);
    }
 
    /**

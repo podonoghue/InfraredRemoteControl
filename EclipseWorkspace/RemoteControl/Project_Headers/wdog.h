@@ -16,7 +16,7 @@
 #include "derivative.h"
 #include "pin_mapping.h"
 
-extern void WatchdogHandler();
+// No handler defined for WDOG
 
 
 namespace USBDM {
@@ -200,12 +200,7 @@ public:
 
    //! Common class based callback code has been generated for this class of peripheral
    // (_BasicInfoIrqGuard)
-   static constexpr bool irqHandlerInstalled = true;
-   
-   /**
-    * Type definition for Wdog interrupt call back.
-    */
-   typedef void (*CallbackFunction)();
+   static constexpr bool irqHandlerInstalled = false;
    
    /**
     * Calculate clock frequency settings
@@ -315,9 +310,6 @@ public:
        */
       constexpr Init() = default;
    
-      // Peripheral interrupt handling (irqHandlingMethod)
-      CallbackFunction callbackFunction = nullptr;
-
       // Test mode disable (wdog_stctrlh_distestwdog)
       // Enable watchdog in WAIT mode (wdog_stctrlh_waiten)
       // Enable watchdog in STOP mode (wdog_stctrlh_stopen)
@@ -340,24 +332,6 @@ public:
 
       ///  Watchdog Window in ticks or seconds
       Seconds_Ticks window;
-
-      /**
-       * Constructor for Peripheral interrupt handling
-       * (irqHandlingMethod)
-       *
-       * @tparam   Types
-       * @param    rest
-       *
-       * @param callbackFunction If enabled, the handler may be set using the setCallback() function or
-       *        by overriding the interrupt handler method in the peripheral class
-       *        If not enabled, then interrupt handlers may be installed by naming them 
-       *        (see weak names used in vector table).
-       */
-      template <typename... Types>
-      constexpr Init(CallbackFunction callbackFunction, Types... rest) : Init(rest...) {
-   
-         this->callbackFunction = callbackFunction;
-      }
 
       /**
        * Constructor for IRQ priority levels
@@ -552,7 +526,7 @@ public:
     */
    //! Class based interrupt code has been generated for this class of peripheral
    // (_BasicInfoIrqGuard)
-   static constexpr bool irqHandlerInstalled = true;
+   static constexpr bool irqHandlerInstalled = false;
    
    //! IRQ numbers for hardware
    static constexpr IRQn_Type irqNums[]  = WDOG_IRQS;
@@ -582,74 +556,6 @@ public:
     */
    static void disableNvicInterrupts() {
       NVIC_DisableIRQ(irqNums[0]);
-   }
-   
-   template<typename T>
-   using CallbackWrapper = USBDM::CallbackWrapper<T, WdogInfo>;
-   
-   /**
-    * Function to wrap a member function as a static callback function
-    * Example:
-    * @code
-    * class AClass {
-    * public:
-    *    int y;
-    *
-    *    // Member function used as callback
-    *    // This function must match CallbackFunction
-    *    void callbackFuction() {
-    *       ...;
-    *    }
-    * };
-    * ...
-    *    AClass *tester = new AClass{};
-    *
-    *    auto cb = Wdog::wrapCallback(tester, &AClass::callbackFuction);
-    *    Wdog::setCallback(cb);
-    *   @endcode
-    *
-    * @tparam T               Type of class containing callback (inferred)
-    *
-    * @param classInstance    Pointer to instance of class
-    * @param memberFunction   Pointer to the member function
-    *
-    * @return  Wrapper
-    */
-   template<typename T>
-   static auto wrapCallback(T *classInstance, void (T::*memberFunction)()) {
-      static CallbackWrapper<T> sClass(classInstance, memberFunction);
-      return sClass.callback;
-   }
-   
-   /**
-    * WDOG interrupt handler -  Calls WDOG callback
-    */
-   static void irqHandler() {
-   
-      // Execute call-back
-      sCallback();
-   }
-   
-   /** Callback function for Wdog */
-   static inline CallbackFunction sCallback = unhandledCallback; // WDOG_IRQn;
-   
-   /**
-    * Set interrupt callback function.
-    *
-    * @param  wdogCallback Callback function to execute on interrupt
-    *                             Use nullptr to remove callback.
-    */
-   static void setCallback(CallbackFunction wdogCallback) {
-      if (wdogCallback == nullptr) {
-         wdogCallback = unhandledCallback;
-      }
-      // Allow either no handler set yet, setting same handler or removing handler
-      usbdm_assert(
-            (sCallback == unhandledCallback) ||
-            (sCallback == wdogCallback) ||
-            (wdogCallback == unhandledCallback),
-            "Handler already set");
-      sCallback = wdogCallback;
    }
    
    /**
@@ -842,8 +748,6 @@ public:
       Seconds_Ticks window  = init.window;
       uint16_t presc        = init.presc;
    
-      // Configure call-backs
-      setCallback(init.callbackFunction);
       // Protect sequence from interrupts
       CriticalSection cs;
    

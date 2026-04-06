@@ -109,6 +109,7 @@ extern void DMA0_Error_IRQHandler(void);             /**< DMA error interrupt   
 extern void FTFL_Command_IRQHandler(void);           /**< Flash Memory Interface                                                           */
 extern void FTFL_ReadCollision_IRQHandler(void);     /**< Flash Memory Interface                                                           */
 extern void PMC_IRQHandler(void);                    /**< Power Management Controller                                                      */
+extern void WDOG_IRQHandler(void);                   /**< External Watchdog Monitor                                                        */
 extern void I2C0_IRQHandler(void);                   /**< Inter-Integrated Circuit                                                         */
 extern void SPI0_IRQHandler(void);                   /**< Serial Peripheral Interface                                                      */
 extern void I2S0_Tx_IRQHandler(void);                /**< Synchronous Serial Interface                                                     */

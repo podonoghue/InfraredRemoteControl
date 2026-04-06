@@ -1049,6 +1049,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    constexpr inline PcrValue operator|(PinMux op2, PcrValue op1) { return PcrValue(uint32_t(op1)|uint32_t(op2)); }
    /**
     *  Convert PcrValue to PinPull
+    * (port_pcr_pd)
     *
     *  @param pcrValue Value to convert
     */
@@ -1058,6 +1059,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    
    /**
     *  Convert PcrValue to PinFilter
+    * (port_pcr_pfe)
     *
     *  @param pcrValue Value to convert
     */
@@ -1067,6 +1069,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    
    /**
     *  Convert PcrValue to PinDriveStrength
+    * (port_pcr_dse)
     *
     *  @param pcrValue Value to convert
     */
@@ -1076,6 +1079,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    
    /**
     *  Convert PcrValue to PinDriveMode
+    * (port_pcr_ode)
     *
     *  @param pcrValue Value to convert
     */
@@ -1085,6 +1089,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    
    /**
     *  Convert PcrValue to PinSlewRate
+    * (port_pcr_sre)
     *
     *  @param pcrValue Value to convert
     */
@@ -1094,6 +1099,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    
    /**
     *  Convert PcrValue to PinLock
+    * (port_pcr_lk)
     *
     *  @param pcrValue Value to convert
     */
@@ -1103,6 +1109,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    
    /**
     *  Convert PcrValue to PinAction
+    * (port_pcr_irqc)
     *
     *  @param pcrValue Value to convert
     */
@@ -1112,6 +1119,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    
    /**
     *  Convert PcrValue to PinStatusFlag
+    * (port_pcr_isf)
     *
     *  @param pcrValue Value to convert
     */
@@ -1121,6 +1129,7 @@ static inline void disablePortClocks(uint32_t pccAddress) {
    
    /**
     *  Convert PcrValue to PinMux
+    * (port_pcr_mux)
     *
     *  @param pcrValue Value to convert
     */
@@ -1292,6 +1301,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
       /**
        * Constructor
        * This version is appropriate for a pin used as a digital output
+       * (port_pcr_dse,port_pcr_ode,port_pcr_sre)
        *
        * @param pinDriveStrength Pin drive strength of digital outputs
        * @param pinDriveMode     Pin drive mode (push-pull/open-drain) of digital outputs
@@ -1307,6 +1317,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
       /**
        * Constructor
        * This version is appropriate for a pin used as a digital input
+       * (port_pcr_pd,port_pcr_pfe,port_pcr_irqc,port_pcr_isf)
        *
        * @param pinPull       Pin pull device (up/down/none) on digital inputs
        * @param pinFilter     Pin filtering on digital inputs
@@ -1317,13 +1328,14 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
             PinPull       pinPull,
             PinFilter     pinFilter,
             PinAction     pinAction,
-            PinStatusFlag pinStatusFlag
+            PinStatusFlag pinStatusFlag = PinStatusFlag_ClearEvent
       ) : value(uint32_t(pinPull|pinFilter|pinAction|pinStatusFlag)) {
       }
    
       /**
        * Constructor
        * This version is appropriate for a pin used as a digital input/output
+       * (port_pcr_dse,port_pcr_ode,port_pcr_sre,port_pcr_pd,port_pcr_pfe,port_pcr_irqc,port_pcr_isf)
        *
        * @param pinDriveStrength Pin drive strength of digital outputs
        * @param pinDriveMode     Pin drive mode (push-pull/open-drain) of digital outputs
@@ -1340,12 +1352,13 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
             PinPull          pinPull,
             PinFilter        pinFilter,
             PinAction        pinAction,
-            PinStatusFlag    pinStatusFlag
+            PinStatusFlag    pinStatusFlag    = PinStatusFlag_ClearEvent
       ) : value(uint32_t(pinDriveStrength|pinDriveMode|pinSlewRate|pinPull|pinFilter|pinAction|pinStatusFlag)) {
       }
    
       /**
        * Constructor
+       * (port_pcr_pd)
        *
        * @tparam   Types
        * @param    rest
@@ -1360,6 +1373,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
 
       /**
        * Constructor
+       * (port_pcr_pfe)
        *
        * @tparam   Types
        * @param    rest
@@ -1374,6 +1388,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
 
       /**
        * Constructor
+       * (port_pcr_dse)
        *
        * @tparam   Types
        * @param    rest
@@ -1388,6 +1403,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
 
       /**
        * Constructor
+       * (port_pcr_ode)
        *
        * @tparam   Types
        * @param    rest
@@ -1402,6 +1418,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
 
       /**
        * Constructor
+       * (port_pcr_sre)
        *
        * @tparam   Types
        * @param    rest
@@ -1416,6 +1433,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
 
       /**
        * Constructor
+       * (port_pcr_lk)
        *
        * @tparam   Types
        * @param    rest
@@ -1430,6 +1448,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
 
       /**
        * Constructor
+       * (port_pcr_irqc)
        *
        * @tparam   Types
        * @param    rest
@@ -1444,6 +1463,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
 
       /**
        * Constructor
+       * (port_pcr_isf)
        *
        * @tparam   Types
        * @param    rest
@@ -1458,6 +1478,7 @@ constexpr PcrValue analoguePcrValue(PcrValue op) {
 
       /**
        * Constructor
+       * (port_pcr_mux)
        *
        * @tparam   Types
        * @param    rest
@@ -2236,6 +2257,7 @@ public:
     * Set Pin Control Register Attributes
     * Parameters default to values appropriate for the pin function being used.
     * The clock to the port will be enabled before changing the PCR
+    * (port_pcr_pd,port_pcr_dse,port_pcr_ode,port_pcr_irqc,port_pcr_pfe,port_pcr_sre,port_pcr_mux,port_pcr_isf)
     *
     * @param pinPull          Pin pull device (up/down/none) on digital inputs
     * @param pinDriveStrength Pin drive strength of digital outputs
@@ -2290,6 +2312,7 @@ public:
     *
     * Mux value is set appropriately for the pin function being used. Other attributes are cleared.
     * The clock to the port will be enabled before changing the PCR.
+    * (port_pcr_dse,port_pcr_ode,port_pcr_sre)
     *
     * @param pinDriveStrength Pin drive strength of digital outputs
     * @param pinDriveMode     Pin drive mode (push-pull/open-drain) of digital outputs
@@ -2331,6 +2354,7 @@ public:
     *
     * Mux value is set appropriately for the pin function being used. Other attributes are cleared.
     * The clock to the port will be enabled before changing the PCR.
+    * (port_pcr_pd,port_pcr_irqc,port_pcr_pfe,port_pcr_isf)
     *
     * @param pinPull       Pin pull device (up/down/none) on digital inputs
     * @param pinAction     DMA and/or interrupt actions to happen on pin change or level

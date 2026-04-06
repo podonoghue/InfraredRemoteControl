@@ -17,7 +17,6 @@
 
 #include "cmt.h"
 #include "gpio.h"
-#include "wdog.h"
 #include "llwu.h"
 #include "pit.h"
 
@@ -197,6 +196,7 @@ void DMA0_Error_IRQHandler(void)              WEAK_DEFAULT_HANDLER;
 void FTFL_Command_IRQHandler(void)            WEAK_DEFAULT_HANDLER;
 void FTFL_ReadCollision_IRQHandler(void)      WEAK_DEFAULT_HANDLER;
 void PMC_IRQHandler(void)                     WEAK_DEFAULT_HANDLER;
+void WDOG_IRQHandler(void)                    WEAK_DEFAULT_HANDLER;
 void I2C0_IRQHandler(void)                    WEAK_DEFAULT_HANDLER;
 void SPI0_IRQHandler(void)                    WEAK_DEFAULT_HANDLER;
 void I2S0_Tx_IRQHandler(void)                 WEAK_DEFAULT_HANDLER;
@@ -264,7 +264,7 @@ VectorTable const __vector_table = {
       FTFL_ReadCollision_IRQHandler,           /*   23,    7  Flash Memory Interface                                                           */
       PMC_IRQHandler,                          /*   24,    8  Power Management Controller                                                      */
       Llwu::irqHandler,                        /*   25,    9  Low Leakage Wakeup                                                               */
-      Wdog::irqHandler,                        /*   26,   10  External Watchdog Monitor                                                        */
+      WDOG_IRQHandler,                         /*   26,   10  External Watchdog Monitor                                                        */
       I2C0_IRQHandler,                         /*   27,   11  Inter-Integrated Circuit                                                         */
       SPI0_IRQHandler,                         /*   28,   12  Serial Peripheral Interface                                                      */
       I2S0_Tx_IRQHandler,                      /*   29,   13  Synchronous Serial Interface                                                     */
